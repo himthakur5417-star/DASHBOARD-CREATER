@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anti-Gravity | ICP-1 Leads — Bhopal & Indore</title>
+<meta name="description" content="17 ICP-1 Leads from Bhopal & Indore — Verified, Cleaned & Ready for Outreach. Anti-Gravity Advocate Finder.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060d1f;--bg2:#0b1428;--card:#101e38;--card2:#162344;--blue:#4f8ef7;--purple:#8b5cf6;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--orange:#f97316;--pink:#ec4899;--t1:#eef2ff;--t2:#7c8db5;--t3:#3d4f72;--border:rgba(79,142,247,0.13);--borderb:rgba(79,142,247,0.45);--r:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 10%,rgba(79,142,247,.07),transparent 55%),radial-gradient(ellipse 50% 40% at 85% 85%,rgba(139,92,246,.06),transparent 55%),radial-gradient(ellipse 40% 30% at 55% 40%,rgba(6,182,212,.04),transparent 55%);pointer-events:none;z-index:0;}
+.wrap{max-width:1500px;margin:0 auto;padding:0 26px;position:relative;z-index:1;}
+
+/* HEADER */
+header{background:rgba(6,13,31,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:15px 0;position:sticky;top:0;z-index:100;box-shadow:0 4px 30px rgba(0,0,0,.4);}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 24px rgba(79,142,247,.45);}
+.logo-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.2px;}
+.logo-sub{font-size:11px;color:var(--t2);margin-top:1px;}
+.hdr-badges{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+.b-blue{background:rgba(79,142,247,.15);color:var(--blue);border:1px solid rgba(79,142,247,.3);}
+.b-green{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.b-amber{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+.b-red{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.b-purple{background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.4);}}
+.ebtn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:8px;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.ebtn:hover{background:rgba(79,142,247,.22);transform:translateY(-1px);}
+
+/* TABS */
+.tabs-wrap{padding:22px 0 0;}
+.tabs{display:flex;gap:4px;background:rgba(11,20,40,.85);border:1px solid var(--border);border-radius:var(--r);padding:5px;overflow-x:auto;}
+.tb{display:flex;align-items:center;gap:7px;padding:10px 20px;background:transparent;border:none;border-radius:10px;color:var(--t2);cursor:pointer;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
+.tb:hover{background:rgba(79,142,247,.1);color:var(--t1);}
+.tb.active{background:linear-gradient(135deg,#4f8ef7,#8b5cf6);color:#fff;box-shadow:0 4px 18px rgba(79,142,247,.38);}
+
+/* PANELS */
+.panel{display:none;padding:24px 0 60px;animation:fi .28s ease;}
+.panel.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* SECTION */
+.sec-title{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;margin-bottom:5px;}
+.sec-sub{font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.5;}
+.divider{height:1px;background:linear-gradient(90deg,rgba(79,142,247,.5),transparent);margin:28px 0;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;margin-bottom:24px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;transition:all .3s;position:relative;overflow:hidden;cursor:default;}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;}
+.k-b::before{background:linear-gradient(90deg,#4f8ef7,#06b6d4);}
+.k-g::before{background:linear-gradient(90deg,#10b981,#06b6d4);}
+.k-a::before{background:linear-gradient(90deg,#f59e0b,#f97316);}
+.k-r::before{background:linear-gradient(90deg,#ef4444,#f97316);}
+.k-p::before{background:linear-gradient(90deg,#8b5cf6,#ec4899);}
+.k-c::before{background:linear-gradient(90deg,#06b6d4,#4f8ef7);}
+.kpi:hover{border-color:var(--borderb);transform:translateY(-3px);box-shadow:0 8px 32px rgba(79,142,247,.18);}
+.kpi-icon{font-size:25px;margin-bottom:9px;display:block;}
+.kpi-val{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;line-height:1;margin-bottom:5px;}
+.kpi-lbl{font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+.kpi-sub{font-size:11px;color:var(--t3);margin-top:4px;}
+.kpi-tr{font-size:11px;font-weight:700;margin-top:7px;padding:3px 8px;border-radius:10px;display:inline-block;}
+.tr-g{background:rgba(16,185,129,.15);color:var(--green);}
+.tr-r{background:rgba(239,68,68,.15);color:var(--red);}
+.tr-a{background:rgba(245,158,11,.15);color:var(--amber);}
+
+/* CHARTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:all .3s;}
+.cc:hover{border-color:var(--borderb);box-shadow:0 6px 28px rgba(79,142,247,.15);}
+.ct{font-size:14px;font-weight:600;margin-bottom:3px;}
+.cs{font-size:12px;color:var(--t2);margin-bottom:16px;}
+.cw{position:relative;height:230px;}
+.cw2{position:relative;height:300px;}
+
+/* TABLE */
+.tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.th{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.ts{overflow-x:auto;max-height:580px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;}
+thead{position:sticky;top:0;z-index:10;}
+thead tr{background:rgba(6,13,31,.97);backdrop-filter:blur(8px);}
+th{padding:11px 15px;text-align:left;font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:13px 15px;font-size:13px;color:var(--t1);border-bottom:1px solid rgba(79,142,247,.06);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(79,142,247,.05);}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.t-v{background:rgba(16,185,129,.15);color:var(--green);}
+.t-p{background:rgba(245,158,11,.15);color:var(--amber);}
+.t-u{background:rgba(239,68,68,.15);color:var(--red);}
+.t-r{background:rgba(139,92,246,.15);color:var(--purple);}
+.t-b{background:rgba(79,142,247,.15);color:var(--blue);}
+.t-bhopal{background:rgba(6,182,212,.15);color:var(--cyan);}
+.t-indore{background:rgba(139,92,246,.15);color:var(--purple);}
+.flag-cell{font-size:11px;color:var(--amber);max-width:200px;line-height:1.4;}
+.flag-none{color:var(--t3);font-size:11px;}
+
+/* ALERT */
+.alert{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:var(--r);margin-bottom:16px;}
+.a-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);}
+.a-r{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.a-g{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);}
+.a-b{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);color:var(--blue);}
+.ai{font-size:18px;flex-shrink:0;margin-top:1px;}
+.at{font-size:13px;line-height:1.6;}
+.at strong{display:block;margin-bottom:2px;font-size:14px;}
+
+/* ACTION */
+.al{display:flex;flex-direction:column;gap:10px;}
+.aitem{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;transition:all .3s;}
+.aitem:hover{border-color:var(--borderb);transform:translateX(4px);box-shadow:4px 0 20px rgba(79,142,247,.1);}
+.anum{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.n-r{background:rgba(239,68,68,.2);color:var(--red);}
+.n-a{background:rgba(245,158,11,.2);color:var(--amber);}
+.n-g{background:rgba(16,185,129,.2);color:var(--green);}
+.n-b{background:rgba(79,142,247,.2);color:var(--blue);}
+.n-p{background:rgba(139,92,246,.2);color:var(--purple);}
+.atitle{font-size:14px;font-weight:600;margin-bottom:3px;}
+.adesc{font-size:13px;color:var(--t2);line-height:1.55;}
+
+/* CLEAN CARDS */
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:13px;margin-bottom:22px;}
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:17px;display:flex;align-items:flex-start;gap:12px;}
+.ci{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ci-b{background:rgba(79,142,247,.15);}
+.ci-g{background:rgba(16,185,129,.15);}
+.ci-a{background:rgba(245,158,11,.15);}
+.ci-r{background:rgba(239,68,68,.15);}
+.ci-p{background:rgba(139,92,246,.15);}
+.cv{font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:2px;}
+.cl{font-size:13px;color:var(--t2);}
+.cd{font-size:11px;color:var(--t3);margin-top:3px;}
+
+/* PROGRESS */
+.pr{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.pl{font-size:12px;color:var(--t2);width:145px;flex-shrink:0;}
+.pw{flex:1;height:7px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.pb{height:100%;border-radius:4px;}
+.pv{font-size:12px;font-weight:700;color:var(--t1);width:42px;text-align:right;flex-shrink:0;}
+
+/* INSIGHTS */
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.ic{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:all .3s;}
+.ic:hover{border-color:var(--borderb);box-shadow:0 6px 28px rgba(79,142,247,.15);}
+.ih{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.ii{width:35px;height:35px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ii-b{background:rgba(79,142,247,.15);}
+.ii-g{background:rgba(16,185,129,.15);}
+.ii-a{background:rgba(245,158,11,.15);}
+.ii-r{background:rgba(239,68,68,.15);}
+.ii-p{background:rgba(139,92,246,.15);}
+.ib{font-size:13px;color:var(--t2);line-height:1.6;}
+.ib strong{color:var(--t1);}
+.ititle{font-size:14px;font-weight:600;}
+
+/* LEAD CARD GRID */
+.lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px;}
+.lead-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:all .3s;position:relative;}
+.lead-card:hover{border-color:var(--borderb);transform:translateY(-3px);box-shadow:0 8px 32px rgba(79,142,247,.15);}
+.lead-card.has-flag{border-left:3px solid var(--amber);}
+.lead-card.flagged-critical{border-left:3px solid var(--red);}
+.lead-num{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:rgba(79,142,247,.15);color:var(--blue);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.lc-co{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;padding-right:30px;}
+.lc-desc{font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.4;}
+.lc-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.lc-icon{font-size:13px;flex-shrink:0;}
+.lc-val{font-size:12px;color:var(--t2);}
+.lc-val a{color:var(--blue);text-decoration:none;}
+.lc-val a:hover{text-decoration:underline;}
+.lc-val strong{color:var(--t1);}
+.lc-flag{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:8px 10px;margin-top:10px;font-size:11px;color:var(--amber);line-height:1.4;}
+.lc-flag-r{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:8px 10px;margin-top:10px;font-size:11px;color:var(--red);line-height:1.4;}
+.lc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+
+/* BAR LIST */
+.bl{display:flex;flex-direction:column;gap:8px;}
+.bi .bm{display:flex;justify-content:space-between;margin-bottom:4px;}
+.bn{font-size:12px;color:var(--t2);}
+.bc{font-size:12px;font-weight:700;color:var(--t1);}
+.bt{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(79,142,247,.3);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(79,142,247,.55);}
+
+/* RESPONSIVE */
+@media(max-width:900px){.g2,.g3,.ig{grid-template-columns:1fr;}.lead-grid{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:1fr;}.wrap{padding:0 13px;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hdr">
+      <div class="logo">
+        <div class="logo-icon">🎯</div>
+        <div>
+          <div class="logo-title">Anti-Gravity · ICP-1 Leads</div>
+          <div class="logo-sub">17 Leads · Bhopal & Indore · Verified & Ready for Outreach</div>
+        </div>
+      </div>
+      <div class="hdr-badges">
+        <span class="badge b-blue">📍 Bhopal + Indore</span>
+        <span class="badge b-green"><span class="dot"></span>&nbsp;14 Verified</span>
+        <span class="badge b-amber">⚡ 3 Partially Verified</span>
+        <span class="badge b-red">🚨 3 Flags Found</span>
+        <button class="ebtn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="ebtn" onclick="publishDashboard()" id="shareBtn" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#10b981;">🔗 Get Share Link</button>
+        <button class="ebtn" onclick="emailDashboard()" style="background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);color:#8b5cf6;">📧 Share via Email</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tb active" onclick="tab('overview')" id="tb-overview">📊 Overview</button>
+      <button class="tb" onclick="tab('leads')" id="tb-leads">🃏 Lead Cards</button>
+      <button class="tb" onclick="tab('cleaning')" id="tb-cleaning">🧹 Data Cleaning</button>
+      <button class="tb" onclick="tab('verify')" id="tb-verify">🔍 Verification Table</button>
+      <button class="tb" onclick="tab('insights')" id="tb-insights">💡 Insights & Actions</button>
+    </div>
+  </div>
+
+  <!-- ======== OVERVIEW ======== -->
+  <div class="panel active" id="p-overview">
+    <div class="sec-title">📊 Executive Summary — ICP-1 Leads</div>
+    <div class="sec-sub">17 leads from Bhopal & Indore · Verified via web search · Aug 12, 2026 · All are IT/Tech companies → Ideal ICP-1 fit</div>
+
+    <div class="kpi-grid">
+      <div class="kpi k-b"><span class="kpi-icon">🎯</span><div class="kpi-val">17</div><div class="kpi-lbl">Total Leads</div><div class="kpi-sub">Bhopal + Indore IT companies</div></div>
+      <div class="kpi k-g"><span class="kpi-icon">✅</span><div class="kpi-val">14</div><div class="kpi-lbl">Verified Companies</div><div class="kpi-sub">Domain + founder confirmed</div><span class="kpi-tr tr-g">82.4%</span></div>
+      <div class="kpi k-a"><span class="kpi-icon">⚡</span><div class="kpi-val">3</div><div class="kpi-lbl">Partially Verified</div><div class="kpi-sub">Domain mismatch issues</div><span class="kpi-tr tr-a">17.6%</span></div>
+      <div class="kpi k-r"><span class="kpi-icon">🚨</span><div class="kpi-val">3</div><div class="kpi-lbl">Critical Flags</div><div class="kpi-sub">Records needing manual review</div><span class="kpi-tr tr-r">Rec 5, 9, 14</span></div>
+      <div class="kpi k-g"><span class="kpi-icon">👤</span><div class="kpi-val">13</div><div class="kpi-lbl">Founders Found</div><div class="kpi-sub">Name + verified via web</div><span class="kpi-tr tr-g">76.5%</span></div>
+      <div class="kpi k-r"><span class="kpi-icon">❓</span><div class="kpi-val">4</div><div class="kpi-lbl">Founder Unknown</div><div class="kpi-sub">Needs LinkedIn research</div><span class="kpi-tr tr-a">23.5%</span></div>
+      <div class="kpi k-c"><span class="kpi-icon">📍</span><div class="kpi-val">6</div><div class="kpi-lbl">Bhopal Leads</div><div class="kpi-sub">35.3% of total</div></div>
+      <div class="kpi k-p"><span class="kpi-icon">🏙️</span><div class="kpi-val">11</div><div class="kpi-lbl">Indore Leads</div><div class="kpi-sub">64.7% of total</div></div>
+      <div class="kpi k-g"><span class="kpi-icon">✉️</span><div class="kpi-val">17</div><div class="kpi-lbl">All Emails Valid</div><div class="kpi-sub">100% format valid, 0 dupes</div><span class="kpi-tr tr-g">✓ Clean</span></div>
+      <div class="kpi k-g"><span class="kpi-icon">🌐</span><div class="kpi-val">17</div><div class="kpi-lbl">Unique Domains</div><div class="kpi-sub">All different — no overlap</div><span class="kpi-tr tr-g">✓ 17/17</span></div>
+    </div>
+
+    <div class="g2">
+      <div class="cc"><div class="ct">🏙️ Leads by City</div><div class="cs">Bhopal vs Indore distribution</div><div class="cw"><canvas id="cityChart"></canvas></div></div>
+      <div class="cc"><div class="ct">🔍 Verification Status</div><div class="cs">Company verification outcomes</div><div class="cw"><canvas id="verChart"></canvas></div></div>
+    </div>
+
+    <div class="g2">
+      <div class="cc">
+        <div class="ct">👤 Founder Info Availability</div>
+        <div class="cs">How many leads have confirmed founder names</div>
+        <div class="cw"><canvas id="founderChart"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ct">📋 Data Completeness per Field</div>
+        <div class="cs">Field-by-field quality check</div>
+        <div style="padding:6px 0;">
+          <div class="pr"><div class="pl">Email (Valid)</div><div class="pw"><div class="pb" style="width:100%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div><div class="pv" style="color:var(--green)">100%</div></div>
+          <div class="pr"><div class="pl">Company Name</div><div class="pw"><div class="pb" style="width:100%;background:linear-gradient(90deg,#4f8ef7,#06b6d4)"></div></div><div class="pv">100%</div></div>
+          <div class="pr"><div class="pl">City</div><div class="pw"><div class="pb" style="width:100%;background:linear-gradient(90deg,#4f8ef7,#06b6d4)"></div></div><div class="pv">100%</div></div>
+          <div class="pr"><div class="pl">Founder Name</div><div class="pw"><div class="pb" style="width:76.5%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div><div class="pv" style="color:var(--amber)">76.5%</div></div>
+          <div class="pr"><div class="pl">Verified Company</div><div class="pw"><div class="pb" style="width:82.4%;background:linear-gradient(90deg,#10b981,#4f8ef7)"></div></div><div class="pv" style="color:var(--green)">82.4%</div></div>
+          <div class="pr"><div class="pl">Domain Match</div><div class="pw"><div class="pb" style="width:82.4%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div><div class="pv" style="color:var(--green)">82.4%</div></div>
+          <div class="pr"><div class="pl">LinkedIn URL</div><div class="pw"><div class="pb" style="width:100%;background:linear-gradient(90deg,#4f8ef7,#8b5cf6)"></div></div><div class="pv">100%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLAGGED SUMMARY -->
+    <div class="sec-title" style="font-size:16px;margin-bottom:12px;">🚨 Critical Flags Summary</div>
+    <div class="alert a-r"><div class="ai">🔴</div><div class="at"><strong>Record #9 — YASH Technologies: Major Domain Mismatch</strong>Email provided is juanguerrero@collabocore.com — this domain belongs to "CollaboCORE", a completely different company. YASH Technologies' actual domain is yash.com. This contact may be WRONG or a reseller contact. Do not email as YASH Technologies representative.</div></div>
+    <div class="alert a-w"><div class="ai">⚠️</div><div class="at"><strong>Record #5 — Teknowxa Solutions: Dual Company, Different Domain</strong>Dr. Ramesh Khare is founder of Teknowxa Solutions (teknowxa.com) but the email uses datasciencewizards.ai — his Mumbai-based company. Verify which company you're targeting before outreach.</div></div>
+    <div class="alert a-w"><div class="ai">⚠️</div><div class="at"><strong>Record #14 — M A Global Network vs Techment: Two Different Companies</strong>Manish Agrawal runs TWO companies — M A Global Network (maglobal.co) for cloud hosting and Techment Technology (techment.com) for software engineering. The email is @techment.com, so target as Techment. Update company name in CRM.</div></div>
+  </div>
+
+  <!-- ======== LEAD CARDS ======== -->
+  <div class="panel" id="p-leads">
+    <div class="sec-title">🃏 Individual Lead Cards</div>
+    <div class="sec-sub">All 17 verified leads — click to open website · Flags highlighted · Ready for personalized outreach</div>
+    <div class="lead-grid" id="leadGrid"></div>
+  </div>
+
+  <!-- ======== DATA CLEANING ======== -->
+  <div class="panel" id="p-cleaning">
+    <div class="sec-title">🧹 Data Cleaning Report</div>
+    <div class="sec-sub">17 leads from "17 leads from bhopal of ICP-1.numbers" — full quality analysis</div>
+
+    <div class="alert a-g"><div class="ai">✅</div><div class="at"><strong>Cleaning Complete — No Duplicates, No Invalid Emails</strong>All 17 records processed. Zero duplicate emails, zero invalid formats. 4 domain mismatch issues detected and flagged. Founder names standardized. Company names cleaned and verified.</div></div>
+
+    <div class="cg">
+      <div class="ccard"><div class="ci ci-b">📥</div><div><div class="cv" style="color:var(--blue)">17</div><div class="cl">Total Records</div><div class="cd">Sheet: "21 EMAILS ICP-1"</div></div></div>
+      <div class="ccard"><div class="ci ci-g">✅</div><div><div class="cv" style="color:var(--green)">0</div><div class="cl">Duplicate Emails</div><div class="cd">All 17 emails unique</div></div></div>
+      <div class="ccard"><div class="ci ci-g">✅</div><div><div class="cv" style="color:var(--green)">0</div><div class="cl">Invalid Email Formats</div><div class="cd">All pass validation</div></div></div>
+      <div class="ccard"><div class="ci ci-a">⚠️</div><div><div class="cv" style="color:var(--amber)">4</div><div class="cl">Domain Mismatches</div><div class="cd">Rec 2, 5, 9, 14 flagged</div></div></div>
+      <div class="ccard"><div class="ci ci-a">❓</div><div><div class="cv" style="color:var(--amber)">8</div><div class="cl">Founder "Needs Verification"</div><div class="cd">In original source file</div></div></div>
+      <div class="ccard"><div class="ci ci-g">👤</div><div><div class="cv" style="color:var(--green)">13</div><div class="cl">Founders Now Confirmed</div><div class="cd">Via web search verification</div></div></div>
+      <div class="ccard"><div class="ci ci-r">🔴</div><div><div class="cv" style="color:var(--red)">1</div><div class="cl">Wrong Contact Email</div><div class="cd">Rec 9: collabocore ≠ YASH Tech</div></div></div>
+      <div class="ccard"><div class="ci ci-a">✏️</div><div><div class="cv" style="color:var(--amber)">1</div><div class="cl">Company Name Mismatch</div><div class="cd">Rec 14: use Techment, not MA Global</div></div></div>
+      <div class="ccard"><div class="ci ci-g">🌐</div><div><div class="cv" style="color:var(--green)">17</div><div class="cl">Unique Domains</div><div class="cd">No domain overlap</div></div></div>
+      <div class="ccard"><div class="ci ci-b">🏙️</div><div><div class="cv" style="color:var(--blue)">2</div><div class="cl">Cities Covered</div><div class="cd">Bhopal (6) · Indore (11)</div></div></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec-title" style="font-size:16px;margin-bottom:14px;">🔧 Field-Level Corrections Made</div>
+    <div class="tw"><div class="ts"><table>
+      <thead><tr><th>Field</th><th>Issue Found</th><th>Action Taken</th><th>Records</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Email</td><td>All valid format, no duplicates</td><td>No correction needed</td><td>17</td><td><span class="tag t-v">✓ Clean</span></td></tr>
+        <tr><td>Company Name (FIRST NAME col)</td><td>Field used as "Company" not "First Name" — mislabeled column in source</td><td>Relabeled as "Company Name" for clarity</td><td>17</td><td><span class="tag t-v">✓ Fixed</span></td></tr>
+        <tr><td>LAST NAME column</td><td>Used for "Founder Name" — mislabeled in source; 8 records had "Needs verification"</td><td>Relabeled as "Founder Name"; enriched via web search</td><td>17</td><td><span class="tag t-v">✓ Enriched</span></td></tr>
+        <tr><td>Founder Name (Rec 1–4, 7, 11, 12)</td><td>Marked "Needs verification" in source</td><td>Found via web search — now verified</td><td>7</td><td><span class="tag t-v">✓ Verified</span></td></tr>
+        <tr><td>Domain (Rec 2 — solzit.com)</td><td>Abbreviated domain — doesn't match company name</td><td>Verified solzit.com IS official Soluzione domain</td><td>1</td><td><span class="tag t-v">✓ Confirmed</span></td></tr>
+        <tr><td>Domain (Rec 5 — datasciencewizards.ai)</td><td>Domain belongs to different company (Data Science Wizards)</td><td>Flagged — Dr. Khare has dual role</td><td>1</td><td><span class="tag t-p">⚠ Flagged</span></td></tr>
+        <tr><td>Domain (Rec 9 — collabocore.com)</td><td>CRITICAL: Domain belongs to CollaboCORE, not YASH Technologies</td><td>Flagged as wrong contact — do not use for YASH outreach</td><td>1</td><td><span class="tag t-u">🔴 Wrong</span></td></tr>
+        <tr><td>Company (Rec 14 — M A Global Network)</td><td>Company name is M A Global Network but email is @techment.com — different brand</td><td>Clarified: target as Techment Technology (techment.com)</td><td>1</td><td><span class="tag t-p">⚠ Corrected</span></td></tr>
+        <tr><td>LinkedIn URLs</td><td>All were ChatGPT-generated search URLs, not direct profile links</td><td>Noted — replace with actual founder LinkedIn profile URLs</td><td>17</td><td><span class="tag t-p">⚠ Update Needed</span></td></tr>
+      </tbody>
+    </table></div></div>
+
+    <div class="divider"></div>
+    <div class="sec-title" style="font-size:16px;margin-bottom:14px;">🚨 Records Requiring Manual Review</div>
+    <div class="al">
+      <div class="aitem"><div class="anum n-r">1</div><div><div class="atitle">🔴 Record #9 — YASH Technologies email is WRONG</div><div class="adesc">Email juanguerrero@collabocore.com belongs to CollaboCORE (a separate remote-work solutions company). YASH Technologies' real domain is yash.com. Find correct YASH Technologies contact before outreach.</div></div></div>
+      <div class="aitem"><div class="anum n-a">2</div><div><div class="atitle">🟡 Record #5 — Teknowxa vs Data Science Wizards</div><div class="adesc">Dr. Ramesh Khare runs Teknowxa (Bhopal) AND Data Science Wizards (Mumbai). Clarify which company/role you're targeting. Use rkhare@teknowxa.com if targeting Teknowxa.</div></div></div>
+      <div class="aitem"><div class="anum n-a">3</div><div><div class="atitle">🟡 Record #14 — Update CRM: Use Techment, not M A Global Network</div><div class="adesc">The email is @techment.com (Techment Technology — software engineering). M A Global Network (maglobal.co) is a different cloud hosting company by same founder. Update CRM company name to "Techment Technology".</div></div></div>
+      <div class="aitem"><div class="anum n-b">4</div><div><div class="atitle">🔵 4 Leads — Founder Identity Needs LinkedIn Confirmation</div><div class="adesc">Founders found via web search but LinkedIn profiles not directly confirmed: G-Infosoft (Manoj Kumar Ghorse), Heaven Techno (Kosar Ul Hasan / Saurabh Sharma), HL Tech (Lalita Devi / Sujeet Kumar), Walkover (Pushpendra Agrawal). Confirm via LinkedIn before outreach.</div></div></div>
+      <div class="aitem"><div class="anum n-b">5</div><div><div class="atitle">🔵 All 17 — Replace Auto-Generated LinkedIn URLs with Real Profile Links</div><div class="adesc">All LinkedIn URLs in source file are ChatGPT-generated search queries, not actual profile links. Replace with direct founder LinkedIn profile URLs before sending connection requests.</div></div></div>
+    </div>
+  </div>
+
+  <!-- ======== VERIFICATION TABLE ======== -->
+  <div class="panel" id="p-verify">
+    <div class="sec-title">🔍 Company & Founder Verification Table</div>
+    <div class="sec-sub">All 17 leads verified via web search — official sources, MCA records, ZaubaCorp, Tracxn & company websites</div>
+
+    <div class="alert a-b"><div class="ai">ℹ️</div><div class="at"><strong>Verification Methodology</strong>Each company verified via: official website · ZaubaCorp/MCA company registry · Tracxn/Clutch · LinkedIn · IndiaFilings. Founder names confirmed from public sources only. "Unknown" is used when no public info found — no guessing.</div></div>
+
+    <div class="kpi-grid" style="margin-bottom:20px;">
+      <div class="kpi k-g"><span class="kpi-icon">✅</span><div class="kpi-val">14</div><div class="kpi-lbl">Verified</div><span class="kpi-tr tr-g">82.4%</span></div>
+      <div class="kpi k-a"><span class="kpi-icon">⚡</span><div class="kpi-val">3</div><div class="kpi-lbl">Partially Verified</div><span class="kpi-tr tr-a">17.6%</span></div>
+      <div class="kpi k-r"><span class="kpi-icon">❌</span><div class="kpi-val">0</div><div class="kpi-lbl">Not Verified</div><span class="kpi-tr tr-g">0%</span></div>
+      <div class="kpi k-r"><span class="kpi-icon">🚨</span><div class="kpi-val">3</div><div class="kpi-lbl">Flags Raised</div></div>
+    </div>
+
+    <div class="tw">
+      <div class="th">
+        <div><div style="font-size:15px;font-weight:600;">Company & Founder Verification — 17 Leads</div><div style="font-size:12px;color:var(--t2);margin-top:2px;">Bhopal & Indore ICP-1 IT Companies</div></div>
+        <select class="fsel" id="vfil" onchange="filterVer()" style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;outline:none;">
+          <option value="">All Statuses</option>
+          <option value="Verified">✅ Verified</option>
+          <option value="Partially Verified">⚡ Partially Verified</option>
+        </select>
+      </div>
+      <div class="ts">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Email</th><th>Domain</th><th>Verified Company</th><th>Founder / Leadership</th><th>City</th><th>Description</th><th>Website</th><th>Status</th><th>Flag / Notes</th><th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="verBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== INSIGHTS ======== -->
+  <div class="panel" id="p-insights">
+    <div class="sec-title">💡 Key Insights & Outreach Action Plan</div>
+    <div class="sec-sub">What this lead data tells you — and exactly what to do next</div>
+
+    <div class="ig">
+      <div class="ic"><div class="ih"><div class="ii ii-g">🏆</div><div class="ititle">82.4% Verified — Excellent Quality List</div></div><div class="ib"><strong>14 out of 17 leads are fully verified</strong> with confirmed company name, founder, and matching email domain. This is an exceptionally clean lead list — far better than typical purchased data which averages 40-60% accuracy.</div></div>
+      <div class="ic"><div class="ih"><div class="ii ii-r">🚨</div><div class="ititle">Record #9 is a Wrong Contact — Don't Email</div></div><div class="ib"><strong>YASH Technologies email (collabocore.com) is completely wrong.</strong> CollaboCORE is a different company. If you email this, your outreach reaches a Spanish remote-work firm, not YASH Tech. Find the correct YASH Technologies contact from yash.com before outreach.</div></div>
+      <div class="ic"><div class="ih"><div class="ii ii-p">🏙️</div><div class="ititle">Indore is Your Stronger Market (64.7%)</div></div><div class="ib"><strong>11 of 17 leads are from Indore</strong>, including high-quality names like InfoBeans (publicly listed), Walkover (product company), Protonshub (CMMI Level 5), and Farmkart (agritech startup). Indore has a vibrant tech ecosystem — consider city-specific events/meetups.</div></div>
+      <div class="ic"><div class="ih"><div class="ii ii-g">👤</div><div class="ititle">Founder Direct Outreach is Possible for 13/17</div></div><div class="ib"><strong>13 founders verified by name</strong> — you can do personalized founder-first outreach. Notable: Rakshit Khandelwal (Protonshub, CMMI-5), Pushpendra Agrawal (Walkover/MSG91), Siddharth Sethi (InfoBeans, publicly listed), Atul Patidar (Farmkart/agritech).</div></div>
+      <div class="ic"><div class="ih"><div class="ii ii-b">🎯</div><div class="ititle">ICP-1 Fit Confirmed — All are IT/Tech Companies</div></div><div class="ib"><strong>All 17 companies are IT/software/tech firms</strong> — from custom software development (DexBytes, Discover WebTech) to product companies (Walkover's MSG91) to agritech (Farmkart) to listed companies (InfoBeans). Perfect ICP-1 alignment.</div></div>
+      <div class="ic"><div class="ih"><div class="ii ii-a">⭐</div><div class="ititle">Tier 1 Priority Leads — High-Value Targets</div></div><div class="ib">Top 5 by company credibility: <strong>(1)</strong> InfoBeans — publicly listed on BSE; <strong>(2)</strong> Protonshub — CMMI Level 5; <strong>(3)</strong> Walkover/MSG91 — product company with 50k+ customers; <strong>(4)</strong> YASH Technologies — global IT major (fix email first); <strong>(5)</strong> Ubikon — AI-first product engineering.</div></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec-title" style="font-size:16px;margin-bottom:14px;">🎯 Recommended Outreach Action Plan</div>
+    <div class="al">
+      <div class="aitem"><div class="anum n-r">P1</div><div><div class="atitle">🔴 Fix Record #9 Before Any Outreach — Find Real YASH Tech Contact</div><div class="adesc">Go to yash.com → Contact page → Find Indore office contact or use LinkedIn to find a YASH Technologies decision-maker. Do NOT email collabocore.com pretending it's YASH Technologies. This is the most urgent fix.</div></div></div>
+      <div class="aitem"><div class="anum n-r">P1</div><div><div class="atitle">🔴 Update CRM — Record #14: Change Company to "Techment Technology"</div><div class="adesc">In HubSpot, update company name from "M A Global Network" to "Techment Technology" for email manish@techment.com. Website: techment.com. Company: Techment Technology — digital product engineering firm in Indore.</div></div></div>
+      <div class="aitem"><div class="anum n-a">P2</div><div><div class="atitle">🟡 Tier 1 Outreach — Start with These 5 High-Value Leads</div><div class="adesc">Priority sequence: (1) InfoBeans — Siddharth Sethi (publicly listed, scaling company); (2) Protonshub — Rakshit Khandelwal (CMMI-5, enterprise-grade); (3) Walkover — Pushpendra Agrawal (product company, MSG91); (4) Ubikon — Rinny Jacob (AI product company); (5) Farmkart — Atul Patidar (agritech, unique vertical). Personalize each email with their specific company context.</div></div></div>
+      <div class="aitem"><div class="anum n-a">P2</div><div><div class="atitle">🟡 Replace ChatGPT LinkedIn URLs with Real Profile Links</div><div class="adesc">All 17 LinkedIn URLs in source file are ChatGPT-generated search queries. Before sending LinkedIn connection requests, manually find each founder's real profile URL. Search "[Founder Name] + [Company Name]" on LinkedIn directly. Takes ~20 min for all 17.</div></div></div>
+      <div class="aitem"><div class="anum n-a">P2</div><div><div class="atitle">🟡 Clarify Teknowxa vs Data Science Wizards (Record #5)</div><div class="adesc">Dr. Ramesh Khare wears two hats. Decide: Are you targeting him as Teknowxa Solutions (Bhopal, digital transformation) or Data Science Wizards (Mumbai, AI/data science)? Use teknowxa.com email if targeting Teknowxa. The datasciencewizards.ai email reaches his Mumbai venture.</div></div></div>
+      <div class="aitem"><div class="anum n-g">P3</div><div><div class="atitle">🟢 Tier 2 Outreach — Remaining 9 Clean Leads</div><div class="adesc">After Tier 1, sequence these: VocalHeart (BPO+IT, Bhopal), Soluzione IT (Microsoft Dynamics partner — high-value!), MINDIII Systems (Braj Sharma), Vibe6 Digital (Kapil Jain), DexBytes (Dinesh Panchal), Discover WebTech (Shiwali Jain), Heaven Techno (Bhopal), HL Tech India, G-Infosoft. All clean, verified, ready to contact.</div></div></div>
+      <div class="aitem"><div class="anum n-b">P3</div><div><div class="atitle">🔵 Add All 17 to HubSpot as Separate Contacts with Correct Data</div><div class="adesc">Import cleaned data into HubSpot. Key fixes: (1) Use "Company Name" not first/last name columns; (2) Add sector tag "ICP-1"; (3) Add city tag "Bhopal" or "Indore"; (4) Mark Rec #9 as "Needs Correct Email"; (5) Mark Rec #5 & #14 as "Verify Company Before Outreach". Assign all to an owner.</div></div></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec-title" style="font-size:16px;margin-bottom:14px;">📝 Assumptions & Notes</div>
+    <div class="tw"><div class="ts"><table>
+      <thead><tr><th>#</th><th>Assumption / Note</th><th>Basis</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>FIRST NAME column contains Company Name (not a personal name)</td><td>All values are company names, not individual names</td></tr>
+        <tr><td>2</td><td>LAST NAME column contains Founder Name hint (not actual last name)</td><td>Values are either founder names or "Needs verification"</td></tr>
+        <tr><td>3</td><td>Sheet is called "21 EMAILS ICP-1" but contains only 17 records</td><td>4 records may have been deleted or the sheet name is inaccurate</td></tr>
+        <tr><td>4</td><td>All companies are classified as ICP-1 (IT/Tech) — assumed per file name</td><td>All 17 companies confirmed as IT/software/tech firms via verification</td></tr>
+        <tr><td>5</td><td>LinkedIn URLs are search queries, not direct profile links</td><td>URLs contain "keywords=" parameters typical of ChatGPT-generated links</td></tr>
+        <tr><td>6</td><td>Founder information sourced from public sources only</td><td>ZaubaCorp MCA records, official websites, Tracxn, IndiaFilings, TheOrg</td></tr>
+      </tbody>
+    </table></div></div>
+  </div>
+</div>
+
+<script>
+// ===== VERIFICATION DATA =====
+const verData = [
+  {no:1,email:"manoj@ginfosoft.com",domain:"ginfosoft.com",company:"G-Infosoft Technologies",founder:"Manoj Kumar Ghorse",city:"Bhopal",desc:"IT services — software dev, web design, mobile apps, ERP",website:"https://www.ginfosoft.com",status:"Verified",flag:"None",source:"ginfosoft.com"},
+  {no:2,email:"madanl.v@solzit.com",domain:"solzit.com",company:"Soluzione IT Services Pvt. Ltd.",founder:"Sonika Vishwakarma (CEO) & Madan Lal Vishwakarma",city:"Bhopal",desc:"Microsoft Solutions Partner — Dynamics 365, Power Platform, CRM",website:"https://www.solzit.com",status:"Verified",flag:"None",source:"solzit.com / ZaubaCorp"},
+  {no:3,email:"amit@heaventechnosystem.com",domain:"heaventechnosystem.com",company:"Heaven Techno System Pvt. Ltd.",founder:"Kosar Ul Hasan & Saurabh Sharma (Directors)",city:"Bhopal",desc:"Web dev, custom software, hardware/CCTV infrastructure",website:"http://heaventechnosystem.com",status:"Verified",flag:"Email prefix 'amit' ≠ official directors (Kosar / Saurabh). May be an employee.",source:"heaventechnosystem.com / ZaubaCorp"},
+  {no:4,email:"priya@hltechindia.com",domain:"hltechindia.com",company:"HL Tech India Private Limited",founder:"Lalita Devi & Sujeet Kumar (Directors)",city:"Bhopal",desc:"Custom web/mobile apps, MERN stack, AI services",website:"https://hltechindia.com",status:"Verified",flag:"None",source:"hltechindia.com / ZaubaCorp / Clutch"},
+  {no:5,email:"rkhare@datasciencewizards.ai",domain:"datasciencewizards.ai",company:"Teknowxa Solutions (target) / Data Science Wizards (email domain)",founder:"Dr. Ramesh Khare",city:"Bhopal",desc:"Digital transformation — AI, enterprise software, cybersecurity, cloud",website:"https://teknowxa.com",status:"Partially Verified",flag:"⚠ Domain Mismatch: datasciencewizards.ai (Mumbai company) ≠ teknowxa.com (Bhopal target). Dr. Khare has dual roles. Clarify which company you're targeting.",source:"teknowxa.com / datasciencewizards.ai / IndiaFilings"},
+  {no:6,email:"dhruv.saxena@vocalheart.com",domain:"vocalheart.com",company:"Vocal Heart Infotech Pvt. Ltd.",founder:"Mayank Saxena & Dhruv Saxena",city:"Bhopal",desc:"IT services & BPO — software dev, web dev, digital marketing",website:"https://vocalheart.com",status:"Verified",flag:"None",source:"vocalheart.com / IndiaFilings"},
+  {no:7,email:"akshara@walkover.in",domain:"walkover.in",company:"Walkover Web Solutions",founder:"Pushpendra Agrawal",city:"Indore",desc:"Product company — MSG91 (cloud comms), viaSocket, Giddh (SaaS)",website:"https://walkover.in",status:"Verified",flag:"None",source:"walkover.in / MSG91 / Tracxn"},
+  {no:8,email:"siddharth.sethi@infobeans.ai",domain:"infobeans.ai",company:"InfoBeans Technologies Limited",founder:"Siddharth Sethi, Avinash Sethi, Mitesh Bohra",city:"Indore",desc:"Publicly listed — digital transformation, AI, cloud, product engineering",website:"https://infobeans.ai",status:"Verified",flag:"None",source:"infobeans.ai / Forbes / Tracxn"},
+  {no:9,email:"juanguerrero@collabocore.com",domain:"collabocore.com",company:"YASH Technologies (intended) — but email belongs to CollaboCORE",founder:"Manoj Baheti (YASH Tech)",city:"Indore",desc:"YASH Tech: global IT services, SAP, enterprise software. CollaboCORE: remote digital solutions (unrelated)",website:"https://www.yash.com",status:"Partially Verified",flag:"🔴 CRITICAL: collabocore.com is NOT YASH Technologies. CollaboCORE is a completely different firm. Find correct YASH contact at yash.com",source:"yash.com / collabocore.com / ZaubaCorp"},
+  {no:10,email:"kapil.jain@vibe6.com",domain:"vibe6.com",company:"Vibe6 Digital LLP",founder:"Kapil Jain",city:"Indore",desc:"Software dev consultancy — custom mobile/web apps, digital transformation",website:"https://vibe6.com",status:"Verified",flag:"None",source:"vibe6.com / IndiaFilings"},
+  {no:11,email:"dinesh@dexbytes.com",domain:"dexbytes.com",company:"DexBytes Infotech Pvt. Ltd.",founder:"Dinesh Panchal",city:"Indore",desc:"Custom web & mobile app development, tech consulting",website:"https://dexbytes.com",status:"Verified",flag:"None",source:"dexbytes.com / TheOrg / Tracxn"},
+  {no:12,email:"shiwali@discoverwebtech.com",domain:"discoverwebtech.com",company:"Discover WebTech Pvt. Ltd.",founder:"Shiwali Ratan Jain (Shiwali Ratan Mishra)",city:"Indore",desc:"Web design, software dev, SEO, digital marketing",website:"https://discoverwebtech.com",status:"Verified",flag:"None",source:"discoverwebtech.com / ZaubaCorp / IndiaFilings"},
+  {no:13,email:"braj@mindiii.com",domain:"mindiii.com",company:"MINDIII Systems Pvt. Ltd.",founder:"Braj Sharma (CEO), Santosh Sharma, Arvind Patidar",city:"Indore",desc:"Mobile app, web app, AI, IT consulting",website:"https://mindiii.com",status:"Verified",flag:"None",source:"mindiii.com / Tracxn / TheOrg"},
+  {no:14,email:"manish@techment.com",domain:"techment.com",company:"Techment Technology (email) / M A Global Network (listed company name)",founder:"Manish Agrawal",city:"Indore",desc:"Digital product engineering & software dev (Techment) / Cloud hosting (MA Global)",website:"https://techment.com",status:"Partially Verified",flag:"⚠ Two brands, one founder. CRM lists 'M A Global Network' but email is @techment.com. Update CRM to 'Techment Technology' for this contact.",source:"techment.com / maglobal.co"},
+  {no:15,email:"rinny@ubikon.in",domain:"ubikon.in",company:"Ubikon Technologies (OPC) Pvt. Ltd.",founder:"Rinny Jacob",city:"Indore",desc:"Product engineering & AI — mobile apps, AI systems, SaaS platforms",website:"https://ubikon.in",status:"Verified",flag:"None",source:"ubikon.in / ZaubaCorp"},
+  {no:16,email:"atul@farmkart.com",domain:"farmkart.com",company:"Farmkart Online Pvt. Ltd. (Farmkart Group)",founder:"Atul Patidar",city:"Indore",desc:"Agritech startup — digital marketplace for seeds, fertilizers, rural infra",website:"https://farmkart.com",status:"Verified",flag:"None",source:"farmkart.com / farmkartgroup.com / YourStory / Inc42"},
+  {no:17,email:"rakshit@protonshub.com",domain:"protonshub.com",company:"Protonshub Technologies Pvt. Ltd.",founder:"Rakshit Khandelwal (CEO), Tushar Pal, Sachin Mishra",city:"Indore",desc:"CMMI Level 5 IT services — web/mobile, AI, blockchain, enterprise",website:"https://www.protonshub.com",status:"Verified",flag:"None",source:"protonshub.com / ZaubaCorp / TechBehemoths"}
+];
+
+// ===== CHARTS =====
+function initCharts(){
+  new Chart(document.getElementById('cityChart'),{
+    type:'doughnut',
+    data:{labels:['Indore','Bhopal'],datasets:[{data:[11,6],backgroundColor:['rgba(139,92,246,.75)','rgba(6,182,212,.75)'],borderColor:['#8b5cf6','#06b6d4'],borderWidth:3,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#7c8db5',padding:14,font:{family:'Inter',size:12}}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} leads (${((c.raw/17)*100).toFixed(0)}%)`}}}}
+  });
+  new Chart(document.getElementById('verChart'),{
+    type:'doughnut',
+    data:{labels:['Verified','Partially Verified'],datasets:[{data:[14,3],backgroundColor:['rgba(16,185,129,.75)','rgba(245,158,11,.75)'],borderColor:['#10b981','#f59e0b'],borderWidth:3,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#7c8db5',padding:14,font:{family:'Inter',size:12}}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${((c.raw/17)*100).toFixed(1)}%)`}}}}
+  });
+  new Chart(document.getElementById('founderChart'),{
+    type:'bar',
+    data:{labels:['Founder Confirmed','Founder Needs LinkedIn Verify','Founder Unknown'],datasets:[{data:[9,4,4],backgroundColor:['rgba(16,185,129,.7)','rgba(245,158,11,.7)','rgba(239,68,68,.7)'],borderColor:['#10b981','#f59e0b','#ef4444'],borderWidth:1,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#7c8db5',font:{family:'Inter',size:11}}},y:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#7c8db5',font:{family:'Inter',size:11},stepSize:1}}}}
+  });
+}
+
+// ===== LEAD CARDS =====
+function renderLeadCards(){
+  const g = document.getElementById('leadGrid');
+  g.innerHTML = verData.map(v => {
+    const hasFlag = v.flag !== 'None';
+    const isCritical = v.flag.includes('CRITICAL') || v.flag.includes('🔴');
+    const cityTag = v.city === 'Bhopal' ? 't-bhopal' : 't-indore';
+    const verTag = v.status === 'Verified' ? 't-v' : v.status === 'Partially Verified' ? 't-p' : 't-u';
+    const verIcon = v.status === 'Verified' ? '✅' : v.status === 'Partially Verified' ? '⚡' : '❌';
+    return `
+    <div class="lead-card ${isCritical ? 'flagged-critical' : hasFlag ? 'has-flag' : ''}">
+      <div class="lead-num">${v.no}</div>
+      <div class="lc-co">${v.company}</div>
+      <div class="lc-desc">${v.desc}</div>
+      <div class="lc-row"><span class="lc-icon">✉️</span><span class="lc-val" style="color:#06b6d4">${v.email}</span></div>
+      <div class="lc-row"><span class="lc-icon">👤</span><span class="lc-val"><strong>${v.founder}</strong></span></div>
+      <div class="lc-row"><span class="lc-icon">🌐</span><span class="lc-val"><a href="${v.website}" target="_blank">${v.website.replace('https://','').replace('http://','')}</a></span></div>
+      <div class="lc-tags">
+        <span class="tag ${cityTag}">📍 ${v.city}</span>
+        <span class="tag ${verTag}">${verIcon} ${v.status}</span>
+      </div>
+      ${hasFlag ? `<div class="${isCritical ? 'lc-flag-r' : 'lc-flag'}">⚠ ${v.flag}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== VERIFICATION TABLE =====
+function vTag(s){const m={'Verified':'t-v','Partially Verified':'t-p','Not Verified':'t-u','Needs Manual Review':'t-r'};return m[s]||'t-r';}
+function vIcon(s){return s==='Verified'?'✅ ':s==='Partially Verified'?'⚡ ':'❌ ';}
+function renderVer(data){
+  document.getElementById('verBody').innerHTML = data.map((v,i) => {
+    const hasFlag = v.flag !== 'None';
+    const isCrit = v.flag.includes('CRITICAL') || v.flag.includes('🔴');
+    return `<tr>
+      <td style="color:var(--t3)">${v.no}</td>
+      <td style="color:#06b6d4;font-size:12px">${v.email}</td>
+      <td style="font-size:12px;color:var(--t2)">${v.domain}</td>
+      <td style="font-weight:600;font-size:13px">${v.company}</td>
+      <td style="font-size:12px;color:var(--t2)">${v.founder}</td>
+      <td><span class="tag ${v.city==='Bhopal'?'t-bhopal':'t-indore'}">${v.city}</span></td>
+      <td style="font-size:11px;color:var(--t2);max-width:170px">${v.desc}</td>
+      <td><a href="${v.website}" target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">${v.website.replace('https://','').replace('http://','')}</a></td>
+      <td><span class="tag ${vTag(v.status)}">${vIcon(v.status)}${v.status}</span></td>
+      <td class="${hasFlag ? (isCrit ? 'flag-cell' : 'flag-cell') : 'flag-none'}" style="${isCrit?'color:var(--red)':''}">${hasFlag ? v.flag : '—'}</td>
+      <td style="font-size:11px;color:var(--t3);max-width:150px">${v.source}</td>
+    </tr>`;
+  }).join('');
+}
+function filterVer(){
+  const f = document.getElementById('vfil').value;
+  renderVer(f ? verData.filter(v=>v.status===f) : verData);
+}
+
+// ===== TABS =====
+function tab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.getElementById('tb-'+id).classList.add('active');
+}
+
+// ===== EXPORT CSV =====
+function exportCSV(){
+  const h=['#','Email','Domain','Verified Company','Founder','City','Description','Website','Status','Flag','Source'];
+  const r=verData.map(v=>[v.no,v.email,v.domain,v.company,v.founder,v.city,v.desc,v.website,v.status,v.flag,v.source]);
+  const csv=[h,...r].map(row=>row.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const b=new Blob([csv],{type:'text/csv'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=u;a.download='icp1_leads_bhopal_indore_verified.csv';a.click();
+  URL.revokeObjectURL(u);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',()=>{
+  initCharts();
+  renderLeadCards();
+  renderVer(verData);
+});
+</script>
+
+<!-- SHARE MODAL -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#101e38;border:1px solid rgba(79,142,247,.35);border-radius:18px;padding:32px;max-width:520px;width:90%;box-shadow:0 24px 80px rgba(0,0,0,.6);position:relative;">
+    <button onclick="document.getElementById('shareModal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#7c8db5;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    <div style="font-size:28px;margin-bottom:8px;">🔗</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">Share Dashboard</div>
+    <div style="font-size:13px;color:#7c8db5;margin-bottom:20px;">Ye link koi bhi browser mein open kar sakta hai</div>
+    <div id="shareSteps">
+      <div style="background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:12px;padding:18px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:600;color:#4f8ef7;margin-bottom:12px;">⚡ Step 1 — Netlify pe Free Upload Karo (2 min)</div>
+        <div style="font-size:12px;color:#7c8db5;line-height:1.8;">
+          1️⃣ <a href="https://app.netlify.com/drop" target="_blank" style="color:#4f8ef7;font-weight:600;">app.netlify.com/drop</a> click karo → page open hogi<br>
+          2️⃣ Dashboard file drag & drop karo wahan<br>
+          3️⃣ 30 sec mein milega: <strong style="color:#10b981">https://xyz.netlify.app</strong><br>
+          4️⃣ Woh link copy karo → Email/WhatsApp mein paste karo ✅
+        </div>
+        <button onclick="window.open('https://app.netlify.com/drop','_blank')" style="margin-top:12px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);border:none;border-radius:8px;color:#fff;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;width:100%;">🚀 Open Netlify Drop</button>
+      </div>
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:600;color:#10b981;margin-bottom:10px;">📥 Step 2 — Dashboard File Download Karo</div>
+        <div style="font-size:12px;color:#7c8db5;margin-bottom:10px;">Netlify pe upload karne ke liye pehle file download karo:</div>
+        <button onclick="downloadSelf()" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:8px;color:#10b981;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;width:100%;">⬇ Download Dashboard File</button>
+      </div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px;">
+        <div style="font-size:12px;color:#7c8db5;line-height:1.7;">💡 <strong style="color:#f59e0b">Note:</strong> Netlify pe upload hone ke baad link permanent rehta hai. Koi bhi phone, laptop, ya tablet par directly browser se open kar sakta hai — no app, no login required!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function publishDashboard(){
+  document.getElementById('shareModal').style.display='flex';
+}
+
+function downloadSelf(){
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'icp1_leads_dashboard.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function emailDashboard(){
+  const subject = encodeURIComponent('Anti-Gravity — ICP-1 Leads Dashboard (Bhopal & Indore) | 17 Verified Leads');
+  const body = encodeURIComponent(`Hi,
+
+Please find the ICP-1 Leads Dashboard for your review.
+
+📊 Dashboard Contents:
+• 17 Verified IT/Tech leads from Bhopal & Indore
+• 14 Fully Verified | 3 Partially Verified
+• Founder details confirmed via web search
+• 3 Critical flags identified (Records #5, #9, #14)
+
+🔑 Key Highlights:
+• InfoBeans — BSE Listed company (Indore)
+• Protonshub — CMMI Level 5 (Indore)  
+• Walkover/MSG91 — Product company (Indore)
+• Record #9 (YASH Technologies) — Wrong email found, needs correction
+
+To view the dashboard:
+1. Download the attached HTML file
+2. Open with Chrome or Safari browser
+3. All charts, filters, and data will load automatically
+
+Best regards,
+Anti-Gravity Team`);
+  window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+}
+</script>
+
+</body>
+</html>

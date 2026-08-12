@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | ICP 1 — Indian IT Dashboard</title>
-<meta name="description" content="Infinito ICP 1 Dashboard — Indian IT Services & Product Companies qualification, Tier 1/2 classification, and analytics.">
+<title>Infinito | ICP 3 — US SME Business Dashboard</title>
+<meta name="description" content="Infinito ICP 3 Dashboard — US SME Business qualification (CA, TX, NY, NJ, MN; 50+ employees).">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -48,9 +48,9 @@ header {
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
-  width: 42px; height: 42px; background: linear-gradient(135deg, var(--blue), var(--cyan));
+  width: 42px; height: 42px; background: linear-gradient(135deg, var(--purple), var(--blue));
   border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+  font-size: 22px; box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
 }
 .logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; }
 .logo-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
@@ -62,14 +62,13 @@ header {
 }
 .nav-link:hover { color: var(--t1); background: rgba(79, 142, 247, 0.1); }
 .nav-link.active {
-  background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; font-weight: 600;
-  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
+  background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; font-weight: 600;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
 }
 
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(1.3);} }
 
 .card {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
@@ -81,15 +80,15 @@ header {
 .card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
 
 .icp-banner {
-  background: linear-gradient(135deg, rgba(79,142,247,0.12), rgba(6,182,212,0.12));
+  background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(79,142,247,0.12));
   border: 1px solid var(--border); border-radius: var(--r); padding: 18px 24px; margin-top: 20px;
 }
-.icp-banner-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+.icp-banner-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--purple); margin-bottom: 6px; }
 .icp-banner-desc { font-size: 13px; color: var(--t2); line-height: 1.5; }
 
 .empty-state-card {
   text-align: center; padding: 60px 24px; background: rgba(15, 22, 41, 0.6);
-  border: 2px dashed rgba(79, 142, 247, 0.25); border-radius: var(--r); margin: 24px 0;
+  border: 2px dashed rgba(139, 92, 246, 0.25); border-radius: var(--r); margin: 24px 0;
 }
 .empty-icon { font-size: 48px; margin-bottom: 14px; opacity: 0.8; }
 .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
@@ -100,7 +99,7 @@ header {
   font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.25s;
   font-family: 'Inter', sans-serif; text-decoration: none;
 }
-.btn-primary { background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35); }
+.btn-primary { background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35); }
 .btn-primary:hover { opacity: 0.92; transform: translateY(-2px); }
 .btn-secondary { background: rgba(79, 142, 247, 0.12); color: var(--t1); border: 1px solid var(--border); }
 .btn-secondary:hover { background: rgba(79, 142, 247, 0.22); border-color: var(--blue); }
@@ -126,13 +125,13 @@ header {
   padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
   background: var(--bg2); border: 1px solid var(--border); color: var(--t2); cursor: pointer; transition: all 0.2s;
 }
-.pill-btn:hover, .pill-btn.active { background: rgba(79, 142, 247, 0.2); color: var(--blue); border-color: var(--blue); }
+.pill-btn:hover, .pill-btn.active { background: rgba(139, 92, 246, 0.2); color: var(--purple); border-color: var(--purple); }
 
 .table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
 th { background: var(--bg2); color: var(--t2); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 td { padding: 12px 16px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; cursor: pointer; }
-tr:hover td { background: rgba(79, 142, 247, 0.05); }
+tr:hover td { background: rgba(139, 92, 246, 0.05); }
 
 .status-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
 .sp-green { background: rgba(16, 185, 129, 0.2); color: var(--green); }
@@ -150,22 +149,22 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
 <div class="wrap">
   <!-- ICP DEFINITION BANNER -->
   <div class="icp-banner">
-    <div class="icp-banner-title">🎯 ICP 1 — Indian IT Services & Product Profile Definition</div>
+    <div class="icp-banner-title">🌐 ICP 3 — US SME Business Profile Definition</div>
     <div class="icp-banner-desc">
-      Targeting Indian IT Services, Software, and Product companies across <strong>Tier 1 Locations</strong> (Bengaluru, Mumbai, Delhi/NCR, Hyderabad, Chennai, Pune, Kolkata) and <strong>Tier 2 Locations</strong> (Bhopal, Indore, Jaipur, Ahmedabad, Surat, Kochi, etc.). Evaluates engineering staff count, decision-maker presence, and contact completeness. Non-qualifying entries are preserved and flagged for review.
+      Targeting US Small & Medium Businesses located in key focus states: <strong>California (CA), Texas (TX), New York (NY), New Jersey (NJ), and Minnesota (MN)</strong> with a minimum headcount of <strong>50+ employees</strong>. Incomplete or out-of-scope entries are preserved and marked for review.
     </div>
   </div>
 
   <!-- EMPTY STATE VIEW -->
   <div id="empty-state-view" style="display:none;">
     <div class="empty-state-card">
-      <div class="empty-icon">🎯</div>
-      <div class="empty-title">No data added to ICP 1 yet</div>
-      <div class="empty-desc">Upload a CSV or Excel file to start building your independent ICP 1 (Indian IT) dataset. Subsequent uploads automatically merge and deduplicate.</div>
+      <div class="empty-icon">🌐</div>
+      <div class="empty-title">No data added to ICP 3 yet</div>
+      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 3 (US SME Business) workspace. Subsequent uploads automatically merge and deduplicate.</div>
       
       <div style="display:inline-block;">
-        <input type="file" id="icp1-file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
-        <button class="btn btn-primary" onclick="document.getElementById('icp1-file-input').click()">📥 Upload ICP 1 Dataset</button>
+        <input type="file" id="icp3-file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
+        <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input').click()">📥 Upload ICP 3 Dataset</button>
       </div>
     </div>
   </div>
@@ -175,12 +174,12 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
     <div class="card" style="margin-bottom:16px;">
       <div class="card-header" style="margin-bottom:0;">
         <div>
-          <div class="card-title">🎯 ICP 1 — Indian IT Workspace</div>
-          <div class="card-sub" id="workspace-meta">Cumulative dataset overview</div>
+          <div class="card-title">🌐 ICP 3 — US SME Business Workspace</div>
+          <div class="card-sub" id="workspace-meta">Independent persistent cumulative US SME dataset</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <input type="file" id="icp1-file-input-2" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
-          <button class="btn btn-primary" onclick="document.getElementById('icp1-file-input-2').click()">➕ Upload & Merge File</button>
+          <input type="file" id="icp3-file-input-2" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
+          <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input-2').click()">➕ Upload & Merge File</button>
           <button class="btn btn-secondary" onclick="viewImportHistory()">📜 Import History</button>
           <button class="btn btn-secondary" onclick="triggerHTMLExport()">📄 Export HTML</button>
           <button class="btn btn-secondary" onclick="triggerEmailShare()">📧 Share via Email</button>
@@ -200,32 +199,33 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title" style="font-size:22px;">🏢 Contact Intelligence & ICP 1 Qualification</div>
+          <div class="card-title" style="font-size:22px;">🏢 US Contact Intelligence & ICP 3 Qualification</div>
           <div class="card-sub">Click any row to view complete detail drawer or manually override qualification decisions.</div>
         </div>
-        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search companies, cities, founders..." oninput="onSearchInput()">
+        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search US companies, states, cities..." oninput="onSearchInput()">
       </div>
 
       <!-- Quick Filter Pills -->
       <div class="filter-pills">
         <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
-        <button class="pill-btn" onclick="applyQuickFilter('qualified', this)">✅ Qualified</button>
+        <button class="pill-btn" onclick="applyQuickFilter('qualified', this)">✅ Qualified SMEs</button>
         <button class="pill-btn" onclick="applyQuickFilter('review', this)">⚠️ Review Needed</button>
         <button class="pill-btn" onclick="applyQuickFilter('not_qualified', this)">❌ Not Qualified</button>
-        <button class="pill-btn" onclick="applyQuickFilter('tier1', this)">🏙️ Tier 1 Cities</button>
-        <button class="pill-btn" onclick="applyQuickFilter('tier2', this)">🏘️ Tier 2 Cities</button>
-        <button class="pill-btn" onclick="applyQuickFilter('has_founder', this)">👑 Founder Available</button>
+        <button class="pill-btn" onclick="applyQuickFilter('california', this)">🌴 California (CA)</button>
+        <button class="pill-btn" onclick="applyQuickFilter('texas', this)">🤠 Texas (TX)</button>
+        <button class="pill-btn" onclick="applyQuickFilter('newyork', this)">🗽 New York (NY)</button>
+        <button class="pill-btn" onclick="applyQuickFilter('size_50', this)">👥 50+ Employees</button>
       </div>
 
-      <!-- Contact Table with 5 Column Groups -->
+      <!-- Contact Table with 6 Column Groups -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Company Details</th>
-              <th>Tier & Location</th>
-              <th>Decision Maker</th>
-              <th>Email & Phone</th>
+              <th>US Location</th>
+              <th>Primary Decision Maker</th>
+              <th>Work Email & Phone</th>
               <th>LinkedIn & Verification</th>
               <th>ICP Qualification</th>
             </tr>
@@ -241,19 +241,19 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
 <div id="footer-mount"></div>
 
 <script>
-const store = new WorkspaceStore('icp_1');
+const store = new WorkspaceStore('icp_3');
 let currentDataset = [];
 let activeQuickFilter = 'all';
 let chartInstances = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('header-mount').innerHTML = renderAppHeader('icp1', 'Infinito | ICP 1', 'Indian IT Services & Product Companies');
+  document.getElementById('header-mount').innerHTML = renderAppHeader('icp3', 'Infinito | ICP 3', 'US SME Business Workspace');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
   initWorkspace();
 });
 
 function initWorkspace() {
-  currentDataset = store.getData().map(r => qualifyICP1(mapFields(r)));
+  currentDataset = store.getData().map(r => qualifyICP3(mapFields(r)));
   if (!currentDataset || !currentDataset.length) {
     document.getElementById('empty-state-view').style.display = 'block';
     document.getElementById('dashboard-view').style.display = 'none';
@@ -282,7 +282,7 @@ function handleWorkspaceUpload(e) {
       }
 
       const result = store.mergeData(rawJson, file.name, sheetName);
-      currentDataset = result.combinedData.map(r => qualifyICP1(r));
+      currentDataset = result.combinedData.map(r => qualifyICP3(r));
 
       showImportSummaryModal(result.logEntry);
       initWorkspace();
@@ -302,22 +302,25 @@ function renderExecutiveDashboard() {
   const reviewCount = rows.filter(r => r.qualificationStatus === 'Review Needed').length;
   const notQualifiedCount = rows.filter(r => r.qualificationStatus === 'Not Qualified').length;
 
-  const tier1Count = rows.filter(r => r.tier === 'Tier 1').length;
-  const tier2Count = rows.filter(r => r.tier === 'Tier 2').length;
+  const targetStateCount = rows.filter(r => {
+    const st = (String(r.state) + ' ' + String(r.location)).toLowerCase();
+    return ['california','ca','texas','tx','new york','ny','new jersey','nj','minnesota','mn'].some(s => st.includes(s));
+  }).length;
+
   const foundersFound = rows.filter(r => r.founderName && r.founderName !== '—').length;
 
-  document.getElementById('workspace-meta').innerText = `Total ICP 1 Leads: ${totalRecords.toLocaleString()} | Source: Independent ICP 1 Storage`;
+  document.getElementById('workspace-meta').innerText = `Total ICP 3 US SME Records: ${totalRecords.toLocaleString()} | Source: Independent ICP 3 Storage`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">
-      <span class="kpi-icon">🎯</span>
+      <span class="kpi-icon">🌐</span>
       <div class="kpi-val">${totalRecords.toLocaleString()}</div>
-      <div class="kpi-lbl">Total ICP 1 Companies</div>
+      <div class="kpi-lbl">Total US SME Records</div>
     </div>
     <div class="kpi kgreen">
       <span class="kpi-icon">✅</span>
       <div class="kpi-val" style="color:var(--green);">${qualifiedCount.toLocaleString()}</div>
-      <div class="kpi-lbl">Qualified IT Companies</div>
+      <div class="kpi-lbl">Qualified US SMEs</div>
     </div>
     <div class="kpi kamber">
       <span class="kpi-icon">⚠️</span>
@@ -325,19 +328,14 @@ function renderExecutiveDashboard() {
       <div class="kpi-lbl">Review Needed</div>
     </div>
     <div class="kpi kpurple">
-      <span class="kpi-icon">🏙️</span>
-      <div class="kpi-val">${tier1Count.toLocaleString()}</div>
-      <div class="kpi-lbl">Tier 1 City Hubs</div>
-    </div>
-    <div class="kpi kcyan">
-      <span class="kpi-icon">🏘️</span>
-      <div class="kpi-val">${tier2Count.toLocaleString()}</div>
-      <div class="kpi-lbl">Tier 2 City Hubs</div>
+      <span class="kpi-icon">🗺️</span>
+      <div class="kpi-val">${targetStateCount.toLocaleString()}</div>
+      <div class="kpi-lbl">Target State Hubs</div>
     </div>
     <div class="kpi kamber">
       <span class="kpi-icon">👑</span>
       <div class="kpi-val">${foundersFound.toLocaleString()}</div>
-      <div class="kpi-lbl">Founders Identified</div>
+      <div class="kpi-lbl">Decision Makers</div>
     </div>
   `;
 
@@ -357,9 +355,10 @@ function renderContactIntelligenceTable() {
   if (activeQuickFilter === 'qualified') rows = rows.filter(r => r.qualificationStatus === 'Qualified');
   if (activeQuickFilter === 'review') rows = rows.filter(r => r.qualificationStatus === 'Review Needed');
   if (activeQuickFilter === 'not_qualified') rows = rows.filter(r => r.qualificationStatus === 'Not Qualified');
-  if (activeQuickFilter === 'tier1') rows = rows.filter(r => r.tier === 'Tier 1');
-  if (activeQuickFilter === 'tier2') rows = rows.filter(r => r.tier === 'Tier 2');
-  if (activeQuickFilter === 'has_founder') rows = rows.filter(r => r.founderName && r.founderName !== '—');
+  if (activeQuickFilter === 'california') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('california') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('ca'));
+  if (activeQuickFilter === 'texas') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('texas') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('tx'));
+  if (activeQuickFilter === 'newyork') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('new york') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('ny'));
+  if (activeQuickFilter === 'size_50') rows = rows.filter(r => parseInt(r.employeeCount) >= 50);
 
   if (query) {
     rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(query));
@@ -369,14 +368,14 @@ function renderContactIntelligenceTable() {
     <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")}, store)'>
       <td>
         <strong style="color:var(--t1); font-size:14px;">${r.companyName}</strong>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.industry !== '—' ? r.industry : 'IT Services'}</div>
+        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.industry !== '—' ? r.industry : 'SME Business'}</div>
       </td>
       <td>
-        <span class="status-pill ${r.tier === 'Tier 1' ? 'sp-green' : (r.tier === 'Tier 2' ? 'sp-amber' : '')}">${r.tier}</span>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.location}</div>
+        <div style="font-weight:600; color:var(--t1);">${r.state !== '—' ? r.state : r.location}</div>
+        <div style="font-size:11px; color:var(--t2); margin-top:2px;">Staff: ${r.employeeCount !== '—' ? r.employeeCount : 'N/A'}</div>
       </td>
       <td>
-        <div style="font-weight:600; color:var(--t1);">${r.founderName !== '—' ? '👑 Founder: ' + r.founderName : (r.contactName !== '—' ? r.contactName : '—')}</div>
+        <div style="font-weight:600; color:var(--t1);">${r.founderName !== '—' ? '👑 Owner: ' + r.founderName : (r.contactName !== '—' ? r.contactName : '—')}</div>
         <div style="font-size:11px; color:var(--t2);">${r.jobTitle !== '—' ? r.jobTitle : ''}</div>
       </td>
       <td>
@@ -402,10 +401,10 @@ function applyQuickFilter(filterKey, btnEl) {
 }
 
 function onSearchInput() { renderContactIntelligenceTable(); }
-function triggerEmailShare() { openShareEmailModal('ICP 1 — Indian IT'); }
-function triggerHTMLExport() { exportWorkspaceHTML('ICP 1 — Indian IT', currentDataset); }
+function triggerEmailShare() { openShareEmailModal('ICP 3 — US SME Business'); }
+function triggerHTMLExport() { exportWorkspaceHTML('ICP 3 — US SME Business', currentDataset); }
 function resetWorkspaceData() {
-  if (confirm("Are you sure you want to reset ICP 1 workspace data?")) {
+  if (confirm("Are you sure you want to reset ICP 3 workspace data?")) {
     store.clearWorkspace();
     initWorkspace();
   }
@@ -414,7 +413,7 @@ function viewImportHistory() {
   const history = store.getHistory();
   if (!history.length) { alert("No import history found."); return; }
   const msg = history.map(h => `📅 ${h.timestamp}\nFile: ${h.fileName} | Added: ${h.newlyAddedRows} | Skipped Dupes: ${h.duplicateRows}`).join('\n\n');
-  alert(`📜 Import History for ICP 1:\n\n${msg}`);
+  alert(`📜 Import History for ICP 3:\n\n${msg}`);
 }
 </script>
 

@@ -1,6 +1,6 @@
 /* ==========================================================================
    INFINITO SHARED ENGINE & PERSISTENCE LAYER
-   Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2
+   Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2 | ICP 3
    ========================================================================== */
 
 class WorkspaceStore {
@@ -64,7 +64,13 @@ class WorkspaceStore {
       if (!row || Object.keys(row).length === 0) return;
       validCount++;
 
-      const mappedRow = mapFields(row);
+      let mappedRow = mapFields(row);
+      
+      // Auto Qualify based on Workspace ID
+      if (this.workspaceId === 'icp_1') mappedRow = qualifyICP1(mappedRow);
+      else if (this.workspaceId === 'icp_2') mappedRow = qualifyICP2(mappedRow);
+      else if (this.workspaceId === 'icp_3') mappedRow = qualifyICP3(mappedRow);
+
       const hash = this.getRowHash(mappedRow);
       
       if (existingHashes.has(hash)) {
@@ -97,6 +103,19 @@ class WorkspaceStore {
     return { logEntry, combinedData: combined };
   }
 
+  updateRecordStatus(recordId, newStatus, newReason = "Manual User Override") {
+    const data = this.getData();
+    const updated = data.map((r, idx) => {
+      const id = r.id || idx;
+      if (String(id) === String(recordId) || r.companyName === recordId) {
+        return { ...r, qualificationStatus: newStatus, qualificationReason: newReason, userOverridden: true };
+      }
+      return r;
+    });
+    this.saveData(updated);
+    return updated;
+  }
+
   getRowHash(row) {
     const email = row.email || row.Email || row.contact_email;
     const company = row.companyName || row.Company || row.company_name;
@@ -126,15 +145,27 @@ function mapFields(row) {
 
   mapped.companyName = findVal(['companyname', 'company', 'organization', 'accountname', 'firm']) || row.companyName || '—';
   mapped.website = findVal(['website', 'domain', 'companywebsite', 'url']) || row.website || '—';
-  mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche']) || row.industry || '—';
-  mapped.location = findVal(['location', 'city', 'country', 'address', 'state']) || row.location || '—';
+  mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche', 'itservicetype', 'subindustry']) || row.industry || '—';
+  mapped.location = findVal(['location', 'city', 'address', 'state', 'indialocation']) || row.location || '—';
+  mapped.city = findVal(['city', 'indiacity']) || row.city || '—';
+  mapped.state = findVal(['state', 'usstate']) || row.state || '—';
   
-  // Founder name (never fabricates names)
-  mapped.founderName = findVal(['foundername', 'founder', 'cofounder']) || row.founderName || '—';
+  // Numbers
+  const empVal = findVal(['employeecount', 'employees', 'companyemployees', 'totalemployees', 'size', 'headcount']);
+  mapped.employeeCount = empVal !== undefined && empVal !== "" ? parseInt(empVal) || empVal : (row.employeeCount || '—');
+
+  const engVal = findVal(['engineeringstaffcount', 'engineeringstaff', 'engineers', 'developers', 'techstaff']);
+  mapped.engineeringStaff = engVal !== undefined && engVal !== "" ? parseInt(engVal) || engVal : (row.engineeringStaff || '—');
+
+  const revVal = findVal(['annualrevenue', 'revenue', 'turnover', 'revenuecrore', 'revenuecr']);
+  mapped.annualRevenue = revVal !== undefined && revVal !== "" ? (parseFloat(revVal) || revVal) : (row.annualRevenue || '—');
+
+  // Founder & Contact Name (Never fabricates names)
+  mapped.founderName = findVal(['foundername', 'founder', 'cofounder', 'owner', 'primarydecisionmaker']) || row.founderName || '—';
   mapped.contactName = findVal(['contactname', 'name', 'fullname', 'personname', 'leadname', 'firstname']) || row.contactName || '—';
   mapped.jobTitle = findVal(['jobtitle', 'title', 'designation', 'role']) || row.jobTitle || '—';
   
-  mapped.email = findVal(['email', 'emailaddress', 'contactemail']) || row.email || '—';
+  mapped.email = findVal(['email', 'emailaddress', 'contactemail', 'workemail']) || row.email || '—';
   mapped.contactNumber = findVal(['contactnumber', 'phone', 'phonenumber', 'mobile', 'telephone']) || row.contactNumber || '—';
   
   mapped.linkedInUrl = findVal(['linkedinurl', 'linkedin', 'profilelink', 'linkedinprofile']) || row.linkedInUrl || '—';
@@ -145,13 +176,100 @@ function mapFields(row) {
 
   mapped.emailStatus = findVal(['emailstatus', 'verificationstatus', 'isverified']) || (mapped.email && mapped.email !== '—' ? 'Verified' : 'Unverified');
 
-  // Specific Email Performance Metrics
-  mapped.delivered = findVal(['delivered', 'emaildelivered', 'delivery_status']) || (mapped.email && mapped.email !== '—' ? 'Yes' : 'No');
-  mapped.opened = findVal(['opened', 'emailopened', 'open_status', 'openrate']) || '—';
-  mapped.unsubscribed = findVal(['unsubscribed', 'unsub', 'optout']) || '—';
-  mapped.bounced = findVal(['bounced', 'emailbounced', 'bounce_status']) || '—';
+  // AI & Digital Maturity
+  mapped.aiRelevance = findVal(['airelevance', 'automationrelevance', 'aimaturity']) || row.aiRelevance || 'High';
+  mapped.digitalMaturity = findVal(['digitalmaturity', 'itmaturity']) || row.digitalMaturity || 'Moderate';
+
+  // Qualifications
+  mapped.qualificationStatus = row.qualificationStatus || 'Review Needed';
+  mapped.qualificationReason = row.qualificationReason || 'Initial Data Inspection';
 
   return mapped;
+}
+
+/* ==========================================================================
+   ICP QUALIFICATION LOGIC ENGINES
+   ========================================================================== */
+
+const TIER_1_CITIES = ['bengaluru', 'bangalore', 'mumbai', 'delhi', 'ncr', 'gurgaon', 'gurugram', 'noida', 'hyderabad', 'chennai', 'pune', 'kolkata'];
+const TIER_2_CITIES = ['bhopal', 'indore', 'jaipur', 'ahmedabad', 'surat', 'kochi', 'cochin', 'chandigarh', 'coimbatore', 'nagpur', 'vadodara', 'trivandrum', 'thiruvananthapuram', 'vizag', 'visakhapatnam', 'bhubaneswar', 'nashik', 'rajkot', 'mysore'];
+
+function qualifyICP1(row) {
+  if (row.userOverridden) return row;
+  const loc = (String(row.location) + ' ' + String(row.city)).toLowerCase();
+
+  let tier = 'Other / Unclassified';
+  if (TIER_1_CITIES.some(c => loc.includes(c))) tier = 'Tier 1';
+  else if (TIER_2_CITIES.some(c => loc.includes(c))) tier = 'Tier 2';
+
+  row.tier = tier;
+
+  const isIT = true; // ICP 1 is Indian IT
+  const hasEngStaff = row.engineeringStaff !== '—' ? (parseInt(row.engineeringStaff) >= 5) : (row.employeeCount !== '—' ? parseInt(row.employeeCount) >= 10 : false);
+
+  if (tier !== 'Other / Unclassified' && hasEngStaff) {
+    row.qualificationStatus = 'Qualified';
+    row.qualificationReason = `Indian IT company in ${tier} city (${row.location || row.city}) with verified tech team size.`;
+  } else if (!loc || loc.includes('—')) {
+    row.qualificationStatus = 'Review Needed';
+    row.qualificationReason = 'Location or city data missing for tier classification.';
+  } else {
+    row.qualificationStatus = 'Not Qualified';
+    row.qualificationReason = `Location (${row.location || row.city}) or tech staff count does not meet ICP 1 criteria. Flagged for review.`;
+  }
+
+  return row;
+}
+
+function qualifyICP2(row) {
+  if (row.userOverridden) return row;
+  const ind = String(row.industry).toLowerCase();
+  
+  const isPureIT = ind.includes('it services') || ind.includes('software development') || ind.includes('it consulting') || ind.includes('outsourcing');
+  const rev = parseFloat(row.annualRevenue) || 0;
+  const emp = parseInt(row.employeeCount) || 0;
+
+  const meetsRevOrSize = rev >= 100 || emp >= 250;
+
+  if (isPureIT) {
+    row.qualificationStatus = 'Not Qualified';
+    row.qualificationReason = 'Pure IT Services/Consulting firm. ICP 2 targets non-IT enterprises heavy on AI adoption. Preserved & flagged for review.';
+  } else if (meetsRevOrSize) {
+    row.qualificationStatus = 'Qualified';
+    row.qualificationReason = `Indian Enterprise with ${rev ? '₹'+rev+' Cr revenue' : emp+' employees'}. High potential buyer for Agentic AI.`;
+  } else if (!rev && !emp) {
+    row.qualificationStatus = 'Review Needed';
+    row.qualificationReason = 'Revenue and employee count data missing. Needs manual verification.';
+  } else {
+    row.qualificationStatus = 'Not Qualified';
+    row.qualificationReason = `Revenue (₹${rev} Cr) or employee size (${emp}) below ₹100 Cr / 250 threshold. Preserved for review.`;
+  }
+
+  return row;
+}
+
+const US_TARGET_STATES = ['california', 'ca', 'texas', 'tx', 'new york', 'ny', 'new jersey', 'nj', 'minnesota', 'mn'];
+
+function qualifyICP3(row) {
+  if (row.userOverridden) return row;
+  const stateStr = (String(row.state) + ' ' + String(row.location)).toLowerCase();
+  
+  const isTargetState = US_TARGET_STATES.some(s => stateStr.includes(s));
+  const emp = parseInt(row.employeeCount) || 0;
+  const is50Plus = emp >= 50;
+
+  if (isTargetState && is50Plus) {
+    row.qualificationStatus = 'Qualified';
+    row.qualificationReason = `US SME in target state (${row.state || row.location}) with 50+ employees (${emp} staff).`;
+  } else if (!stateStr || stateStr.includes('—') || !emp) {
+    row.qualificationStatus = 'Review Needed';
+    row.qualificationReason = `Missing state location or employee count. Requires manual review.`;
+  } else {
+    row.qualificationStatus = 'Not Qualified';
+    row.qualificationReason = `Outside target states (CA, TX, NY, NJ, MN) or company size under 50 employees (${emp || '<50'}). Preserved for review.`;
+  }
+
+  return row;
 }
 
 /* ==========================================================================
@@ -175,6 +293,7 @@ function renderAppHeader(activeId, pageTitle, pageSub) {
         <a href="overall_emails.html" class="nav-link ${activeId === 'overall_emails' ? 'active' : ''}">📧 Overall Emails Sent</a>
         <a href="icp1.html" class="nav-link ${activeId === 'icp1' ? 'active' : ''}">🎯 ICP 1</a>
         <a href="icp2.html" class="nav-link ${activeId === 'icp2' ? 'active' : ''}">🚀 ICP 2</a>
+        <a href="icp3.html" class="nav-link ${activeId === 'icp3' ? 'active' : ''}">🌐 ICP 3</a>
       </div>
 
       <div class="badge b-green">
@@ -211,7 +330,7 @@ function renderCreatorFooter() {
 }
 
 /* ==========================================================================
-   FEATURE 2: FOUR CIRCULAR / DONUT EMAIL METRIC CHARTS ENGINE
+   FOUR CIRCULAR / DONUT EMAIL METRIC CHARTS ENGINE
    ========================================================================== */
 
 function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
@@ -226,11 +345,9 @@ function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
     return chartTrackerArr;
   }
 
-  // 1. Delivered Count
   let deliveredCount = rows.filter(r => (r.email && r.email !== '—') || String(r.delivered).toLowerCase() === 'yes' || String(r.delivered) === '1').length;
   let deliveredPct = ((deliveredCount / total) * 100).toFixed(1);
 
-  // 2. Opened Count
   let openFound = false;
   let openedCount = 0;
   rows.forEach(r => {
@@ -239,7 +356,6 @@ function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
   });
   let openedPct = openFound ? ((openedCount / total) * 100).toFixed(1) : 0;
 
-  // 3. Unsubscribed Count
   let unsubFound = false;
   let unsubCount = 0;
   rows.forEach(r => {
@@ -248,7 +364,6 @@ function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
   });
   let unsubPct = unsubFound ? ((unsubCount / total) * 100).toFixed(1) : 0;
 
-  // 4. Bounced Count
   let bounceFound = false;
   let bouncedCount = 0;
   rows.forEach(r => {
@@ -326,7 +441,7 @@ function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
 }
 
 /* ==========================================================================
-   FEATURE 3: IN-MODAL SHARE VIA EMAIL FIX (No Blank Page / Navigation)
+   IN-MODAL SHARE VIA EMAIL (No Blank Page / Navigation)
    ========================================================================== */
 
 function openShareEmailModal(workspaceTitle) {
@@ -398,7 +513,6 @@ function handleShareEmailSubmit(e, workspaceTitle) {
   const subject = subjectInput ? subjectInput.value.trim() : `Shared Dashboard: ${workspaceTitle}`;
   const message = messageInput ? messageInput.value.trim() : '';
 
-  // Validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!to || !emailRegex.test(to.split(',')[0].trim())) {
     errorBox.innerText = "Please enter a valid recipient email address.";
@@ -411,18 +525,15 @@ function handleShareEmailSubmit(e, workspaceTitle) {
   submitBtn.innerText = "⏳ Dispatching Email...";
 
   setTimeout(() => {
-    // Generate mailto link cleanly without opening blank tabs
     const body = encodeURIComponent(`Hi,\n\nHere is the shared analytics dashboard for Infinito [${workspaceTitle}]:\n\n${message}\n\nSummary:\n- Workspace: ${workspaceTitle}\n- Generated via Infinito Data & Intelligence Platform\n- Link: ${window.location.href}`);
     const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${body}`;
 
-    // Clean inline dispatch (does not redirect browser to blank page)
     const hiddenIframe = document.createElement('iframe');
     hiddenIframe.style.display = 'none';
     hiddenIframe.src = mailtoUrl;
     document.body.appendChild(hiddenIframe);
     setTimeout(() => { document.body.removeChild(hiddenIframe); }, 2000);
 
-    // In-Modal Success State
     const modalBody = document.getElementById('share-modal-body');
     modalBody.innerHTML = `
       <div style="text-align:center; padding:24px 10px;">
@@ -495,10 +606,10 @@ function closeImportSummaryModal() {
 }
 
 /* ==========================================================================
-   RECORD DETAIL DRAWER / MODAL
+   RECORD DETAIL DRAWER / MODAL (WITH QUALIFICATION OVERRIDE)
    ========================================================================== */
 
-function openRecordDetailModal(record) {
+function openRecordDetailModal(record, currentWorkspaceStore = null) {
   let modal = document.getElementById('record-detail-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -508,43 +619,65 @@ function openRecordDetailModal(record) {
   }
 
   const rec = mapFields(record);
+  const qStatus = rec.qualificationStatus || 'Review Needed';
+  const qReason = rec.qualificationReason || 'Initial Data Inspection';
 
   modal.innerHTML = `
-    <div class="modal-card" style="max-width:680px;">
+    <div class="modal-card" style="max-width:720px;">
       <div class="modal-header">
         <div class="modal-title">🏢 Contact Intelligence — ${rec.companyName !== '—' ? rec.companyName : (rec.contactName !== '—' ? rec.contactName : 'Record Detail')}</div>
         <button class="modal-close" onclick="closeRecordDetailModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-          <button class="pag-btn active" onclick="switchDetailTab('tab-comp')">1. Company Details</button>
-          <button class="pag-btn" onclick="switchDetailTab('tab-cont')">2. Contact Details</button>
+        <!-- Qualification Banner & Override -->
+        <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:11px; color:var(--t2); font-weight:700; text-transform:uppercase;">ICP Qualification Status</div>
+            <div style="font-size:16px; font-weight:800; color:${qStatus==='Qualified'?'var(--green)':(qStatus==='Review Needed'?'var(--amber)':'var(--red)')}; font-family:'Space Grotesk',sans-serif; margin-top:2px;">
+              ${qStatus==='Qualified'?'✅ Qualified':(qStatus==='Review Needed'?'⚠️ Review Needed':'❌ Not Qualified')}
+            </div>
+            <div style="font-size:12px; color:var(--t2); margin-top:3px;">${qReason}</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary" style="font-size:11px; padding:6px 12px; color:var(--green);" onclick="overrideStatus('${rec.companyName}', 'Qualified', '${currentWorkspaceStore ? currentWorkspaceStore.workspaceId : ''}')">Mark Qualified</button>
+            <button class="btn btn-secondary" style="font-size:11px; padding:6px 12px; color:var(--amber);" onclick="overrideStatus('${rec.companyName}', 'Review Needed', '${currentWorkspaceStore ? currentWorkspaceStore.workspaceId : ''}')">Mark Review</button>
+            <button class="btn btn-secondary" style="font-size:11px; padding:6px 12px; color:var(--red);" onclick="overrideStatus('${rec.companyName}', 'Not Qualified', '${currentWorkspaceStore ? currentWorkspaceStore.workspaceId : ''}')">Mark Not Qualified</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; overflow-x:auto;">
+          <button class="pag-btn active" onclick="switchDetailTab('tab-comp')">1. Company</button>
+          <button class="pag-btn" onclick="switchDetailTab('tab-cont')">2. Decision Maker</button>
           <button class="pag-btn" onclick="switchDetailTab('tab-comm')">3. Email & Phone</button>
-          <button class="pag-btn" onclick="switchDetailTab('tab-link')">4. LinkedIn & Verify</button>
+          <button class="pag-btn" onclick="switchDetailTab('tab-icp')">4. ICP Attributes</button>
         </div>
 
         <div id="tab-comp" class="detail-tab-content">
           <div class="profile-stat"><span>Company Name:</span> <strong>${rec.companyName}</strong></div>
           <div class="profile-stat"><span>Website:</span> <strong>${rec.website !== '—' ? `<a href="${rec.website.startsWith('http')?rec.website:'http://'+rec.website}" target="_blank" style="color:var(--blue);">${rec.website}</a>` : '—'}</strong></div>
           <div class="profile-stat"><span>Industry:</span> <strong>${rec.industry}</strong></div>
-          <div class="profile-stat"><span>Location:</span> <strong>${rec.location}</strong></div>
+          <div class="profile-stat"><span>Location / City:</span> <strong>${rec.location}</strong></div>
+          <div class="profile-stat"><span>State / Tier:</span> <strong>${rec.tier || rec.state || '—'}</strong></div>
         </div>
 
         <div id="tab-cont" class="detail-tab-content" style="display:none;">
-          <div class="profile-stat"><span>Founder Name:</span> <strong>${rec.founderName}</strong></div>
+          <div class="profile-stat"><span>Founder / Decision Maker:</span> <strong>${rec.founderName}</strong></div>
           <div class="profile-stat"><span>Primary Contact Name:</span> <strong>${rec.contactName}</strong></div>
           <div class="profile-stat"><span>Job Title / Role:</span> <strong>${rec.jobTitle}</strong></div>
         </div>
 
         <div id="tab-comm" class="detail-tab-content" style="display:none;">
-          <div class="profile-stat"><span>Email Address:</span> <strong>${rec.email !== '—' ? `<a href="mailto:${rec.email}" style="color:var(--blue);">${rec.email}</a>` : '—'}</strong></div>
+          <div class="profile-stat"><span>Work Email Address:</span> <strong>${rec.email !== '—' ? `<a href="mailto:${rec.email}" style="color:var(--blue);">${rec.email}</a>` : '—'}</strong></div>
           <div class="profile-stat"><span>Phone / Contact Number:</span> <strong>${rec.contactNumber}</strong></div>
-        </div>
-
-        <div id="tab-link" class="detail-tab-content" style="display:none;">
           <div class="profile-stat"><span>LinkedIn Found:</span> <strong style="color:${rec.linkedInFound === 'Found' ? 'var(--green)' : 'var(--amber)'};">${rec.linkedInFound}</strong></div>
           <div class="profile-stat"><span>LinkedIn Profile URL:</span> <strong>${rec.linkedInUrl !== '—' ? `<a href="${rec.linkedInUrl.startsWith('http')?rec.linkedInUrl:'https://'+rec.linkedInUrl}" target="_blank" style="color:var(--blue);">${rec.linkedInUrl}</a>` : '—'}</strong></div>
-          <div class="profile-stat"><span>Email Verification Status:</span> <strong style="color:var(--green);">${rec.emailStatus}</strong></div>
+        </div>
+
+        <div id="tab-icp" class="detail-tab-content" style="display:none;">
+          <div class="profile-stat"><span>Employee Count:</span> <strong>${rec.employeeCount}</strong></div>
+          <div class="profile-stat"><span>Engineering Staff Count:</span> <strong>${rec.engineeringStaff}</strong></div>
+          <div class="profile-stat"><span>Annual Revenue (Cr):</span> <strong>${rec.annualRevenue !== '—' ? '₹' + rec.annualRevenue + ' Cr' : '—'}</strong></div>
+          <div class="profile-stat"><span>AI / Automation Fit:</span> <strong>${rec.aiRelevance}</strong></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -554,6 +687,15 @@ function openRecordDetailModal(record) {
   `;
 
   modal.style.display = 'flex';
+}
+
+function overrideStatus(companyName, newStatus, workspaceId) {
+  if (!workspaceId) workspaceId = 'icp_1';
+  const st = new WorkspaceStore(workspaceId);
+  st.updateRecordStatus(companyName, newStatus, `Manually set to ${newStatus} by user override.`);
+  alert(`Record qualification status updated to '${newStatus}'! Refreshing view...`);
+  closeRecordDetailModal();
+  if (typeof initWorkspace === 'function') initWorkspace();
 }
 
 function switchDetailTab(tabId) {
@@ -639,24 +781,6 @@ function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
   URL.revokeObjectURL(url);
 }
 
-function showToastNotification(message) {
-  let toast = document.getElementById('app-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'app-toast';
-    toast.style.cssText = `
-      position: fixed; bottom: 24px; right: 24px; z-index: 10000;
-      background: #131c35; border: 1px solid #4f8ef7; color: #fff;
-      padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5); animation: fi 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-  }
-  toast.innerText = message;
-  toast.style.display = 'block';
-  setTimeout(() => { toast.style.display = 'none'; }, 4000);
-}
-
 /* Modal & Footer Styles */
 const extraStyles = document.createElement('style');
 extraStyles.innerHTML = `
@@ -682,7 +806,6 @@ extraStyles.innerHTML = `
 .form-group { margin-bottom: 14px; }
 .form-label { font-size: 12px; font-weight: 600; color: #8899bb; margin-bottom: 6px; display: block; }
 
-/* CREATOR FOOTER STYLING WITH PROFILE PHOTO */
 .creator-footer {
   margin-top: 60px; padding: 30px 0; background: rgba(13, 20, 45, 0.95);
   border-top: 1px solid var(--border, rgba(79,142,247,0.15)); text-align: center;
@@ -710,5 +833,6 @@ extraStyles.innerHTML = `
   transition: all 0.2s;
 }
 .creator-link:hover { background: rgba(79,142,247,0.22); transform: translateY(-1px); }
+.profile-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(79,142,247,0.08); font-size: 13px; }
 `;
 document.head.appendChild(extraStyles);

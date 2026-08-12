@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | ICP 2 Dashboard</title>
-<meta name="description" content="Infinito ICP 2 Dashboard — Independent cumulative target profile workspace, Contact Intelligence, and Power BI-style analytics.">
+<title>Infinito | ICP 2 — Indian Enterprise Dashboard</title>
+<meta name="description" content="Infinito ICP 2 Dashboard — Indian Enterprise AI Buyers qualification (₹100 Cr+ revenue, non-IT buyers).">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -79,6 +79,13 @@ header {
 .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 10px; }
 .card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
 
+.icp-banner {
+  background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(139,92,246,0.12));
+  border: 1px solid var(--border); border-radius: var(--r); padding: 18px 24px; margin-top: 20px;
+}
+.icp-banner-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+.icp-banner-desc { font-size: 13px; color: var(--t2); line-height: 1.5; }
+
 .empty-state-card {
   text-align: center; padding: 60px 24px; background: rgba(15, 22, 41, 0.6);
   border: 2px dashed rgba(6, 182, 212, 0.25); border-radius: var(--r); margin: 24px 0;
@@ -129,12 +136,8 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
 .status-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
 .sp-green { background: rgba(16, 185, 129, 0.2); color: var(--green); }
 .sp-amber { background: rgba(245, 158, 11, 0.2); color: var(--amber); }
+.sp-red { background: rgba(239, 68, 68, 0.2); color: var(--red); }
 
-.insights-box {
-  background: linear-gradient(135deg, rgba(6,182,212,0.08), rgba(79,142,247,0.08));
-  border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 24px;
-}
-.insight-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 10px; }
 .search-input { padding: 8px 14px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 13px; flex: 1; }
 </style>
 </head>
@@ -144,12 +147,20 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
 <div id="header-mount"></div>
 
 <div class="wrap">
+  <!-- ICP DEFINITION BANNER -->
+  <div class="icp-banner">
+    <div class="icp-banner-title">🚀 ICP 2 — Indian Enterprise (AI & Business App Buyers) Profile Definition</div>
+    <div class="icp-banner-desc">
+      Targeting Indian Enterprises that are potential buyers of AI-enabled business applications and Agentic AI. <strong>Revenue Threshold: ₹100 Crore+</strong> or 250+ employees. Priority sectors: Fintech, Banking, Insurance, Manufacturing, Retail, Healthcare. Excludes companies whose primary business is IT Services/Consulting (flagged for review, not deleted).
+    </div>
+  </div>
+
   <!-- EMPTY STATE VIEW -->
   <div id="empty-state-view" style="display:none;">
     <div class="empty-state-card">
       <div class="empty-icon">🚀</div>
       <div class="empty-title">No data added to ICP 2 yet</div>
-      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 2 workspace. Subsequent uploads will automatically merge and deduplicate.</div>
+      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 2 (Indian Enterprise) workspace. Subsequent uploads automatically merge and deduplicate.</div>
       
       <div style="display:inline-block;">
         <input type="file" id="icp2-file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
@@ -163,8 +174,8 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
     <div class="card" style="margin-bottom:16px;">
       <div class="card-header" style="margin-bottom:0;">
         <div>
-          <div class="card-title">🚀 ICP 2 Dashboard</div>
-          <div class="card-sub" id="workspace-meta">Independent persistent cumulative target profile 2 workspace</div>
+          <div class="card-title">🚀 ICP 2 — Indian Enterprise Workspace</div>
+          <div class="card-sub" id="workspace-meta">Independent persistent cumulative enterprise dataset</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <input type="file" id="icp2-file-input-2" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
@@ -177,49 +188,45 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
       </div>
     </div>
 
-    <!-- EXECUTIVE KPI CARDS -->
+    <!-- EXECUTIVE QUALIFICATION KPI CARDS -->
     <div class="kpi-grid" id="kpi-grid"></div>
 
     <!-- FOUR CIRCULAR / DONUT EMAIL KPI CHARTS -->
     <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Email Performance Circular Indicators</div>
     <div class="charts-grid" id="circular-charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"></div>
 
-    <!-- NARRATIVE INSIGHTS -->
-    <div class="insights-box">
-      <div style="font-weight:700; margin-bottom:10px; font-family:'Space Grotesk',sans-serif; font-size:16px;">💡 ICP 2 Cumulative Insights</div>
-      <div id="insights-list"></div>
-    </div>
-
     <!-- DEDICATED CONTACT INTELLIGENCE SECTION -->
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title" style="font-size:22px;">🏢 Contact Intelligence</div>
-          <div class="card-sub">Interactive lead explorer. Click any row to view complete record detail drawer.</div>
+          <div class="card-title" style="font-size:22px;">🏢 Enterprise Contact Intelligence & ICP 2 Qualification</div>
+          <div class="card-sub">Click any row to view complete detail drawer or manually override qualification decisions.</div>
         </div>
-        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search companies, contacts, emails..." oninput="onSearchInput()">
+        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search enterprises, sectors, revenue..." oninput="onSearchInput()">
       </div>
 
       <!-- Quick Filter Pills -->
       <div class="filter-pills">
         <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
-        <button class="pill-btn" onclick="applyQuickFilter('has_email', this)">Has Email</button>
-        <button class="pill-btn" onclick="applyQuickFilter('verified_email', this)">Verified Email</button>
-        <button class="pill-btn" onclick="applyQuickFilter('has_phone', this)">Has Phone Number</button>
-        <button class="pill-btn" onclick="applyQuickFilter('linkedin_found', this)">LinkedIn Found</button>
-        <button class="pill-btn" onclick="applyQuickFilter('has_founder', this)">Has Founder Name</button>
+        <button class="pill-btn" onclick="applyQuickFilter('qualified', this)">✅ Qualified Buyers</button>
+        <button class="pill-btn" onclick="applyQuickFilter('review', this)">⚠️ Review Needed</button>
+        <button class="pill-btn" onclick="applyQuickFilter('not_qualified', this)">❌ IT Services Flagged</button>
+        <button class="pill-btn" onclick="applyQuickFilter('high_rev', this)">💰 Revenue ≥ ₹100 Cr</button>
+        <button class="pill-btn" onclick="applyQuickFilter('fintech', this)">🏦 Fintech & BFSI</button>
+        <button class="pill-btn" onclick="applyQuickFilter('manufacturing', this)">🏭 Manufacturing</button>
       </div>
 
-      <!-- Contact Table with 5 Column Groups -->
+      <!-- Contact Table with 6 Column Groups -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Company Details</th>
-              <th>Primary Contact</th>
+              <th>Enterprise Name</th>
+              <th>Industry & Sector</th>
+              <th>Revenue & Size</th>
+              <th>Decision Maker</th>
               <th>Email & Phone</th>
-              <th>LinkedIn & Verification</th>
-              <th>Data Status</th>
+              <th>ICP Qualification</th>
             </tr>
           </thead>
           <tbody id="contact-tbody"></tbody>
@@ -239,13 +246,13 @@ let activeQuickFilter = 'all';
 let chartInstances = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('header-mount').innerHTML = renderAppHeader('icp2', 'Infinito | ICP 2', 'Independent Persistent Cumulative Target Profile 2 Workspace');
+  document.getElementById('header-mount').innerHTML = renderAppHeader('icp2', 'Infinito | ICP 2', 'Indian Enterprise AI Buyers');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
   initWorkspace();
 });
 
 function initWorkspace() {
-  currentDataset = store.getData();
+  currentDataset = store.getData().map(r => qualifyICP2(mapFields(r)));
   if (!currentDataset || !currentDataset.length) {
     document.getElementById('empty-state-view').style.display = 'block';
     document.getElementById('dashboard-view').style.display = 'none';
@@ -274,7 +281,7 @@ function handleWorkspaceUpload(e) {
       }
 
       const result = store.mergeData(rawJson, file.name, sheetName);
-      currentDataset = result.combinedData;
+      currentDataset = result.combinedData.map(r => qualifyICP2(r));
 
       showImportSummaryModal(result.logEntry);
       initWorkspace();
@@ -288,48 +295,43 @@ function handleWorkspaceUpload(e) {
 
 function renderExecutiveDashboard() {
   const rows = currentDataset;
-  const cols = Object.keys(rows[0] || {});
-
   const totalRecords = rows.length;
-  const validEmails = rows.filter(r => r.email && r.email !== '—').length;
-  const uniqueCompanies = new Set(rows.map(r => r.companyName).filter(c => c && c !== '—')).size;
-  const uniqueContacts = new Set(rows.map(r => r.contactName).filter(c => c && c !== '—')).size;
-  const phonesFound = rows.filter(r => r.contactNumber && r.contactNumber !== '—').length;
-  const linkedInFound = rows.filter(r => r.linkedInFound === 'Found').length;
 
-  document.getElementById('workspace-meta').innerText = `Total ICP 2 Stored Records: ${totalRecords.toLocaleString()} | Attributes: ${cols.length} | Source: Cumulative Imports`;
+  const qualifiedCount = rows.filter(r => r.qualificationStatus === 'Qualified').length;
+  const reviewCount = rows.filter(r => r.qualificationStatus === 'Review Needed').length;
+  const itFlaggedCount = rows.filter(r => r.qualificationStatus === 'Not Qualified').length;
+
+  const rev100CrCount = rows.filter(r => parseFloat(r.annualRevenue) >= 100 || parseInt(r.employeeCount) >= 250).length;
+  const foundersFound = rows.filter(r => r.founderName && r.founderName !== '—').length;
+
+  document.getElementById('workspace-meta').innerText = `Total ICP 2 Enterprise Records: ${totalRecords.toLocaleString()} | Source: Independent ICP 2 Storage`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">
-      <span class="kpi-icon">🚀</span>
-      <div class="kpi-val">${totalRecords.toLocaleString()}</div>
-      <div class="kpi-lbl">Total ICP 2 Records</div>
-    </div>
-    <div class="kpi kpurple">
-      <span class="kpi-icon">📧</span>
-      <div class="kpi-val">${validEmails.toLocaleString()}</div>
-      <div class="kpi-lbl">Valid Emails</div>
-    </div>
-    <div class="kpi kcyan">
       <span class="kpi-icon">🏢</span>
-      <div class="kpi-val">${uniqueCompanies.toLocaleString()}</div>
-      <div class="kpi-lbl">Unique Companies</div>
+      <div class="kpi-val">${totalRecords.toLocaleString()}</div>
+      <div class="kpi-lbl">Total Enterprise Records</div>
     </div>
     <div class="kpi kgreen">
-      <span class="kpi-icon">👤</span>
-      <div class="kpi-val">${uniqueContacts.toLocaleString()}</div>
-      <div class="kpi-lbl">Unique Contacts</div>
+      <span class="kpi-icon">✅</span>
+      <div class="kpi-val" style="color:var(--green);">${qualifiedCount.toLocaleString()}</div>
+      <div class="kpi-lbl">Qualified AI Buyers</div>
     </div>
     <div class="kpi kamber">
-      <span class="kpi-icon">🔗</span>
-      <div class="kpi-val">${linkedInFound.toLocaleString()}</div>
-      <div class="kpi-lbl">LinkedIn Profiles</div>
+      <span class="kpi-icon">⚠️</span>
+      <div class="kpi-val" style="color:var(--amber);">${reviewCount.toLocaleString()}</div>
+      <div class="kpi-lbl">Review Needed</div>
     </div>
-  `;
-
-  document.getElementById('insights-list').innerHTML = `
-    <div class="insight-item"><span style="color:var(--cyan)">⚡</span> <span>ICP 2 workspace tracking <strong>${totalRecords.toLocaleString()} target records</strong>.</span></div>
-    <div class="insight-item"><span style="color:var(--cyan)">⚡</span> <span>Strict workspace isolation ensures data remains completely separate from ICP 1 and Overall Emails.</span></div>
+    <div class="kpi kpurple">
+      <span class="kpi-icon">💰</span>
+      <div class="kpi-val">${rev100CrCount.toLocaleString()}</div>
+      <div class="kpi-lbl">≥ ₹100 Cr / 250+ Staff</div>
+    </div>
+    <div class="kpi kamber">
+      <span class="kpi-icon">👑</span>
+      <div class="kpi-val">${foundersFound.toLocaleString()}</div>
+      <div class="kpi-lbl">Decision Makers</div>
+    </div>
   `;
 
   // Render 4 Circular Donut Charts
@@ -343,23 +345,32 @@ function renderContactIntelligenceTable() {
   const tbody = document.getElementById('contact-tbody');
   const query = document.getElementById('table-search').value.toLowerCase().trim();
 
-  let rows = currentDataset.map(r => mapFields(r));
+  let rows = currentDataset;
 
-  if (activeQuickFilter === 'has_email') rows = rows.filter(r => r.email && r.email !== '—');
-  if (activeQuickFilter === 'verified_email') rows = rows.filter(r => r.emailStatus === 'Verified');
-  if (activeQuickFilter === 'has_phone') rows = rows.filter(r => r.contactNumber && r.contactNumber !== '—');
-  if (activeQuickFilter === 'linkedin_found') rows = rows.filter(r => r.linkedInFound === 'Found');
-  if (activeQuickFilter === 'has_founder') rows = rows.filter(r => r.founderName && r.founderName !== '—');
+  if (activeQuickFilter === 'qualified') rows = rows.filter(r => r.qualificationStatus === 'Qualified');
+  if (activeQuickFilter === 'review') rows = rows.filter(r => r.qualificationStatus === 'Review Needed');
+  if (activeQuickFilter === 'not_qualified') rows = rows.filter(r => r.qualificationStatus === 'Not Qualified');
+  if (activeQuickFilter === 'high_rev') rows = rows.filter(r => parseFloat(r.annualRevenue) >= 100 || parseInt(r.employeeCount) >= 250);
+  if (activeQuickFilter === 'fintech') rows = rows.filter(r => String(r.industry).toLowerCase().includes('fintech') || String(r.industry).toLowerCase().includes('bank') || String(r.industry).toLowerCase().includes('financial'));
+  if (activeQuickFilter === 'manufacturing') rows = rows.filter(r => String(r.industry).toLowerCase().includes('manufacturing'));
 
   if (query) {
     rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(query));
   }
 
   tbody.innerHTML = rows.slice(0, 40).map(r => `
-    <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")})'>
+    <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")}, store)'>
       <td>
         <strong style="color:var(--t1); font-size:14px;">${r.companyName}</strong>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.industry !== '—' ? r.industry : ''} ${r.location !== '—' ? '• ' + r.location : ''}</div>
+        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.location}</div>
+      </td>
+      <td>
+        <div style="font-weight:600; color:var(--t1);">${r.industry !== '—' ? r.industry : 'Enterprise'}</div>
+        <div style="font-size:11px; color:var(--cyan); margin-top:2px;">AI Fit: ${r.aiRelevance}</div>
+      </td>
+      <td>
+        <div style="font-weight:700; color:var(--green);">${r.annualRevenue !== '—' ? '₹' + r.annualRevenue + ' Cr' : '—'}</div>
+        <div style="font-size:11px; color:var(--t2);">${r.employeeCount !== '—' ? r.employeeCount + ' staff' : ''}</div>
       </td>
       <td>
         <div style="font-weight:600; color:var(--t1);">${r.founderName !== '—' ? '👑 Founder: ' + r.founderName : (r.contactName !== '—' ? r.contactName : '—')}</div>
@@ -370,11 +381,8 @@ function renderContactIntelligenceTable() {
         <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.contactNumber}</div>
       </td>
       <td>
-        <span class="status-pill ${r.linkedInFound === 'Found' ? 'sp-green' : 'sp-amber'}">${r.linkedInFound}</span>
-        ${r.linkedInUrl !== '—' ? `<a href="${r.linkedInUrl.startsWith('http')?r.linkedInUrl:'https://'+r.linkedInUrl}" target="_blank" onclick="event.stopPropagation();" style="font-size:11px; color:var(--cyan); margin-left:6px;">🔗 View Profile</a>` : ''}
-      </td>
-      <td>
-        <span class="status-pill sp-green">${r.emailStatus}</span>
+        <span class="status-pill ${r.qualificationStatus === 'Qualified' ? 'sp-green' : (r.qualificationStatus === 'Review Needed' ? 'sp-amber' : 'sp-red')}">${r.qualificationStatus}</span>
+        <div style="font-size:10px; color:var(--t2); margin-top:2px; max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${r.qualificationReason}">${r.qualificationReason}</div>
       </td>
     </tr>
   `).join('');
@@ -388,8 +396,8 @@ function applyQuickFilter(filterKey, btnEl) {
 }
 
 function onSearchInput() { renderContactIntelligenceTable(); }
-function triggerEmailShare() { openShareEmailModal('ICP 2'); }
-function triggerHTMLExport() { exportWorkspaceHTML('ICP 2', currentDataset); }
+function triggerEmailShare() { openShareEmailModal('ICP 2 — Indian Enterprise'); }
+function triggerHTMLExport() { exportWorkspaceHTML('ICP 2 — Indian Enterprise', currentDataset); }
 function resetWorkspaceData() {
   if (confirm("Are you sure you want to reset ICP 2 workspace data?")) {
     store.clearWorkspace();

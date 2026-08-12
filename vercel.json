@@ -5,6 +5,7 @@
     { "source": "/emails", "destination": "/overall_emails.html" },
     { "source": "/icp1", "destination": "/icp1.html" },
     { "source": "/icp2", "destination": "/icp2.html" },
+    { "source": "/icp3", "destination": "/icp3.html" },
     { "source": "/dashboard", "destination": "/overall_emails.html" }
   ]
 }

@@ -2,7 +2,9 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/icp1", "destination": "/icp1_leads_dashboard.html" }
+    { "source": "/emails", "destination": "/overall_emails.html" },
+    { "source": "/icp1", "destination": "/icp1.html" },
+    { "source": "/icp2", "destination": "/icp2.html" },
+    { "source": "/dashboard", "destination": "/overall_emails.html" }
   ]
 }

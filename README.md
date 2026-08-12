@@ -1,45 +1,51 @@
-# ⚡ Anti-Gravity | Smart Auto-Dashboard & Data Studio
+# ⚡ Anti-Gravity | Multi-Workspace Cumulative Dashboard Suite
 
-An enterprise-grade, automated **Data Processing, Cleaning, Quality Diagnostics, and Dynamic Power BI-style Dashboard Generator** web application suite. 
+An enterprise-grade, multi-workspace web application designed for **Automated Data Upload, Data Cleaning, Quality Diagnostics, and Cumulative Workspace Dashboards**.
 
-Allows users to upload any `.csv`, `.xls`, or `.xlsx` spreadsheet file and automatically generates a custom, interactive dashboard with real-time filtering, schema inference, data cleaning controls, and data health scores — **without losing or breaking existing dashboards**.
+Allows teams to manage four independent, isolated data workspaces, each supporting persistent database storage, repeated spreadsheet uploads with automated deduplication and merge logs, **Share via Email**, and **Standalone HTML Exporting**.
 
-![Dashboard Preview](https://img.shields.io/badge/Dashboard-Power%20BI%20Style-4f8ef7?style=for-the-badge&logo=powerbi)
-![Supported Formats](https://img.shields.io/badge/Formats-CSV%20%7C%20XLS%20%7C%20XLSX-06b6d4?style=for-the-badge)
+![Multi Workspace](https://img.shields.io/badge/Workspaces-Auto%20Studio%20%7C%20Emails%20%7C%20ICP1%20%7C%20ICP2-4f8ef7?style=for-the-badge)
+![Cumulative Database](https://img.shields.io/badge/Storage-Persistent%20Cumulative-green?style=for-the-badge)
 ![Vercel Ready](https://img.shields.io/badge/Deployment-Vercel-000000?style=for-the-badge&logo=vercel)
 
 ---
 
-## 🌟 Key Application Modules
+## 🌟 The 4 Workspaces
 
-### 1. ⚡ **Smart Auto-Dashboard Studio (`index.html` - Primary Landing)**
-- **File Upload & Parsing**: Drag-and-drop support for `.csv`, `.xls`, `.xlsx` up to 25MB. Powered by SheetJS for 100% private, client-side browser parsing.
-- **Excel Multi-Sheet Selector**: Automatically detects all sheets in Excel workbooks and intelligently pre-selects the largest data sheet.
-- **Data Preview & Schema Detection**: Auto-detects data types (`Numeric`, `Category`, `Date`, `Boolean`, `Text`) with interactive type badges and a 10-row preview table.
-- **Data Quality Diagnostics Studio**:
-  - Auto-calculated **Data Health Score (0-100%)** and **Completeness Score**.
-  - Categorized findings with severity levels: `Critical` 🚨, `Warning` ⚠️, and `Info` ℹ️.
-- **Configurable Cleaning Engine**:
-  - Deduplication (detects & removes duplicate rows).
-  - Column name normalization (trims whitespace, removes illegal symbols).
-  - Missing value imputation strategies (fill numeric with 0, text with 'N/A', or keep blank).
-  - String whitespace trimming.
-  - Transparent **"What Changed" Audit Trail**.
-  - Cleaned data export in `.csv` or `.xlsx` formats.
-- **Dynamic Auto-Generated Dashboard**:
-  - Automatically selects optimal visualizations based on dataset columns.
-  - Dynamic KPI cards (Totals, Health Score, Numerical Averages, Top Categories).
-  - Smart Chart.js Visualizations (Bar distribution, Donut composition, Time-series trendlines).
-  - Automated natural-language narrative insights.
-  - Interactive Filter Bar (Global search + dynamic category dropdown filters).
-  - Interactive Data Explorer Table with sorting, pagination, and search highlights.
+### 1. ⚡ **Auto Studio (`index.html`)**
+- Primary upload & auto-dashboard generator studio.
+- Supported formats: `.csv`, `.xls`, `.xlsx` (up to 25MB).
+- 4-Step Interactive Pipeline: `Upload` → `Preview & Sheet Select` → `Clean & Validate` → `Auto Dashboard`.
+- Data health meter, column profiling grid, and customizable cleaning rules.
+- Added capabilities: **Share via Email** modal & **Standalone HTML Export**.
 
-### 2. 📊 **Master CRM Intelligence Dashboard (`dashboard.html`)**
-- Full analysis of **2,066+ contacts** cleaned from HubSpot CRM export.
-- Segmented views for Lead Scores, Domain counts, Unassigned Leads, and Company Verifications.
+### 2. 📧 **Overall Emails Sent (`overall_emails.html`)**
+- *Replaces and resets the old Master CRM workspace*.
+- Starts in a clean zero-data initial state: *"No email data has been added yet..."*.
+- Persistent cumulative database storage: When new CSV/XLS/XLSX files are uploaded, new valid records are merged with historical data while skipping duplicate entries.
+- **Import Summary Toast**: Displays `Rows Received`, `Valid Rows`, `Skipped Rows`, `Duplicate Rows`, `Newly Added Rows`, and `Total Stored Rows`.
+- Evolving Email Analytics Dashboard with Trendlines, Campaign Breakdown, Sender/Recipient metrics, and Searchable Data Explorer.
 
-### 3. 🎯 **ICP-1 Advocates Dashboard (`icp1_leads_dashboard.html`)**
-- Specialized lead prospecting dashboard for legal advocates and high-intent leads in Bhopal/Indore markets.
+### 3. 🎯 **ICP 1 (`icp1.html`)**
+- *Renamed from "ICP 1 Advocates" to simply **"ICP 1"*** (word "Advocates" removed everywhere across UI & exports).
+- Independent persistent cumulative lead workspace.
+- Supports repeated uploads, data deduplication, import history, and dynamic dashboard auto-refresh.
+
+### 4. 🚀 **ICP 2 (`icp2.html`)**
+- *Brand new independent workspace*.
+- Initial zero-data empty state ready to accept CSV/Excel uploads.
+- Strictly isolated persistent database storage for ICP 2 target segments.
+
+---
+
+## 🛠️ Common Capabilities Across All Workspaces
+
+- 📥 **Spreadsheet Upload**: Multi-sheet Excel selector (`.xlsx`, `.xls`) & CSV parser.
+- 🧼 **Transparent Cleaning & Deduplication**: Duplicate row detection and merge summaries.
+- 📧 **Share via Email**: Modal popup supporting recipient emails, subject lines, message notes, and report attachments.
+- 📄 **Export HTML**: Generates a self-contained, standalone downloadable `.html` report of the current workspace dashboard.
+- 💾 **Cleaned Data Download**: Export processed datasets as `.csv` or `.xlsx`.
+- 📜 **Import History Log**: Inspect previous file upload events and row counts.
 
 ---
 
@@ -47,48 +53,25 @@ Allows users to upload any `.csv`, `.xls`, or `.xlsx` spreadsheet file and autom
 
 ```
 DASHBOARD-CREATER/
-├── index.html                 # ⚡ Primary Smart Upload, Data Cleaning & Auto-Dashboard Studio
-├── dashboard.html             # 📊 Master CRM Contact Intelligence Dashboard
-├── icp1_leads_dashboard.html  # 🎯 ICP-1 Advocate & Legal Prospecting Dashboard
-├── cleaned_data.json          # Processed CRM dataset (sample pre-loader)
-├── combined_data.json         # Combined intelligence dataset (v1)
-├── combined_data_v2.json      # Enhanced combined dataset with metadata (v2)
-├── contacts_raw.csv           # Original raw HubSpot CRM contact export
-├── vercel.json                # Vercel deployment route configuration
-└── README.md                  # Comprehensive project documentation
+├── index.html                 # ⚡ Auto Studio Workspace
+├── overall_emails.html        # 📧 Overall Emails Sent Workspace
+├── icp1.html                  # 🎯 ICP 1 Target Workspace
+├── icp2.html                  # 🚀 ICP 2 Target Workspace
+├── app-shared.js              # 🛠️ Multi-Workspace Persistent Engine & Shared UI Components
+├── dashboard.html             # Legacy Master CRM reference
+├── icp1_leads_dashboard.html  # Legacy ICP 1 reference
+├── cleaned_data.json          # Pre-loaded sample CRM dataset
+├── vercel.json                # Vercel route rewrites for all 4 workspaces
+└── README.md                  # System documentation
 ```
 
 ---
 
-## 🚀 How to Run Locally
+## 🌐 Routes & Deployment (Vercel)
 
-No build step or `node_modules` required!
+- `/` → **Auto Studio** (`index.html`)
+- `/emails` → **Overall Emails Sent** (`overall_emails.html`)
+- `/icp1` → **ICP 1** (`icp1.html`)
+- `/icp2` → **ICP 2** (`icp2.html`)
 
-### Option A: Open in Browser
-Double-click `index.html` in your file explorer.
-
-### Option B: Local HTTP Server
-```bash
-python3 -m http.server 8000
-```
-Then visit `http://localhost:8000/`.
-
----
-
-## 🌐 Deployment (Vercel)
-
-This repository includes a `vercel.json` routing configuration:
-- `/` → Serves the **Smart Auto-Dashboard Studio** (`index.html`)
-- `/dashboard` → Serves **Master CRM Dashboard** (`dashboard.html`)
-- `/icp1` → Serves **ICP-1 Advocates Dashboard** (`icp1_leads_dashboard.html`)
-
-Simply commit and push to GitHub, and Vercel will automatically re-deploy your live website!
-
----
-
-## 🛠️ Technology Stack
-
-- **Frontend Core**: HTML5, ES6+ JavaScript, CSS3 (Glassmorphic Design Tokens)
-- **Parsing Engine**: [SheetJS](https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js)
-- **Chart Engine**: [Chart.js v4](https://www.chartjs.org/)
-- **Fonts**: Google Fonts (*Inter* & *Space Grotesk*)
+Simply commit and push changes to GitHub, and Vercel will deploy the multi-workspace application instantly!

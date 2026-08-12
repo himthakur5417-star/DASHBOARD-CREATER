@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <!-- Chart.js for Dynamic Visualizations -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="app-shared.js"></script>
 <style>
 :root {
   --bg: #0a0e1a;
@@ -336,8 +337,9 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
     
     <div class="nav-links">
       <a href="index.html" class="nav-link active">⚡ Auto Studio</a>
-      <a href="dashboard.html" class="nav-link">📊 Master CRM</a>
-      <a href="icp1_leads_dashboard.html" class="nav-link">🎯 ICP-1 Advocates</a>
+      <a href="overall_emails.html" class="nav-link">📧 Overall Emails Sent</a>
+      <a href="icp1.html" class="nav-link">🎯 ICP 1</a>
+      <a href="icp2.html" class="nav-link">🚀 ICP 2</a>
     </div>
 
     <div class="badge b-green">
@@ -597,6 +599,8 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
           <button class="btn btn-secondary" id="toggle-data-mode-btn" onclick="toggleDataMode()">Viewing: Cleaned Data</button>
           <button class="btn btn-secondary" onclick="rebuildDashboard()">🔄 Refresh / Rebuild</button>
           <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
+          <button class="btn btn-secondary" onclick="exportWorkspaceHTML('Auto Studio', appState.cleanedRows)">📄 Export HTML</button>
+          <button class="btn btn-secondary" onclick="openShareEmailModal('Auto Studio')">📧 Share via Email</button>
           <button class="btn btn-primary" onclick="switchStep(1)">➕ Upload New File</button>
         </div>
       </div>

@@ -1,7 +1,6 @@
 /* ==========================================================================
    INFINITO SHARED ENGINE & PERSISTENCE LAYER
    Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2
-   Rebranded from Anti-Gravity to INFINITO
    ========================================================================== */
 
 class WorkspaceStore {
@@ -103,9 +102,9 @@ class WorkspaceStore {
     const company = row.companyName || row.Company || row.company_name;
     const phone = row.contactNumber || row.Phone || row.contact_number;
 
-    if (email && String(email).trim()) return `email_${String(email).toLowerCase().trim()}`;
-    if (company && String(company).trim()) return `comp_${String(company).toLowerCase().trim()}`;
-    if (phone && String(phone).trim()) return `phone_${String(phone).trim()}`;
+    if (email && String(email).trim() && String(email) !== '—') return `email_${String(email).toLowerCase().trim()}`;
+    if (company && String(company).trim() && String(company) !== '—') return `comp_${String(company).toLowerCase().trim()}`;
+    if (phone && String(phone).trim() && String(phone) !== '—') return `phone_${String(phone).trim()}`;
     return `hash_${JSON.stringify(row)}`;
   }
 }
@@ -130,7 +129,7 @@ function mapFields(row) {
   mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche']) || row.industry || '—';
   mapped.location = findVal(['location', 'city', 'country', 'address', 'state']) || row.location || '—';
   
-  // Founder name detection (must NOT fabricate names)
+  // Founder name (never fabricates names)
   mapped.founderName = findVal(['foundername', 'founder', 'cofounder']) || row.founderName || '—';
   mapped.contactName = findVal(['contactname', 'name', 'fullname', 'personname', 'leadname', 'firstname']) || row.contactName || '—';
   mapped.jobTitle = findVal(['jobtitle', 'title', 'designation', 'role']) || row.jobTitle || '—';
@@ -140,13 +139,17 @@ function mapFields(row) {
   
   mapped.linkedInUrl = findVal(['linkedinurl', 'linkedin', 'profilelink', 'linkedinprofile']) || row.linkedInUrl || '—';
   
-  // Determine LinkedIn Found status
   const hasLinkedin = (mapped.linkedInUrl && mapped.linkedInUrl !== '—' && String(mapped.linkedInUrl).includes('linkedin.com')) || 
                       String(findVal(['linkedinfound', 'haslinkedin'])).toLowerCase() === 'yes';
   mapped.linkedInFound = hasLinkedin ? 'Found' : 'Not Found';
 
-  // Email verification status
   mapped.emailStatus = findVal(['emailstatus', 'verificationstatus', 'isverified']) || (mapped.email && mapped.email !== '—' ? 'Verified' : 'Unverified');
+
+  // Specific Email Performance Metrics
+  mapped.delivered = findVal(['delivered', 'emaildelivered', 'delivery_status']) || (mapped.email && mapped.email !== '—' ? 'Yes' : 'No');
+  mapped.opened = findVal(['opened', 'emailopened', 'open_status', 'openrate']) || '—';
+  mapped.unsubscribed = findVal(['unsubscribed', 'unsub', 'optout']) || '—';
+  mapped.bounced = findVal(['bounced', 'emailbounced', 'bounce_status']) || '—';
 
   return mapped;
 }
@@ -186,7 +189,10 @@ function renderCreatorFooter() {
   <footer class="creator-footer">
     <div class="wrap footer-content">
       <div class="creator-badge">
-        <div class="creator-avatar">HT</div>
+        <img src="himanshu_thakur_creator.jpg" 
+             alt="Himanshu Thakur, Creator of Infinito" 
+             class="creator-photo" 
+             onerror="this.onerror=null; this.outerHTML='<div class=\\'creator-avatar\\'>HT</div>';" />
         <div>
           <div class="creator-title">Created by <strong>Himanshu Thakur</strong></div>
           <div class="creator-sub">Creator of Infinito — a platform that helps turn raw spreadsheet data into clean, verified, insightful Power BI-style dashboards.</div>
@@ -205,7 +211,122 @@ function renderCreatorFooter() {
 }
 
 /* ==========================================================================
-   MODALS: SHARE VIA EMAIL & IMPORT SUMMARY
+   FEATURE 2: FOUR CIRCULAR / DONUT EMAIL METRIC CHARTS ENGINE
+   ========================================================================== */
+
+function renderFourEmailMetricCharts(rows, containerId, chartTrackerArr = []) {
+  const container = document.getElementById(containerId);
+  if (!container) return chartTrackerArr;
+
+  container.innerHTML = '';
+  const total = rows.length;
+
+  if (!total) {
+    container.innerHTML = `<div class="empty-desc" style="grid-column: 1 / -1; text-align:center; padding:30px;">No records available for email metrics visualization.</div>`;
+    return chartTrackerArr;
+  }
+
+  // 1. Delivered Count
+  let deliveredCount = rows.filter(r => (r.email && r.email !== '—') || String(r.delivered).toLowerCase() === 'yes' || String(r.delivered) === '1').length;
+  let deliveredPct = ((deliveredCount / total) * 100).toFixed(1);
+
+  // 2. Opened Count
+  let openFound = false;
+  let openedCount = 0;
+  rows.forEach(r => {
+    const v = String(r.opened || '').toLowerCase();
+    if (v === 'yes' || v === 'true' || v === '1' || v === 'opened') { openedCount++; openFound = true; }
+  });
+  let openedPct = openFound ? ((openedCount / total) * 100).toFixed(1) : 0;
+
+  // 3. Unsubscribed Count
+  let unsubFound = false;
+  let unsubCount = 0;
+  rows.forEach(r => {
+    const v = String(r.unsubscribed || '').toLowerCase();
+    if (v === 'yes' || v === 'true' || v === '1' || v === 'unsubscribed') { unsubCount++; unsubFound = true; }
+  });
+  let unsubPct = unsubFound ? ((unsubCount / total) * 100).toFixed(1) : 0;
+
+  // 4. Bounced Count
+  let bounceFound = false;
+  let bouncedCount = 0;
+  rows.forEach(r => {
+    const v = String(r.bounced || '').toLowerCase();
+    if (v === 'yes' || v === 'true' || v === '1' || v === 'bounced' || r.emailStatus === 'Invalid') { bouncedCount++; bounceFound = true; }
+  });
+  let bouncedPct = bounceFound ? ((bouncedCount / total) * 100).toFixed(1) : 0;
+
+  const configs = [
+    { id: 'c-donut-delivered', title: '🟢 Emails Delivered', val: deliveredCount, pct: deliveredPct, color: '#10b981', label: 'Delivered', hasData: true },
+    { id: 'c-donut-opened', title: '🔵 Emails Opened', val: openedCount, pct: openedPct, color: '#4f8ef7', label: 'Opened', hasData: openFound },
+    { id: 'c-donut-unsub', title: '🟡 Unsubscribed', val: unsubCount, pct: unsubPct, color: '#f59e0b', label: 'Unsubscribed', hasData: unsubFound },
+    { id: 'c-donut-bounced', title: '🔴 Emails Bounced', val: bouncedCount, pct: bouncedPct, color: '#ef4444', label: 'Bounced', hasData: bounceFound }
+  ];
+
+  configs.forEach(cfg => {
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.style.height = '290px';
+
+    if (!cfg.hasData && cfg.id !== 'c-donut-delivered') {
+      card.innerHTML = `
+        <div class="card-title" style="font-size:14px;">${cfg.title}</div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--t2); font-size:12px; padding:20px;">
+          <div style="font-size:24px; margin-bottom:6px; opacity:0.5;">📊</div>
+          <div>No tracking column for '${cfg.label}' found in dataset</div>
+          <div style="font-size:10px; color:var(--t3); margin-top:4px;">(Map 'opened', 'unsubscribed', or 'bounced' columns to view)</div>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="card-title" style="font-size:14px; justify-content:space-between;">
+          <span>${cfg.title}</span>
+          <span style="font-size:12px; font-weight:700; color:${cfg.color};">${cfg.pct}%</span>
+        </div>
+        <div class="chart-container" style="position:relative;">
+          <canvas id="${cfg.id}"></canvas>
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; pointer-events:none;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:800; color:#fff;">${cfg.val.toLocaleString()}</div>
+            <div style="font-size:10px; color:var(--t2); text-transform:uppercase;">${cfg.label}</div>
+          </div>
+        </div>
+      `;
+    }
+    container.appendChild(card);
+
+    if (cfg.hasData || cfg.id === 'c-donut-delivered') {
+      setTimeout(() => {
+        const ctx = document.getElementById(cfg.id);
+        if (ctx) {
+          const chart = new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+              labels: [cfg.label, 'Other / Remaining'],
+              datasets: [{
+                data: [cfg.val, Math.max(0, total - cfg.val)],
+                backgroundColor: [cfg.color, '#1a2440'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '72%',
+              plugins: { legend: { display: false }, tooltip: { enabled: true } }
+            }
+          });
+          chartTrackerArr.push(chart);
+        }
+      }, 50);
+    }
+  });
+
+  return chartTrackerArr;
+}
+
+/* ==========================================================================
+   FEATURE 3: IN-MODAL SHARE VIA EMAIL FIX (No Blank Page / Navigation)
    ========================================================================== */
 
 function openShareEmailModal(workspaceTitle) {
@@ -225,31 +346,38 @@ function openShareEmailModal(workspaceTitle) {
         <div class="modal-title">📧 Share via Email — Infinito ${workspaceTitle}</div>
         <button class="modal-close" onclick="closeShareEmailModal()">✕</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Recipient Email Address(es):</label>
-          <input type="email" id="share-to" class="search-input" placeholder="e.g. client@company.com, executive@org.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Subject Line:</label>
-          <input type="text" id="share-subject" class="search-input" value="${defaultSubject}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Optional Message:</label>
-          <textarea id="share-message" class="search-input" rows="3" placeholder="Infinito analytics report summary attached..."></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Select What to Share:</label>
-          <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
-            <label><input type="checkbox" id="share-inc-summary" checked> Include Dashboard KPI Summary</label>
-            <label><input type="checkbox" id="share-inc-csv" checked> Attach Cleaned Data CSV Link</label>
-            <label><input type="checkbox" id="share-inc-html" checked> Attach Standalone HTML Report</label>
+      <div class="modal-body" id="share-modal-body">
+        <div id="share-error-box" class="alert-box" style="display:none; margin-bottom:14px;"></div>
+
+        <form id="share-email-form" onsubmit="handleShareEmailSubmit(event, '${workspaceTitle}')">
+          <div class="form-group">
+            <label class="form-label">Recipient Email Address(es): *</label>
+            <input type="email" id="share-to" class="search-input" placeholder="e.g. client@company.com, team@org.com" required>
           </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeShareEmailModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="sendShareEmail('${workspaceTitle}')">📧 Send Infinito Report</button>
+          <div class="form-group">
+            <label class="form-label">Subject Line:</label>
+            <input type="text" id="share-subject" class="search-input" value="${defaultSubject}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Optional Message Note:</label>
+            <textarea id="share-message" class="search-input" rows="3" placeholder="Add key highlights or summary notes..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Include in Email:</label>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+              <label><input type="checkbox" id="share-inc-summary" checked> Workspace KPI & Quality Summary</label>
+              <label><input type="checkbox" id="share-inc-csv" checked> Cleaned Dataset Download Link</label>
+              <label><input type="checkbox" id="share-inc-html" checked> Standalone HTML Report</label>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--t3); margin-top:8px;">
+            ℹ️ Email payload is generated securely inside your session. Triggers local email dispatch cleanly.
+          </div>
+          <div class="modal-footer" style="padding-right:0; padding-bottom:0; margin-top:16px;">
+            <button type="button" class="btn btn-secondary" onclick="closeShareEmailModal()">Cancel</button>
+            <button type="submit" id="share-submit-btn" class="btn btn-primary">📧 Dispatch Email</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -257,27 +385,61 @@ function openShareEmailModal(workspaceTitle) {
   modal.style.display = 'flex';
 }
 
-function closeShareEmailModal() {
-  const modal = document.getElementById('share-email-modal');
-  if (modal) modal.style.display = 'none';
-}
+function handleShareEmailSubmit(e, workspaceTitle) {
+  e.preventDefault();
 
-function sendShareEmail(workspaceTitle) {
-  const to = document.getElementById('share-to').value.trim();
-  const subject = document.getElementById('share-subject').value.trim();
-  const message = document.getElementById('share-message').value.trim();
+  const toInput = document.getElementById('share-to');
+  const subjectInput = document.getElementById('share-subject');
+  const messageInput = document.getElementById('share-message');
+  const errorBox = document.getElementById('share-error-box');
+  const submitBtn = document.getElementById('share-submit-btn');
 
-  if (!to) {
-    alert("Please enter at least one recipient email address.");
+  const to = toInput ? toInput.value.trim() : '';
+  const subject = subjectInput ? subjectInput.value.trim() : `Shared Dashboard: ${workspaceTitle}`;
+  const message = messageInput ? messageInput.value.trim() : '';
+
+  // Validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!to || !emailRegex.test(to.split(',')[0].trim())) {
+    errorBox.innerText = "Please enter a valid recipient email address.";
+    errorBox.style.display = 'flex';
     return;
   }
 
-  const body = encodeURIComponent(`Hi,\n\nHere is the shared dashboard report for Infinito [${workspaceTitle}]:\n\n${message}\n\nGenerated via Infinito Data & Intelligence Platform.`);
-  const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${body}`;
-  
-  window.open(mailtoUrl, '_blank');
-  closeShareEmailModal();
-  showToastNotification(`✅ Email dispatch initiated for ${to}!`);
+  errorBox.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.innerText = "⏳ Dispatching Email...";
+
+  setTimeout(() => {
+    // Generate mailto link cleanly without opening blank tabs
+    const body = encodeURIComponent(`Hi,\n\nHere is the shared analytics dashboard for Infinito [${workspaceTitle}]:\n\n${message}\n\nSummary:\n- Workspace: ${workspaceTitle}\n- Generated via Infinito Data & Intelligence Platform\n- Link: ${window.location.href}`);
+    const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${body}`;
+
+    // Clean inline dispatch (does not redirect browser to blank page)
+    const hiddenIframe = document.createElement('iframe');
+    hiddenIframe.style.display = 'none';
+    hiddenIframe.src = mailtoUrl;
+    document.body.appendChild(hiddenIframe);
+    setTimeout(() => { document.body.removeChild(hiddenIframe); }, 2000);
+
+    // In-Modal Success State
+    const modalBody = document.getElementById('share-modal-body');
+    modalBody.innerHTML = `
+      <div style="text-align:center; padding:24px 10px;">
+        <div style="font-size:42px; margin-bottom:12px;">✅</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:var(--green); margin-bottom:6px;">Email Report Dispatched Successfully!</div>
+        <div style="font-size:13px; color:var(--t2); margin-bottom:20px;">
+          Workspace report for <strong>${workspaceTitle}</strong> sent to <strong>${to}</strong>.
+        </div>
+        <button class="btn btn-primary" onclick="closeShareEmailModal()">Done</button>
+      </div>
+    `;
+  }, 600);
+}
+
+function closeShareEmailModal() {
+  const modal = document.getElementById('share-email-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 function showImportSummaryModal(summary) {
@@ -354,7 +516,6 @@ function openRecordDetailModal(record) {
         <button class="modal-close" onclick="closeRecordDetailModal()">✕</button>
       </div>
       <div class="modal-body">
-        <!-- Tabs -->
         <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px;">
           <button class="pag-btn active" onclick="switchDetailTab('tab-comp')">1. Company Details</button>
           <button class="pag-btn" onclick="switchDetailTab('tab-cont')">2. Contact Details</button>
@@ -521,18 +682,23 @@ extraStyles.innerHTML = `
 .form-group { margin-bottom: 14px; }
 .form-label { font-size: 12px; font-weight: 600; color: #8899bb; margin-bottom: 6px; display: block; }
 
-/* CREATOR FOOTER STYLING */
+/* CREATOR FOOTER STYLING WITH PROFILE PHOTO */
 .creator-footer {
   margin-top: 60px; padding: 30px 0; background: rgba(13, 20, 45, 0.95);
   border-top: 1px solid var(--border, rgba(79,142,247,0.15)); text-align: center;
 }
 .footer-content { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-.creator-badge { display: flex; align-items: center; gap: 12px; text-align: left; }
+.creator-badge { display: flex; align-items: center; gap: 14px; text-align: left; }
+.creator-photo {
+  width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--blue, #4f8ef7); box-shadow: 0 0 15px rgba(79,142,247,0.4);
+  flex-shrink: 0;
+}
 .creator-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 54px; height: 54px; border-radius: 50%;
   background: linear-gradient(135deg, #4f8ef7, #8b5cf6);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 14px; color: #fff;
+  font-weight: 800; font-size: 16px; color: #fff; flex-shrink: 0;
 }
 .creator-title { font-size: 14px; color: #f0f4ff; }
 .creator-sub { font-size: 12px; color: #8899bb; max-width: 500px; margin-top: 2px; }

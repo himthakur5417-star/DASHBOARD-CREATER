@@ -108,7 +108,7 @@ header {
 .kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
 .kpi-lbl { font-size: 11px; color: var(--t2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 24px; }
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 24px; }
 @media(max-width:768px){ .charts-grid { grid-template-columns: 1fr; } }
 .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; height: 340px; display: flex; flex-direction: column; }
 .chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 220px; }
@@ -180,13 +180,9 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
     <!-- EXECUTIVE KPI CARDS -->
     <div class="kpi-grid" id="kpi-grid"></div>
 
-    <!-- CIRCULAR INSIGHTS SECTION -->
-    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Circular Quality & Distribution Insights</div>
-    <div class="charts-grid" id="circular-charts-grid"></div>
-
-    <!-- TRENDS & BREAKDOWNS SECTION -->
-    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">📈 Category Breakdowns</div>
-    <div class="charts-grid" id="trends-charts-grid"></div>
+    <!-- FOUR CIRCULAR / DONUT EMAIL KPI CHARTS -->
+    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Email Performance Circular Indicators</div>
+    <div class="charts-grid" id="circular-charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"></div>
 
     <!-- NARRATIVE INSIGHTS -->
     <div class="insights-box">
@@ -336,79 +332,11 @@ function renderExecutiveDashboard() {
     <div class="insight-item"><span style="color:var(--cyan)">⚡</span> <span>Strict workspace isolation ensures data remains completely separate from ICP 1 and Overall Emails.</span></div>
   `;
 
-  renderCircularCharts(totalRecords, validEmails, linkedInFound);
-  renderTrendsCharts();
-  renderContactIntelligenceTable();
-}
-
-function renderCircularCharts(total, validEmails, linkedInFound) {
+  // Render 4 Circular Donut Charts
   chartInstances.forEach(c => c.destroy());
-  chartInstances = [];
+  chartInstances = renderFourEmailMetricCharts(rows, 'circular-charts-grid');
 
-  const circGrid = document.getElementById('circular-charts-grid');
-  circGrid.innerHTML = `
-    <div class="chart-card">
-      <div class="card-title" style="font-size:14px;">🍩 Email Verification Status</div>
-      <div class="chart-container"><canvas id="c-donut-email"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="card-title" style="font-size:14px;">🍩 LinkedIn Profile Availability</div>
-      <div class="chart-container"><canvas id="c-donut-linkedin"></canvas></div>
-    </div>
-  `;
-
-  const ctx1 = document.getElementById('c-donut-email').getContext('2d');
-  const chart1 = new Chart(ctx1, {
-    type: 'doughnut',
-    data: {
-      labels: ['Valid / Verified', 'Missing / Unverified'],
-      datasets: [{ data: [validEmails, total - validEmails], backgroundColor: ['#10b981', '#f59e0b'] }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8899bb' } } } }
-  });
-
-  const ctx2 = document.getElementById('c-donut-linkedin').getContext('2d');
-  const chart2 = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: ['LinkedIn Found', 'LinkedIn Missing'],
-      datasets: [{ data: [linkedInFound, total - linkedInFound], backgroundColor: ['#06b6d4', '#1a2440'] }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8899bb' } } } }
-  });
-
-  chartInstances.push(chart1, chart2);
-}
-
-function renderTrendsCharts() {
-  const grid = document.getElementById('trends-charts-grid');
-  grid.innerHTML = '';
-
-  const rows = currentDataset;
-  const cols = Object.keys(rows[0] || {});
-
-  const catCol = cols.find(c => c.toLowerCase().includes('status') || c.toLowerCase().includes('category') || c.toLowerCase().includes('type') || c.toLowerCase().includes('title'));
-  if (catCol) {
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px;">📊 ${catCol} Breakdown</div><div class="chart-container"><canvas id="c-bar-cat"></canvas></div>`;
-    grid.appendChild(card);
-
-    const counts = {};
-    rows.forEach(r => { const v = r[catCol] || 'N/A'; counts[v] = (counts[v] || 0) + 1; });
-    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 8);
-
-    const ctx = document.getElementById('c-bar-cat').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: sorted.map(s => s[0]),
-        datasets: [{ label: 'Count', data: sorted.map(s => s[1]), backgroundColor: '#06b6d4', borderRadius: 6 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-    chartInstances.push(chart);
-  }
+  renderContactIntelligenceTable();
 }
 
 function renderContactIntelligenceTable() {

@@ -615,6 +615,10 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
       <div id="dash-insights-list"></div>
     </div>
 
+    <!-- Four Circular Donut Email KPI Charts -->
+    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Email Performance Circular Indicators</div>
+    <div class="charts-grid" id="dash-email-donuts-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"></div>
+
     <!-- Smart Auto Charts Grid -->
     <div class="charts-grid" id="dash-charts-grid"></div>
 
@@ -1284,10 +1288,14 @@ function renderDynamicCharts() {
   appState.chartInstances.forEach(c => c.destroy());
   appState.chartInstances = [];
 
+  const rows = appState.filteredRows;
+  
+  // Render 4 Email Metric Donut Charts
+  appState.chartInstances = renderFourEmailMetricCharts(rows, 'dash-email-donuts-grid', appState.chartInstances);
+
   const grid = document.getElementById('dash-charts-grid');
   grid.innerHTML = '';
 
-  const rows = appState.filteredRows;
   const cols = appState.rawHeaders;
 
   const catCols = cols.filter(c => appState.columnTypes[c] === 'Category');

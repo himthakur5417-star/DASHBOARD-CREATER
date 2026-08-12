@@ -3,668 +3,1387 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anti-Gravity | CRM Contact Intelligence Dashboard</title>
-<meta name="description" content="HubSpot CRM Contact Intelligence Dashboard — Anti-Gravity Advocate Finder. 2,066 contacts analyzed, cleaned, and verified.">
+<title>Anti-Gravity | Smart Auto-Dashboard & Data Studio</title>
+<meta name="description" content="Automated data upload, cleaning, validation, and dynamic Power BI-style dashboard generator for CSV, XLS, and XLSX files.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- SheetJS for Excel/CSV Parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Chart.js for Dynamic Visualizations -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{--bg:#0a0e1a;--bg2:#0f1629;--card:#131c35;--card2:#1a2440;--blue:#4f8ef7;--purple:#8b5cf6;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--pink:#ec4899;--orange:#f97316;--t1:#f0f4ff;--t2:#8899bb;--t3:#4a5875;--border:rgba(79,142,247,0.15);--borderb:rgba(79,142,247,0.4);--r:14px;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(79,142,247,.06),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(139,92,246,.05),transparent 60%);pointer-events:none;z-index:0;}
-.wrap{max-width:1600px;margin:0 auto;padding:0 28px;position:relative;z-index:1;}
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1629;
+  --card: #131c35;
+  --card2: #1a2440;
+  --blue: #4f8ef7;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --pink: #ec4899;
+  --t1: #f0f4ff;
+  --t2: #8899bb;
+  --t3: #4a5875;
+  --border: rgba(79, 142, 247, 0.15);
+  --borderb: rgba(79, 142, 247, 0.4);
+  --r: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--t1);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,142,247,.06), transparent 60%),
+              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,.05), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+
 /* HEADER */
-header{background:rgba(13,20,45,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px 0;position:sticky;top:0;z-index:100;}
-.hdr{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
-.logo{display:flex;align-items:center;gap:12px;}
-.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#4f8ef7,#06b6d4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(79,142,247,.4);}
-.logo-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;}
-.logo-sub{font-size:11px;color:var(--t2);margin-top:1px;}
-.hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;}
-.b-blue{background:rgba(79,142,247,.15);color:var(--blue);border:1px solid rgba(79,142,247,.3);}
-.b-green{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
-.b-amber{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
-.b-red{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
-.ebtn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;}
-.ebtn:hover{background:rgba(79,142,247,.2);}
-/* TABS */
-.tabs-wrap{padding:24px 0 0;}
-.tabs{display:flex;gap:4px;background:rgba(15,22,41,.8);border:1px solid var(--border);border-radius:var(--r);padding:6px;overflow-x:auto;}
-.tab-btn{display:flex;align-items:center;gap:8px;padding:10px 20px;background:transparent;border:none;border-radius:8px;color:var(--t2);cursor:pointer;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
-.tab-btn:hover{background:rgba(79,142,247,.1);color:var(--t1);}
-.tab-btn.active{background:linear-gradient(135deg,#4f8ef7,#06b6d4);color:#fff;box-shadow:0 4px 15px rgba(79,142,247,.35);}
-/* PANELS */
-.panel{display:none;padding:26px 0 60px;animation:fi .3s ease;}
-.panel.active{display:block;}
-@keyframes fi{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-/* TITLES */
-.sec-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;}
-.sec-sub{font-size:14px;color:var(--t2);margin-bottom:22px;}
-.divider{height:1px;background:linear-gradient(90deg,var(--blue),transparent);margin:30px 0;}
-/* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:15px;margin-bottom:26px;}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;transition:all .3s;position:relative;overflow:hidden;cursor:default;}
-.kpi::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;}
-.kpi.kblue::before{background:linear-gradient(135deg,#4f8ef7,#06b6d4);}
-.kpi.kpurple::before{background:linear-gradient(135deg,#8b5cf6,#ec4899);}
-.kpi.kgreen::before{background:linear-gradient(135deg,#10b981,#06b6d4);}
-.kpi.kamber::before{background:linear-gradient(135deg,#f59e0b,#ef4444);}
-.kpi.kcyan::before{background:linear-gradient(135deg,#06b6d4,#4f8ef7);}
-.kpi.kred::before{background:linear-gradient(135deg,#ef4444,#f97316);}
-.kpi:hover{border-color:var(--borderb);transform:translateY(-3px);box-shadow:0 0 30px rgba(79,142,247,.2);}
-.kpi-icon{font-size:26px;margin-bottom:10px;display:block;}
-.kpi-val{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;line-height:1;margin-bottom:5px;}
-.kpi-lbl{font-size:11px;color:var(--t2);font-weight:500;text-transform:uppercase;letter-spacing:.5px;}
-.kpi-sub{font-size:11px;color:var(--t3);margin-top:4px;}
-.kpi-trend{font-size:11px;font-weight:600;margin-top:7px;padding:3px 8px;border-radius:10px;display:inline-block;}
-.tup{background:rgba(16,185,129,.15);color:var(--green);}
-.tdown{background:rgba(239,68,68,.15);color:var(--red);}
-.twarn{background:rgba(245,158,11,.15);color:var(--amber);}
-/* CHARTS */
-.charts2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
-.charts3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:20px;}
-.cwide{grid-column:span 2;}
-.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:all .3s;}
-.chart-card:hover{border-color:var(--borderb);box-shadow:0 0 30px rgba(79,142,247,.2);}
-.ct{font-size:15px;font-weight:600;margin-bottom:3px;}
-.cs{font-size:12px;color:var(--t2);margin-bottom:18px;}
-.cw{position:relative;height:240px;}
-.cwtall{position:relative;height:300px;}
-/* FILTER */
-.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
-.flbl{font-size:12px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.fgrp{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.fsel{background:var(--bg2);border:1px solid var(--border);color:var(--t1);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;outline:none;transition:border-color .2s;}
-.fsel:focus{border-color:var(--blue);}
-.finp{background:var(--bg2);border:1px solid var(--border);color:var(--t1);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'Inter',sans-serif;outline:none;width:220px;transition:border-color .2s;}
-.finp:focus{border-color:var(--blue);}
-.finp::placeholder{color:var(--t3);}
-.btn{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .2s;}
-.btn-g{background:rgba(79,142,247,.1);color:var(--blue);border:1px solid rgba(79,142,247,.3);}
-.btn-g:hover{background:rgba(79,142,247,.2);}
-/* TABLE */
-.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
-.tbl-hdr{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
-.tbl-scroll{overflow-x:auto;max-height:500px;overflow-y:auto;}
-table{width:100%;border-collapse:collapse;}
-thead{position:sticky;top:0;z-index:10;}
-thead tr{background:rgba(10,14,26,.96);backdrop-filter:blur(8px);}
-th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);white-space:nowrap;}
-td{padding:11px 16px;font-size:13px;color:var(--t1);border-bottom:1px solid rgba(79,142,247,.06);vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:rgba(79,142,247,.04);}
-.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
-.t-edu{background:rgba(79,142,247,.15);color:#60a5fa;}
-.t-gov{background:rgba(16,185,129,.15);color:var(--green);}
-.t-bank{background:rgba(245,158,11,.15);color:var(--amber);}
-.t-corp{background:rgba(139,92,246,.15);color:var(--purple);}
-.t-generic{background:rgba(239,68,68,.15);color:var(--red);}
-.t-ver{background:rgba(16,185,129,.15);color:var(--green);}
-.t-part{background:rgba(245,158,11,.15);color:var(--amber);}
-.t-unver{background:rgba(239,68,68,.15);color:var(--red);}
-.t-rev{background:rgba(139,92,246,.15);color:var(--purple);}
-.t-miss{background:rgba(74,88,117,.3);color:var(--t3);}
-/* CLEANING CARDS */
-.clean-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:26px;}
-.clean-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;align-items:flex-start;gap:12px;}
-.ci{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.ci-b{background:rgba(79,142,247,.15);}
-.ci-g{background:rgba(16,185,129,.15);}
-.ci-a{background:rgba(245,158,11,.15);}
-.ci-r{background:rgba(239,68,68,.15);}
-.ci-p{background:rgba(139,92,246,.15);}
-.cv{font-size:25px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:3px;}
-.cl{font-size:13px;color:var(--t2);}
-.cd{font-size:11px;color:var(--t3);margin-top:3px;}
-/* PROGRESS */
-.prow{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-.plbl{font-size:13px;color:var(--t2);width:155px;flex-shrink:0;}
-.pbar-w{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
-.pbar{height:100%;border-radius:4px;}
-.pval{font-size:13px;font-weight:600;color:var(--t1);width:48px;text-align:right;flex-shrink:0;}
-/* INSIGHTS */
-.ins-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
-.ins-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;transition:all .3s;}
-.ins-card:hover{border-color:var(--borderb);box-shadow:0 0 30px rgba(79,142,247,.2);}
-.ins-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.ii{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.ii-b{background:rgba(79,142,247,.15);}
-.ii-g{background:rgba(16,185,129,.15);}
-.ii-a{background:rgba(245,158,11,.15);}
-.ii-r{background:rgba(239,68,68,.15);}
-.ii-p{background:rgba(139,92,246,.15);}
-.ins-title{font-size:14px;font-weight:600;}
-.ins-body{font-size:13px;color:var(--t2);line-height:1.6;}
-.ins-body strong{color:var(--t1);}
-/* ACTIONS */
-.act-list{display:flex;flex-direction:column;gap:11px;}
-.act-item{display:flex;align-items:flex-start;gap:13px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px 18px;transition:all .3s;}
-.act-item:hover{border-color:var(--borderb);transform:translateX(4px);}
-.act-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
-.an-r{background:rgba(239,68,68,.2);color:var(--red);}
-.an-a{background:rgba(245,158,11,.2);color:var(--amber);}
-.an-b{background:rgba(79,142,247,.2);color:var(--blue);}
-.an-p{background:rgba(139,92,246,.2);color:var(--purple);}
-.an-g{background:rgba(16,185,129,.2);color:var(--green);}
-.at{font-size:14px;font-weight:600;margin-bottom:3px;}
-.ad{font-size:13px;color:var(--t2);line-height:1.5;}
-/* ALERT */
-.alert{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:var(--r);margin-bottom:18px;}
-.al-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);}
-.al-i{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);color:var(--blue);}
-.al-s{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);}
-.al-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
-.al-txt{font-size:13px;line-height:1.6;}
-.al-txt strong{display:block;margin-bottom:3px;font-size:14px;}
+header {
+  background: rgba(13, 20, 45, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.hdr { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+}
+.logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
+.logo-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
+
+.nav-links { display: flex; gap: 8px; align-items: center; }
+.nav-link {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  text-decoration: none; font-size: 13px; font-weight: 500;
+  color: var(--t2); transition: all 0.2s;
+}
+.nav-link:hover { color: var(--t1); background: rgba(79, 142, 247, 0.1); }
+.nav-link.active {
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
+}
+
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.b-blue { background: rgba(79, 142, 247, 0.15); color: var(--blue); border: 1px solid rgba(79, 142, 247, 0.3); }
+.b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+.b-amber { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+.b-red { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(1.3);} }
+
+/* STEPPER */
+.stepper-wrap { margin: 24px 0 10px; }
+.stepper {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 24px; position: relative; overflow-x: auto;
+}
+.step-item { display: flex; align-items: center; gap: 10px; cursor: pointer; opacity: 0.5; transition: all 0.3s; white-space: nowrap; }
+.step-item.active { opacity: 1; }
+.step-item.completed { opacity: 0.9; }
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--card2); border: 1px solid var(--t3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700;
+  color: var(--t2); transition: all 0.3s;
+}
+.step-item.active .step-num {
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #fff; border-color: transparent;
+  box-shadow: 0 0 15px rgba(79, 142, 247, 0.5);
+}
+.step-item.completed .step-num {
+  background: var(--green); color: #fff; border-color: transparent;
+}
+.step-title { font-size: 13px; font-weight: 600; color: var(--t1); }
+.step-sub { font-size: 11px; color: var(--t2); }
+.step-line { flex: 1; height: 2px; background: var(--t3); margin: 0 16px; min-width: 20px; opacity: 0.3; }
+
+/* MAIN CONTENT PANELS */
+.panel { display: none; padding: 20px 0 60px; animation: fi 0.3s ease; }
+.panel.active { display: block; }
+@keyframes fi { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* CARDS & CONTAINERS */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 24px; margin-bottom: 24px;
+  position: relative; transition: all 0.3s;
+}
+.card:hover { border-color: var(--borderb); }
+.card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 10px; }
+.card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
+
+/* UPLOAD DROP ZONE */
+.dropzone {
+  border: 2px dashed rgba(79, 142, 247, 0.3); border-radius: var(--r);
+  background: rgba(15, 22, 41, 0.6); padding: 48px 24px;
+  text-align: center; cursor: pointer; transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--blue); background: rgba(79, 142, 247, 0.08);
+  box-shadow: 0 0 30px rgba(79, 142, 247, 0.2);
+}
+.dropzone-icon {
+  width: 70px; height: 70px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(6,182,212,0.2));
+  border: 1px solid var(--border); border-radius: 20px;
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+}
+.dropzone-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.dropzone-desc { font-size: 13px; color: var(--t2); max-width: 450px; margin: 0 auto 20px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.25s; font-family: 'Inter', sans-serif;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #fff; box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
+}
+.btn-primary:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 142, 247, 0.5); }
+.btn-secondary {
+  background: rgba(79, 142, 247, 0.12); color: var(--t1);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: rgba(79, 142, 247, 0.22); border-color: var(--blue); }
+.btn-success {
+  background: linear-gradient(135deg, var(--green), #059669);
+  color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+.btn-success:hover { opacity: 0.92; transform: translateY(-2px); }
+
+/* FILE METADATA BOX */
+.file-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 20px; }
+.meta-item { background: var(--bg2); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; }
+.meta-lbl { font-size: 11px; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.meta-val { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--t1); }
+
+/* DATA TABLES */
+.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+th {
+  background: var(--bg2); color: var(--t2); font-weight: 600;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  white-space: nowrap; user-select: none;
+}
+th.sortable { cursor: pointer; }
+th.sortable:hover { color: var(--blue); }
+td { padding: 12px 16px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; }
+tr:hover td { background: rgba(79, 142, 247, 0.04); }
+
+/* TYPE PILLS */
+.type-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 12px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tp-num { background: rgba(79,142,247,0.2); color: var(--blue); }
+.tp-cat { background: rgba(139,92,246,0.2); color: var(--purple); }
+.tp-date { background: rgba(6,182,212,0.2); color: var(--cyan); }
+.tp-bool { background: rgba(16,185,129,0.2); color: var(--green); }
+.tp-text { background: rgba(245,158,11,0.2); color: var(--amber); }
+
+/* DIAGNOSTICS & CLEANING RULES */
+.health-meter-wrap { display: flex; align-items: center; gap: 24px; padding: 20px; background: var(--bg2); border-radius: 12px; margin-bottom: 20px; }
+.health-score-circle {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: conic-gradient(var(--green) 0%, var(--card2) 0%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; flex-shrink: 0;
+}
+.health-score-inner {
+  width: 74px; height: 74px; border-radius: 50%; background: var(--card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.health-val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 800; }
+.health-lbl { font-size: 9px; color: var(--t2); text-transform: uppercase; }
+
+.findings-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.finding-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 10px; font-size: 13px; }
+.f-critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+.f-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fde047; }
+.f-info { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); color: #93c5fd; }
+.f-icon { font-size: 16px; margin-top: 1px; }
+.f-title { font-weight: 700; margin-bottom: 2px; }
+.f-desc { font-size: 12px; opacity: 0.9; }
+
+.cleaning-options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.opt-card { background: var(--bg2); border: 1px solid var(--border); padding: 16px; border-radius: 10px; }
+.opt-label { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.opt-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); cursor: pointer; }
+.opt-sub { font-size: 12px; color: var(--t2); margin-top: 6px; padding-left: 28px; }
+.opt-select {
+  margin-top: 8px; margin-left: 28px; padding: 6px 12px; border-radius: 6px;
+  background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 12px;
+}
+
+/* KPI GRID & DASHBOARD */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 20px; position: relative; overflow: hidden; transition: all 0.3s;
+}
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
+.kblue::before { background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+.kpurple::before { background: linear-gradient(135deg, var(--purple), var(--pink)); }
+.kgreen::before { background: linear-gradient(135deg, var(--green), var(--cyan)); }
+.kamber::before { background: linear-gradient(135deg, var(--amber), var(--red)); }
+.kpi:hover { border-color: var(--borderb); transform: translateY(-3px); box-shadow: 0 0 25px rgba(79,142,247,0.2); }
+.kpi-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+.kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
+.kpi-lbl { font-size: 11px; color: var(--t2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 24px; }
+@media(max-width:768px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; height: 360px; display: flex; flex-direction: column; }
+.chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 240px; }
+
+/* FILTERS BAR */
+.filter-bar {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  background: var(--bg2); border: 1px solid var(--border); padding: 14px 18px;
+  border-radius: var(--r); margin-bottom: 20px;
+}
+.search-input {
+  flex: 1; min-width: 220px; padding: 8px 14px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 13px;
+}
+.search-input:focus { outline: none; border-color: var(--blue); }
+.filter-select {
+  padding: 8px 14px; border-radius: 8px; background: var(--card);
+  border: 1px solid var(--border); color: var(--t1); font-size: 13px; min-width: 150px;
+}
+
+/* AUDIT LOG & INSIGHTS */
+.insights-box {
+  background: linear-gradient(135deg, rgba(79,142,247,0.08), rgba(139,92,246,0.08));
+  border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 24px;
+}
+.insight-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 10px; }
+.insight-item:last-child { margin-bottom: 0; }
+.insight-bullet { color: var(--blue); font-size: 16px; }
+
+/* ERROR ALERT BOX */
+.alert-box {
+  background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5; padding: 14px 18px; border-radius: 10px; font-size: 13px;
+  margin-top: 16px; display: none; align-items: center; gap: 10px;
+}
+
 /* PAGINATION */
-.pagi{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-top:1px solid var(--border);gap:10px;flex-wrap:wrap;}
-.pagi-info{font-size:13px;color:var(--t2);}
-.pagi-btns{display:flex;gap:5px;}
-.pbtn{padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .2s;}
-.pbtn:hover,.pbtn.active{background:rgba(79,142,247,.2);color:var(--blue);border-color:var(--blue);}
-.pbtn:disabled{opacity:.3;cursor:not-allowed;}
-/* BAR LIST */
-.blist{display:flex;flex-direction:column;gap:9px;}
-.bitem .bmeta{display:flex;justify-content:space-between;margin-bottom:4px;}
-.bname{font-size:12px;color:var(--t2);}
-.bcnt{font-size:12px;font-weight:600;color:var(--t1);}
-.btrack{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
-.bfill{height:100%;border-radius:3px;}
-/* MINI STATS */
-.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px;}
-.mini{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
-.mini-v{font-size:19px;font-weight:700;font-family:'Space Grotesk',sans-serif;}
-.mini-l{font-size:11px;color:var(--t3);margin-top:2px;}
-/* SCROLLBAR */
-::-webkit-scrollbar{width:6px;height:6px;}
-::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:rgba(79,142,247,.3);border-radius:3px;}
-::-webkit-scrollbar-thumb:hover{background:rgba(79,142,247,.5);}
-/* RESPONSIVE */
-@media(max-width:900px){.charts2,.charts3,.ins-grid{grid-template-columns:1fr;}.cwide{grid-column:span 1;}.kpi-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:600px){.kpi-grid{grid-template-columns:1fr;}.wrap{padding:0 14px;}}
+.pag-wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+.pag-info { font-size: 12px; color: var(--t2); }
+.pag-btns { display: flex; gap: 6px; }
+.pag-btn {
+  padding: 6px 12px; border-radius: 6px; background: var(--bg2);
+  border: 1px solid var(--border); color: var(--t1); font-size: 12px; cursor: pointer;
+}
+.pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pag-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
 </style>
 </head>
 <body>
+
+<!-- HEADER -->
 <header>
-  <div class="wrap">
-    <div class="hdr">
-      <div class="logo">
-        <div class="logo-icon">🚀</div>
-        <div>
-          <div class="logo-title">Anti-Gravity · CRM Intelligence</div>
-          <div class="logo-sub">HubSpot Export · Advocate Finder · Aug 11 2026</div>
-        </div>
+  <div class="wrap hdr">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-title">Anti-Gravity | Smart Auto-Dashboard & Data Studio</div>
+        <div class="logo-sub">Automated File Processing, Data Cleaning & Dynamic Visualizations</div>
       </div>
-      <div class="hdr-right">
-        <span class="badge b-blue">📊 2,066 Contacts</span>
-        <span class="badge b-green"><span class="dot"></span>&nbsp;991 Domains</span>
-        <span class="badge b-amber">⚠️ 94.8% Unassigned</span>
-        <span class="badge b-red">🔴 0% Phone Data</span>
-        <button class="ebtn" onclick="exportCSV()">⬇ Export CSV</button>
-      </div>
+    </div>
+    
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">⚡ Auto Studio</a>
+      <a href="dashboard.html" class="nav-link">📊 Master CRM</a>
+      <a href="icp1_leads_dashboard.html" class="nav-link">🎯 ICP-1 Advocates</a>
+    </div>
+
+    <div class="badge b-green">
+      <div class="dot"></div> System Online
     </div>
   </div>
 </header>
 
 <div class="wrap">
-  <div class="tabs-wrap">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="tab('overview')" id="tb-overview"><span>📊</span> Overview</button>
-      <button class="tab-btn" onclick="tab('cleaning')" id="tb-cleaning"><span>🧹</span> Data Cleaning</button>
-      <button class="tab-btn" onclick="tab('contacts')" id="tb-contacts"><span>👥</span> Contacts Table</button>
-      <button class="tab-btn" onclick="tab('verify')" id="tb-verify"><span>🔍</span> Company Verification</button>
-      <button class="tab-btn" onclick="tab('insights')" id="tb-insights"><span>💡</span> Insights & Actions</button>
-    </div>
-  </div>
-
-  <!-- ======== OVERVIEW ======== -->
-  <div class="panel active" id="p-overview">
-    <div class="sec-title">📊 Executive Summary</div>
-    <div class="sec-sub">HubSpot CRM Export · 2,066 contacts · Aug 11, 2026 · Anti-Gravity Advocate Finder</div>
-    <div class="kpi-grid">
-      <div class="kpi kblue"><span class="kpi-icon">👥</span><div class="kpi-val">2,066</div><div class="kpi-lbl">Total Contacts</div><div class="kpi-sub">HubSpot CRM export</div></div>
-      <div class="kpi kgreen"><span class="kpi-icon">✉️</span><div class="kpi-val">2,066</div><div class="kpi-lbl">Emails Available</div><div class="kpi-sub">100% coverage</div><span class="kpi-trend tup">✓ 100%</span></div>
-      <div class="kpi kamber"><span class="kpi-icon">💼</span><div class="kpi-val">1,368</div><div class="kpi-lbl">Professional Emails</div><div class="kpi-sub">Non-generic domains</div><span class="kpi-trend tup">66.2%</span></div>
-      <div class="kpi kred"><span class="kpi-icon">📧</span><div class="kpi-val">698</div><div class="kpi-lbl">Generic Emails</div><div class="kpi-sub">Gmail/Yahoo/Rediffmail</div><span class="kpi-trend tdown">33.8% ⚠</span></div>
-      <div class="kpi kpurple"><span class="kpi-icon">🏭</span><div class="kpi-val">812</div><div class="kpi-lbl">Unique Companies</div><div class="kpi-sub">Named & identified</div></div>
-      <div class="kpi kcyan"><span class="kpi-icon">🌐</span><div class="kpi-val">991</div><div class="kpi-lbl">Unique Domains</div><div class="kpi-sub">Across all emails</div></div>
-      <div class="kpi kgreen"><span class="kpi-icon">✅</span><div class="kpi-val">0</div><div class="kpi-lbl">Duplicates Found</div><div class="kpi-sub">Clean — all unique</div><span class="kpi-trend tup">✓ No dupes</span></div>
-      <div class="kpi kred"><span class="kpi-icon">👤</span><div class="kpi-val">1,465</div><div class="kpi-lbl">Missing Names</div><div class="kpi-sub">No first/last name</div><span class="kpi-trend tdown">70.9% 🔴</span></div>
-      <div class="kpi kred"><span class="kpi-icon">📞</span><div class="kpi-val">2,066</div><div class="kpi-lbl">No Phone Numbers</div><div class="kpi-sub">Zero phone coverage</div><span class="kpi-trend tdown">0% 🔴 Critical</span></div>
-      <div class="kpi kamber"><span class="kpi-icon">🏷️</span><div class="kpi-val">907</div><div class="kpi-lbl">Missing Company</div><div class="kpi-sub">Only numeric ID</div><span class="kpi-trend twarn">43.9%</span></div>
-      <div class="kpi kred"><span class="kpi-icon">👨‍💼</span><div class="kpi-val">1,958</div><div class="kpi-lbl">Unassigned</div><div class="kpi-sub">No contact owner</div><span class="kpi-trend tdown">94.8% 🔴</span></div>
-      <div class="kpi kblue"><span class="kpi-icon">📅</span><div class="kpi-val">173d</div><div class="kpi-lbl">Date Span</div><div class="kpi-sub">Feb 23 – Aug 11 2026</div></div>
-    </div>
-    <div class="charts2">
-      <div class="chart-card"><div class="ct">📊 Contacts by Sector</div><div class="cs">Industry vertical distribution</div><div class="cw"><canvas id="cSector"></canvas></div></div>
-      <div class="chart-card"><div class="ct">📅 Monthly Additions</div><div class="cs">Feb–Aug 2026 · Note June spike = 61% of total</div><div class="cw"><canvas id="cMonthly"></canvas></div></div>
-    </div>
-    <div class="charts2">
-      <div class="chart-card"><div class="ct">✉️ Email Type Split</div><div class="cs">Professional vs Generic providers</div><div class="cw"><canvas id="cEmail"></canvas></div></div>
-      <div class="chart-card">
-        <div class="ct">📋 Data Completeness</div>
-        <div class="cs">Field-by-field availability</div>
-        <div style="padding:8px 0;">
-          <div class="prow"><div class="plbl">Email</div><div class="pbar-w"><div class="pbar" style="width:100%;background:linear-gradient(135deg,#10b981,#06b6d4)"></div></div><div class="pval" style="color:var(--green)">100%</div></div>
-          <div class="prow"><div class="plbl">Company (Named)</div><div class="pbar-w"><div class="pbar" style="width:56.1%;background:linear-gradient(135deg,#4f8ef7,#06b6d4)"></div></div><div class="pval">56.1%</div></div>
-          <div class="prow"><div class="plbl">First Name</div><div class="pbar-w"><div class="pbar" style="width:29.1%;background:linear-gradient(135deg,#f59e0b,#f97316)"></div></div><div class="pval" style="color:var(--amber)">29.1%</div></div>
-          <div class="prow"><div class="plbl">Full Name</div><div class="pbar-w"><div class="pbar" style="width:22.2%;background:linear-gradient(135deg,#f97316,#ef4444)"></div></div><div class="pval" style="color:var(--orange)">22.2%</div></div>
-          <div class="prow"><div class="plbl">Contact Owner</div><div class="pbar-w"><div class="pbar" style="width:5.2%;background:linear-gradient(135deg,#ef4444,#8b5cf6)"></div></div><div class="pval" style="color:var(--red)">5.2%</div></div>
-          <div class="prow"><div class="plbl">Phone Number</div><div class="pbar-w"><div class="pbar" style="width:0.5%;background:var(--red)"></div></div><div class="pval" style="color:var(--red)">0%</div></div>
+  <!-- STEPPER -->
+  <div class="stepper-wrap">
+    <div class="stepper">
+      <div class="step-item active" id="step-btn-1" onclick="switchStep(1)">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Upload File</div>
+          <div class="step-sub">CSV, XLS, XLSX</div>
+        </div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" id="step-btn-2" onclick="switchStep(2)">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Preview & Select</div>
+          <div class="step-sub">Sheets & Schema</div>
+        </div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" id="step-btn-3" onclick="switchStep(3)">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Clean & Validate</div>
+          <div class="step-sub">Health Diagnostics</div>
+        </div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" id="step-btn-4" onclick="switchStep(4)">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">Auto Dashboard</div>
+          <div class="step-sub">Interactive Analytics</div>
         </div>
       </div>
     </div>
-    <div class="charts2">
-      <div class="chart-card"><div class="ct">🏆 Top 15 Companies</div><div class="cs">Most represented organisations</div><div class="cwtall" style="height:350px"><canvas id="cCompanies"></canvas></div></div>
-      <div class="chart-card">
-        <div class="ct">🌐 Top Professional Domains</div><div class="cs">Non-generic email domains by volume</div>
-        <div class="blist" id="domainBars" style="margin-top:8px;"></div>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="ct">👨‍💼 Contact Owner Distribution — Critical Gap</div>
-      <div class="cs">94.8% contacts have no assigned owner in HubSpot CRM</div>
-      <div style="display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:center;">
-        <div style="height:170px;"><canvas id="cOwner"></canvas></div>
+  </div>
+
+  <!-- STEP 1: UPLOAD PANEL -->
+  <div class="panel active" id="panel-1">
+    <div class="card">
+      <div class="card-header">
         <div>
-          <div class="alert al-w"><div class="al-icon">⚠️</div><div class="al-txt"><strong>Critical: Ownership Gap</strong>1,958 of 2,066 contacts (94.8%) have no assigned owner. "Saahil raj" (21 contacts) is a Deactivated User — needs immediate reassignment.</div></div>
-          <div class="mini-grid">
-            <div class="mini"><div class="mini-v" style="color:var(--red)">1,958</div><div class="mini-l">Unassigned</div></div>
-            <div class="mini"><div class="mini-v" style="color:var(--blue)">87</div><div class="mini-l">Gauri's</div></div>
-            <div class="mini"><div class="mini-v" style="color:var(--amber)">21</div><div class="mini-l">Deactivated</div></div>
+          <div class="card-title">📁 Upload Spreadsheet Dataset</div>
+          <div class="card-sub">Select or drag & drop your Excel or CSV spreadsheet file to automatically parse, clean, and visualize.</div>
+        </div>
+        <button class="btn btn-secondary" onclick="loadSampleData()">⚡ Try Sample Dataset</button>
+      </div>
+
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleFileSelect(event)">
+        <div class="dropzone-icon">📥</div>
+        <div class="dropzone-title">Drag & Drop Your Spreadsheet Here</div>
+        <div class="dropzone-desc">Supports <strong>.CSV</strong>, <strong>.XLS</strong>, and <strong>.XLSX</strong> formats up to 25MB. All processing happens 100% privately in your browser.</div>
+        <button class="btn btn-primary">Browse Computer</button>
+      </div>
+
+      <div class="alert-box" id="upload-alert">
+        <span>⚠️</span> <span id="upload-alert-text">Error loading file.</span>
+      </div>
+
+      <!-- File Metadata Container -->
+      <div id="file-meta-container" style="display:none;">
+        <div class="divider" style="height:1px; background:var(--border); margin:20px 0;"></div>
+        <div class="file-meta-grid">
+          <div class="meta-item">
+            <div class="meta-lbl">File Name</div>
+            <div class="meta-val" id="meta-name" style="font-size:14px; word-break:break-all;">-</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-lbl">File Size</div>
+            <div class="meta-val" id="meta-size">-</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-lbl">Format</div>
+            <div class="meta-val" id="meta-type">-</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-lbl">Status</div>
+            <div class="meta-val" id="meta-status" style="color:var(--green);">Ready</div>
           </div>
         </div>
+
+        <div style="margin-top:20px; text-align:right;">
+          <button class="btn btn-primary" onclick="switchStep(2)">Proceed to Data Preview →</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ======== CLEANING ======== -->
-  <div class="panel" id="p-cleaning">
-    <div class="sec-title">🧹 Data Cleaning Summary</div>
-    <div class="sec-sub">Complete quality analysis of the HubSpot export — 2,066 records processed</div>
-    <div class="alert al-s"><div class="al-icon">✅</div><div class="al-txt"><strong>Cleaning Complete — No Duplicate Emails Found</strong>All 2,066 records processed. Zero duplicate email addresses. Data categorized, standardized, and flagged for manual review where needed.</div></div>
-    <div class="clean-grid">
-      <div class="clean-card"><div class="ci ci-b">📥</div><div><div class="cv" style="color:var(--blue)">2,066</div><div class="cl">Total Records Received</div><div class="cd">HubSpot CRM · Aug 11 2026</div></div></div>
-      <div class="clean-card"><div class="ci ci-g">✅</div><div><div class="cv" style="color:var(--green)">0</div><div class="cl">Duplicate Emails Removed</div><div class="cd">All emails are unique</div></div></div>
-      <div class="clean-card"><div class="ci ci-g">✅</div><div><div class="cv" style="color:var(--green)">0</div><div class="cl">Invalid Email Formats</div><div class="cd">All pass format validation</div></div></div>
-      <div class="clean-card"><div class="ci ci-a">⚠️</div><div><div class="cv" style="color:var(--amber)">698</div><div class="cl">Generic Email Providers</div><div class="cd">Gmail, Yahoo, Rediffmail etc.</div></div></div>
-      <div class="clean-card"><div class="ci ci-a">🏷️</div><div><div class="cv" style="color:var(--amber)">907</div><div class="cl">Missing Company Names</div><div class="cd">Numeric HubSpot ID only</div></div></div>
-      <div class="clean-card"><div class="ci ci-r">👤</div><div><div class="cv" style="color:var(--red)">1,465</div><div class="cl">Missing Contact Names</div><div class="cd">No first/last name at all</div></div></div>
-      <div class="clean-card"><div class="ci ci-r">📞</div><div><div class="cv" style="color:var(--red)">2,066</div><div class="cl">Missing Phone Numbers</div><div class="cd">Phone field empty for ALL records</div></div></div>
-      <div class="clean-card"><div class="ci ci-p">👨‍💼</div><div><div class="cv" style="color:var(--purple)">1,958</div><div class="cl">No Contact Owner</div><div class="cd">94.8% have no CRM owner</div></div></div>
-      <div class="clean-card"><div class="ci ci-a">⚠️</div><div><div class="cv" style="color:var(--amber)">21</div><div class="cl">Deactivated Owner Records</div><div class="cd">"Saahil raj" — needs reassignment</div></div></div>
-      <div class="clean-card"><div class="ci ci-g">✅</div><div><div class="cv" style="color:var(--green)">458</div><div class="cl">Complete Name Records</div><div class="cd">Both first + last name (22.2%)</div></div></div>
-    </div>
-    <div class="divider"></div>
-    <div class="sec-title" style="font-size:17px;">🔧 Corrections & Standardizations</div>
-    <div style="margin:16px 0;">
-      <div class="tbl-wrap"><div class="tbl-scroll"><table>
-        <thead><tr><th>Field</th><th>Issue Found</th><th>Action Taken</th><th>Count</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>Email</td><td>All present, format valid</td><td>No corrections needed</td><td>2,066</td><td><span class="tag t-ver">✓ Clean</span></td></tr>
-          <tr><td>First Name</td><td>Mixed case (e.g. "mohammed", "harnish")</td><td>Flagged for Title Case normalization</td><td>601</td><td><span class="tag t-part">⚠ Noted</span></td></tr>
-          <tr><td>Company Name</td><td>Numeric HubSpot IDs in company field</td><td>Labeled "Missing" · domain used as fallback</td><td>907</td><td><span class="tag t-rev">👁 Review</span></td></tr>
-          <tr><td>Contact Owner</td><td>NULL for 94.8% records</td><td>Labeled "Unassigned" for dashboard</td><td>1,958</td><td><span class="tag t-unver">⚠ Critical</span></td></tr>
-          <tr><td>Contact Owner</td><td>"Saahil raj" is Deactivated User</td><td>Flagged for immediate reassignment</td><td>21</td><td><span class="tag t-unver">🔴 Reassign</span></td></tr>
-          <tr><td>Phone Number</td><td>Completely empty column</td><td>Flagged as critical data gap</td><td>2,066</td><td><span class="tag t-unver">🔴 Missing</span></td></tr>
-          <tr><td>Email Domain</td><td>698 generic providers — can't verify company</td><td>Classified as "Generic Email" sector</td><td>698</td><td><span class="tag t-part">⚠ Generic</span></td></tr>
-          <tr><td>Sector</td><td>No sector/industry field in source</td><td>Auto-classified by domain + company keywords</td><td>2,066</td><td><span class="tag t-ver">✓ Added</span></td></tr>
-          <tr><td>Create Date</td><td>Datetime format in Numbers file</td><td>Standardized to YYYY-MM-DD</td><td>2,066</td><td><span class="tag t-ver">✓ Clean</span></td></tr>
-        </tbody>
-      </table></div></div>
-    </div>
-    <div class="divider"></div>
-    <div class="sec-title" style="font-size:17px;margin-bottom:16px;">🚨 Records Requiring Manual Review</div>
-    <div class="act-list">
-      <div class="act-item"><div class="act-num an-r">1</div><div><div class="at">🔴 907 Records — Company Name is a Numeric ID</div><div class="ad">The "Associated Company" field has a HubSpot internal Company ID instead of a name. Fix: Export HubSpot Company objects and JOIN by Primary Associated Company ID.</div></div></div>
-      <div class="act-item"><div class="act-num an-a">2</div><div><div class="at">🟡 698 Records — Generic Email Provider</div><div class="ad">Gmail, Yahoo, Rediffmail contacts — company identity cannot be verified from email domain. Fix: Enrich via LinkedIn or request professional email.</div></div></div>
-      <div class="act-item"><div class="act-num an-r">3</div><div><div class="at">🔴 21 Records — Deactivated Owner "Saahil raj"</div><div class="ad">21 contacts assigned to a deactivated user — no one is responsible. Fix: Immediately reassign in HubSpot CRM.</div></div></div>
-      <div class="act-item"><div class="act-num an-r">4</div><div><div class="at">🔴 1,465 Records — No Contact Name</div><div class="ad">70.9% contacts have no name — personalization impossible. Fix: Apollo.io or LinkedIn Sales Navigator enrichment.</div></div></div>
-      <div class="act-item"><div class="act-num an-b">5</div><div><div class="at">🔵 2,066 Records — Zero Phone Numbers</div><div class="ad">Calling and WhatsApp completely blocked. Fix: Use Lusha, Clearbit, or ZoomInfo for phone enrichment.</div></div></div>
-    </div>
-  </div>
+  <!-- STEP 2: PREVIEW PANEL -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🔍 Data Preview & Sheet Selection</div>
+          <div class="card-sub">Review auto-detected columns, data types, and initial row samples before applying data cleaning rules.</div>
+        </div>
+        <div id="sheet-selector-wrap" style="display:none; align-items:center; gap:8px;">
+          <span style="font-size:13px; color:var(--t2); font-weight:600;">Excel Sheet:</span>
+          <select id="sheet-select" class="filter-select" onchange="onSheetChange(this.value)"></select>
+        </div>
+      </div>
 
-  <!-- ======== CONTACTS TABLE ======== -->
-  <div class="panel" id="p-contacts">
-    <div class="sec-title">👥 All Contacts</div>
-    <div class="sec-sub">2,066 records — searchable & filterable by sector, name, company, email type</div>
-    <div class="filter-bar">
-      <div class="flbl">🔍 Filter</div>
-      <div class="fgrp">
-        <input class="finp" id="srch" placeholder="Search name, email, company, domain..." oninput="filterTbl()">
-        <select class="fsel" id="fSec" onchange="filterTbl()">
-          <option value="">All Sectors</option>
-          <option value="Education">🎓 Education</option>
-          <option value="Banking & Finance">🏦 Banking & Finance</option>
-          <option value="Government">🏛️ Government</option>
-          <option value="Corporate">🏢 Corporate</option>
-          <option value="Generic Email">📧 Generic Email</option>
-        </select>
-        <select class="fsel" id="fName" onchange="filterTbl()">
-          <option value="">All Name Status</option>
-          <option value="Complete">✅ Complete</option>
-          <option value="Partial">⚠️ Partial</option>
-          <option value="Missing">❌ Missing</option>
-        </select>
-        <select class="fsel" id="fComp" onchange="filterTbl()">
-          <option value="">Company Status</option>
-          <option value="Known">✅ Known</option>
-          <option value="Missing">❌ Missing</option>
-        </select>
-        <select class="fsel" id="fEmail" onchange="filterTbl()">
-          <option value="">Email Type</option>
-          <option value="Professional">💼 Professional</option>
-          <option value="Generic">📧 Generic</option>
-        </select>
-        <button class="btn btn-g" onclick="resetTbl()">↺ Reset</button>
+      <div class="kpi-grid" style="margin-bottom:16px;">
+        <div class="kpi kblue">
+          <span class="kpi-icon">📊</span>
+          <div class="kpi-val" id="prev-total-rows">0</div>
+          <div class="kpi-lbl">Total Records / Rows</div>
+        </div>
+        <div class="kpi kpurple">
+          <span class="kpi-icon">📐</span>
+          <div class="kpi-val" id="prev-total-cols">0</div>
+          <div class="kpi-lbl">Total Columns</div>
+        </div>
+        <div class="kpi kcyan">
+          <span class="kpi-icon">🧩</span>
+          <div class="kpi-val" id="prev-detected-types">0</div>
+          <div class="kpi-lbl">Data Types Identified</div>
+        </div>
       </div>
-    </div>
-    <div class="tbl-wrap">
-      <div class="tbl-hdr">
-        <div><div style="font-size:15px;font-weight:600;">Contact Records</div><div id="tblInfo" style="font-size:13px;color:var(--t2);margin-top:2px;"></div></div>
-      </div>
-      <div class="tbl-scroll">
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Domain</th><th>Sector</th><th>Company</th><th>Email Type</th><th>Name Status</th><th>Owner</th><th>Date Added</th></tr></thead>
-          <tbody id="tblBody"></tbody>
+
+      <div class="card-title" style="font-size:15px; margin-bottom:8px;">Detected Schema & Types:</div>
+      <div id="schema-badges" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+
+      <div class="card-title" style="font-size:15px; margin-bottom:8px;">First 10 Data Sample Rows:</div>
+      <div class="table-wrap">
+        <table id="preview-table">
+          <thead><tr id="preview-thead"></tr></thead>
+          <tbody id="preview-tbody"></tbody>
         </table>
       </div>
-      <div class="pagi">
-        <div class="pagi-info" id="pagiInfo"></div>
-        <div class="pagi-btns" id="pagiBtns"></div>
+
+      <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary" onclick="switchStep(1)">← Back to Upload</button>
+        <button class="btn btn-primary" onclick="runDiagnosticsAndProceed()">Proceed to Data Cleaning & Diagnostics →</button>
       </div>
     </div>
   </div>
 
-  <!-- ======== VERIFICATION ======== -->
-  <div class="panel" id="p-verify">
-    <div class="sec-title">🔍 Company & Domain Verification</div>
-    <div class="sec-sub">Top email domains verified via web search — official sites, LinkedIn & business directories</div>
-    <div class="alert al-i"><div class="al-icon">ℹ️</div><div class="al-txt"><strong>Verification Methodology</strong>Domains verified using web search + official websites + LinkedIn company pages. Generic providers auto-marked "Not Verifiable". Well-known institutions (IIMs, NITs, major banks) verified from authoritative sources. Corporate domains verified via live web search by verification agent.</div></div>
-    <div class="kpi-grid" style="margin-bottom:22px;">
-      <div class="kpi kgreen"><span class="kpi-icon">✅</span><div class="kpi-val" id="vVer">—</div><div class="kpi-lbl">Verified</div></div>
-      <div class="kpi kamber"><span class="kpi-icon">⚡</span><div class="kpi-val" id="vPart">—</div><div class="kpi-lbl">Partially Verified</div></div>
-      <div class="kpi kred"><span class="kpi-icon">❌</span><div class="kpi-val" id="vNot">—</div><div class="kpi-lbl">Not Verifiable</div></div>
-      <div class="kpi kpurple"><span class="kpi-icon">👁</span><div class="kpi-val" id="vRev">—</div><div class="kpi-lbl">Needs Review</div></div>
-    </div>
-    <div class="tbl-wrap">
-      <div class="tbl-hdr">
-        <div><div style="font-size:15px;font-weight:600;">Company & Founder Verification Table</div><div style="font-size:13px;color:var(--t2);">Top domains + major institutions from contact list</div></div>
-        <div><select class="fsel" id="vFil" onchange="filterVer()"><option value="">All Statuses</option><option value="Verified">✅ Verified</option><option value="Partially Verified">⚡ Partially Verified</option><option value="Not Verifiable">❌ Not Verifiable</option><option value="Needs Manual Review">👁 Needs Review</option></select></div>
+  <!-- STEP 3: CLEANING & DIAGNOSTICS PANEL -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🧼 Data Health & Automated Cleaning Studio</div>
+          <div class="card-sub">System-detected quality findings and configurable cleaning rules.</div>
+        </div>
+        <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
       </div>
-      <div class="tbl-scroll" style="max-height:620px;">
-        <table>
-          <thead><tr><th>#</th><th>Email Domain</th><th>Contacts</th><th>Verified Company Name</th><th>Founder / Leadership</th><th>Official Website</th><th>Status</th><th>Source / Notes</th></tr></thead>
-          <tbody id="verBody"></tbody>
+
+      <!-- Health Meter -->
+      <div class="health-meter-wrap">
+        <div class="health-score-circle" id="health-circle">
+          <div class="health-score-inner">
+            <div class="health-val" id="health-val">0%</div>
+            <div class="health-lbl">Health</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;" id="health-status-title">Analyzing Dataset Quality...</div>
+          <div style="font-size:13px; color:var(--t2); margin-top:4px;" id="health-status-desc">Calculating missing values, duplicate records, and type consistency.</div>
+        </div>
+      </div>
+
+      <!-- Findings List -->
+      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Quality Diagnostics & Findings:</div>
+      <div class="findings-list" id="findings-list"></div>
+
+      <!-- Cleaning Controls -->
+      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Configurable Cleaning Actions:</div>
+      <div class="cleaning-options-grid">
+        <div class="opt-card">
+          <label class="opt-label">
+            <input type="checkbox" id="opt-dedupe" checked onchange="updateCleaningRules()">
+            Remove Duplicate Rows
+          </label>
+          <div class="opt-sub" id="opt-dedupe-sub">Identified 0 duplicate rows.</div>
+        </div>
+
+        <div class="opt-card">
+          <label class="opt-label">
+            <input type="checkbox" id="opt-normalize" checked onchange="updateCleaningRules()">
+            Normalize Column Names
+          </label>
+          <div class="opt-sub">Trims whitespace and cleans illegal characters.</div>
+        </div>
+
+        <div class="opt-card">
+          <label class="opt-label">
+            <input type="checkbox" id="opt-missing" checked onchange="updateCleaningRules()">
+            Handle Missing Values
+          </label>
+          <div class="opt-sub">Select strategy for missing cell values:</div>
+          <select id="opt-missing-strategy" class="opt-select" onchange="updateCleaningRules()">
+            <option value="default">Fill text with 'N/A', keep numeric blank</option>
+            <option value="zero">Fill numeric with 0</option>
+            <option value="keep">Keep all missing cells blank</option>
+          </select>
+        </div>
+
+        <div class="opt-card">
+          <label class="opt-label">
+            <input type="checkbox" id="opt-trim" checked onchange="updateCleaningRules()">
+            Trim String Whitespace
+          </label>
+          <div class="opt-sub">Removes leading & trailing spaces from text cells.</div>
+        </div>
+      </div>
+
+      <!-- Audit Summary -->
+      <div class="insights-box" style="margin-bottom:20px;">
+        <div style="font-weight:700; margin-bottom:8px; font-family:'Space Grotesk',sans-serif; color:var(--t1);">📝 Transparent "What Changed" Audit Log:</div>
+        <div id="audit-log-content">No modifications applied yet.</div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary" onclick="switchStep(2)">← Back to Preview</button>
+        <button class="btn btn-success" onclick="generateAutoDashboard()">⚡ Generate Dynamic Dashboard →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: DYNAMIC DASHBOARD PANEL -->
+  <div class="panel" id="panel-4">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header" style="margin-bottom:0;">
+        <div>
+          <div class="card-title">📊 Auto-Generated Interactive Dashboard</div>
+          <div class="card-sub" id="dash-dataset-meta">Generated from processed dataset</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="rebuildDashboard()">🔄 Refresh / Rebuild</button>
+          <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
+          <button class="btn btn-primary" onclick="switchStep(1)">➕ Upload New File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic KPI Cards -->
+    <div class="kpi-grid" id="dash-kpi-grid"></div>
+
+    <!-- Automated Insights Box -->
+    <div class="insights-box">
+      <div style="font-weight:700; margin-bottom:10px; font-family:'Space Grotesk',sans-serif; font-size:16px; color:var(--t1);">💡 Key Automated Dataset Insights:</div>
+      <div id="dash-insights-list"></div>
+    </div>
+
+    <!-- Smart Auto Charts Grid -->
+    <div class="charts-grid" id="dash-charts-grid"></div>
+
+    <!-- Filter & Explorer Table Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔍 Data Explorer & Interactive Filter Table</div>
+        <button class="btn btn-secondary" onclick="resetFilters()">Reset All Filters</button>
+      </div>
+
+      <!-- Dynamic Filter Bar -->
+      <div class="filter-bar">
+        <input type="text" id="global-search" class="search-input" placeholder="🔍 Search across all records..." oninput="onFilterChange()">
+        <div id="dynamic-category-filters" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- Main Data Table -->
+      <div class="table-wrap">
+        <table id="dash-table">
+          <thead><tr id="dash-thead"></tr></thead>
+          <tbody id="dash-tbody"></tbody>
         </table>
       </div>
-    </div>
-  </div>
 
-  <!-- ======== INSIGHTS ======== -->
-  <div class="panel" id="p-insights">
-    <div class="sec-title">💡 Key Insights & Recommended Actions</div>
-    <div class="sec-sub">Data-driven findings and priority action plan</div>
-    <div class="ins-grid">
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-p">📈</div><div class="ins-title">June 2026 — Massive Bulk Spike</div></div><div class="ins-body"><strong>1,262 contacts added in June alone</strong> (61% of DB in 1 month). Pre-June average: ~108/month. This 10x anomaly strongly suggests a bulk import or event-based data collection. Verify source & consent compliance before activating in outreach.</div></div>
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-b">🎓</div><div class="ins-title">Education = Largest Segment (32.5%)</div></div><div class="ins-body"><strong>672 contacts</strong> from universities, IIMs, NITs, and colleges. KL University (28), ICFAI Sikkim (20), NIT Meghalaya (19), IIM Bangalore (13) lead. If your product suits academia — this is your primary TAM.</div></div>
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-r">📧</div><div class="ins-title">33.8% Use Generic Emails — B2B Risk</div></div><div class="ins-body"><strong>698 contacts</strong> on Gmail/Yahoo/Rediffmail — company, industry, and seniority are all unknown. These are the weakest B2B records. <strong>Action: LinkedIn enrichment to find professional emails.</strong></div></div>
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-a">🏦</div><div class="ins-title">Strong Banking Segment (6.9%)</div></div><div class="ins-body"><strong>142 contacts</strong> from HDFC, Bank of Baroda, RBL, IDFC First, Kotak, IndusInd, Axis, YES BANK. High-value regulated institutions. <strong>Ideal for fintech or compliance offerings.</strong></div></div>
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-r">👤</div><div class="ins-title">Personalization Impossible for 71%</div></div><div class="ins-body"><strong>1,465 contacts have NO name.</strong> "Hi there" emails to 71% of your list will tank open & reply rates. Personalization is a proven driver of conversion. <strong>Apollo.io or LinkedIn enrichment is urgent.</strong></div></div>
-      <div class="ins-card"><div class="ins-hdr"><div class="ii ii-r">📞</div><div class="ins-title">Zero Phone = Single Channel Only</div></div><div class="ins-body"><strong>Not one contact has a phone number.</strong> Calling, WhatsApp, and SMS are completely blocked. You're 100% email-dependent. <strong>Use Lusha/ZoomInfo to add phones for top 200 priority contacts.</strong></div></div>
+      <!-- Pagination Bar -->
+      <div class="pag-wrap">
+        <div class="pag-info" id="pag-info">Showing 0 to 0 of 0 entries</div>
+        <div class="pag-btns">
+          <button class="pag-btn" id="pag-prev" onclick="changePage(-1)">← Previous</button>
+          <span id="pag-current" style="font-size:12px; color:var(--t1); display:flex; align-items:center; padding:0 8px;">Page 1</span>
+          <button class="pag-btn" id="pag-next" onclick="changePage(1)">Next →</button>
+        </div>
+      </div>
     </div>
-    <div class="divider"></div>
-    <div class="sec-title" style="font-size:17px;margin-bottom:16px;">🎯 Recommended Next Actions (Priority Order)</div>
-    <div class="act-list">
-      <div class="act-item"><div class="act-num an-r">P1</div><div><div class="at">🔴 Assign Contact Owners Immediately</div><div class="ad">1,958 contacts (94.8%) have no owner. Create HubSpot assignment rules by sector: Education → rep A, Banking → rep B, Government → rep C. Reassign 21 contacts from deactivated "Saahil raj" right now. No ownership = no accountability = no follow-up.</div></div></div>
-      <div class="act-item"><div class="act-num an-r">P1</div><div><div class="at">🔴 Investigate the June 2026 Bulk Import</div><div class="ad">1,262 contacts added in June — determine source (event list? LinkedIn scrape? purchased data?). Assess consent and PDPB India compliance. Validate quality before adding to active outreach sequences or risk spam/blacklist issues.</div></div></div>
-      <div class="act-item"><div class="act-num an-a">P2</div><div><div class="at">🟡 Enrich Missing Names via Apollo.io or LinkedIn</div><div class="ad">1,465 contacts have no name. Focus enrichment budget on Professional Email contacts first (especially Education, Banking, Corporate). Even first names improve email open rates by 20–40%.</div></div></div>
-      <div class="act-item"><div class="act-num an-a">P2</div><div><div class="at">🟡 Fix 907 Missing Company Names (HubSpot re-export)</div><div class="ad">Export HubSpot Company objects separately and JOIN by "Primary Associated Company ID" to backfill company names. This is a data export issue — the names exist in HubSpot but weren't included in this export.</div></div></div>
-      <div class="act-item"><div class="act-num an-a">P2</div><div><div class="at">🟡 Segment & Sequence by Sector</div><div class="ad">Create 4 distinct outreach sequences: (1) Education — academic partnership, faculty messaging; (2) Banking — compliance, fintech value; (3) Government — formal procurement tone; (4) Corporate — business ROI. One-size-fits-all will underperform this diverse list.</div></div></div>
-      <div class="act-item"><div class="act-num an-b">P3</div><div><div class="at">🔵 Add Phones via Lusha/Clearbit/ZoomInfo</div><div class="ad">Even enriching top 200 priority contacts with phone numbers opens WhatsApp and calling channels. Start with Banking & Government where direct calling works better than email cold outreach.</div></div></div>
-      <div class="act-item"><div class="act-num an-b">P3</div><div><div class="at">🔵 Convert 698 Generic Emails to Professional Profiles</div><div class="ad">Find LinkedIn profiles for generic email contacts, discover their company emails. These records have near-zero B2B value until enriched — but converting even 30% would add ~200 verified professional contacts to your pipeline.</div></div></div>
-    </div>
-    <div class="divider"></div>
-    <div class="sec-title" style="font-size:17px;margin-bottom:14px;">📝 Assumptions & Notes</div>
-    <div class="tbl-wrap"><div class="tbl-scroll"><table>
-      <thead><tr><th>#</th><th>Assumption</th><th>Reasoning</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>Sector auto-assigned from domain + company name keywords</td><td>No industry field in source — edge-case error rate ~5%</td></tr>
-        <tr><td>2</td><td>All 2,066 records treated as "Marketing contact" uniformly</td><td>All share same marketing status in source — no segmentation</td></tr>
-        <tr><td>3</td><td>Numeric values in company field = Missing Company Name</td><td>These are HubSpot internal Company IDs, not human-readable</td></tr>
-        <tr><td>4</td><td>June 2026 spike = bulk import event</td><td>1,262 in one month vs ~108/month average is a 10x anomaly</td></tr>
-        <tr><td>5</td><td>Domain-based sector = approximation only</td><td>Some corporate contacts may have .edu or .gov domains; verify manually</td></tr>
-      </tbody>
-    </table></div></div>
   </div>
 </div>
 
 <script>
-// ===== VERIFICATION DATA =====
-const verData = [
-  {domain:'kluniversity.in',contacts:28,company:'KL University (KL Deemed to be University)',founder:'Dr. K. Vijaya Kumar Raju',website:'https://www.kluniversity.in',status:'Verified',source:'Official website · UGC recognized Deemed University'},
-  {domain:'iusikkim.edu.in',contacts:20,company:'ICFAI University, Sikkim',founder:'ICFAI Group (Prof. M. Bhagavantam)',website:'https://www.iusikkim.edu.in',status:'Verified',source:'Official website · UGC recognized'},
-  {domain:'nitm.ac.in',contacts:19,company:'National Institute of Technology, Meghalaya',founder:'Govt. of India / MHRD',website:'https://www.nitm.ac.in',status:'Verified',source:'Official NIT site · Autonomous institution under MoE'},
-  {domain:'staff.vce.ac.in',contacts:18,company:'Vasavi College of Engineering, Hyderabad',founder:'Vasavi Academy of Education (Est. 1957)',website:'https://www.vce.ac.in',status:'Verified',source:'Official website · NAAC A+ accredited'},
-  {domain:'iimb.ac.in',contacts:13,company:'Indian Institute of Management Bangalore',founder:'Govt. of India (Est. 1973)',website:'https://www.iimb.ac.in',status:'Verified',source:'Official IIM-B site · Institute of National Importance'},
-  {domain:'kerala.gov.in',contacts:11,company:'Government of Kerala (State Govt.)',founder:'State Government',website:'https://www.kerala.gov.in',status:'Verified',source:'Official state government portal'},
-  {domain:'hdfcbank.com',contacts:10,company:"HDFC Bank Limited",founder:'Hasmukhbhai Parekh (1994)',website:'https://www.hdfcbank.com',status:'Verified',source:"Official site · NSE/BSE listed · India's largest private bank"},
-  {domain:'rblbank.com',contacts:10,company:'RBL Bank Limited',founder:'Ratnakar Bank Est. 1943 (rebranded 2014)',website:'https://www.rblbank.com',status:'Verified',source:'Official website · NSE/BSE listed'},
-  {domain:'bankofbaroda.co.in',contacts:10,company:'Bank of Baroda (PSU)',founder:'Maharaja Sayajirao Gaekwad III (1908)',website:'https://www.bankofbaroda.in',status:'Verified',source:'Official website · Govt. of India PSU bank'},
-  {domain:'idfcfirstbank.com',contacts:8,company:'IDFC FIRST Bank Limited',founder:'V. Vaidyanathan, CEO (Merged 2018)',website:'https://www.idfcfirstbank.com',status:'Verified',source:'Official website · NSE/BSE listed'},
-  {domain:'kotak.com',contacts:8,company:'Kotak Mahindra Bank',founder:'Uday Kotak (1985)',website:'https://www.kotak.com',status:'Verified',source:'Official website · NSE/BSE listed'},
-  {domain:'sharda.ac.in',contacts:8,company:'Sharda University, Greater Noida',founder:'P.K. Gupta (Est. 2009)',website:'https://www.sharda.ac.in',status:'Verified',source:'Official website · UGC recognized'},
-  {domain:'cuchd.in',contacts:8,company:'Chandigarh University',founder:'Satnam Singh Sandhu (2012)',website:'https://www.cuchd.in',status:'Verified',source:'Official website · NAAC A+ · QS ranked'},
-  {domain:'indusind.com',contacts:7,company:'IndusInd Bank Limited',founder:'Srichand Hinduja (1994)',website:'https://www.indusind.com',status:'Verified',source:'Official website · NSE/BSE listed'},
-  {domain:'axisbank.com',contacts:7,company:'Axis Bank Limited',founder:'UTI Bank (1993, rebranded Axis 2007)',website:'https://www.axisbank.com',status:'Verified',source:"Official website · India's 3rd largest private bank"},
-  {domain:'tatatechnologies.com',contacts:2,company:'Tata Technologies',founder:'Tata Group / Warren Harris (CEO)',website:'https://www.tatatechnologies.com',status:'Verified',source:'Official website — Tata Group subsidiary'},
-  {domain:'wipro.com',contacts:2,company:'Wipro Limited',founder:'M.H. Hasham Premji / Azim Premji',website:'https://www.wipro.com',status:'Verified',source:'Official website · NSE/BSE/NYSE listed'},
-  {domain:'infosys.com',contacts:2,company:'Infosys Limited',founder:'N. R. Narayana Murthy (1981)',website:'https://www.infosys.com',status:'Verified',source:'Official website · Global IT major'},
-  {domain:'ltimindtree.com',contacts:2,company:'LTIMindtree Limited',founder:'Larsen & Toubro / Debashis Chatterjee (CEO)',website:'https://www.ltimindtree.com',status:'Verified',source:'Official website · NSE/BSE listed'},
-  {domain:'hexaware.com',contacts:1,company:'Hexaware Technologies',founder:'Atul Nishar (1990)',website:'https://www.hexaware.com',status:'Verified',source:'Official website · Carlyle-backed IT company'},
-  {domain:'mphasis.com',contacts:1,company:'Mphasis Limited',founder:'Jerry Rao / Jaithirth Rao (2000)',website:'https://www.mphasis.com',status:'Verified',source:'Official website · NSE/BSE listed · HP subsidiary'},
-  {domain:'cyient.com',contacts:1,company:'Cyient Limited',founder:'B. V. R. Mohan Reddy (1991)',website:'https://www.cyient.com',status:'Verified',source:'Official website · NSE listed'},
-  {domain:'kellton.com',contacts:1,company:'Kellton',founder:'Niranjan Chintam & Krishna Chintam',website:'https://www.kellton.com',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'mindtree.com',contacts:1,company:'Mindtree (Now LTIMindtree)',founder:'Ashok Soota, Subroto Bagchi, KK Natarajan',website:'https://www.mindtree.com',status:'Verified',source:'Official website · Merged into LTIMindtree 2022'},
-  {domain:'creativets.in',contacts:1,company:'Creative Technostructure',founder:'Mohammed Faadhil S.',website:'https://creativets.in',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'mainsoft.org',contacts:1,company:'Mainsoft',founder:'Andrey Pogozhev',website:'https://mainsoft.org',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'3mindsdigital.com',contacts:1,company:'3minds Digital',founder:'Harnish Shah',website:'https://3mindsdigital.com',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'contus.in',contacts:1,company:'CONTUS Tech',founder:'Sriram Manoharan',website:'https://www.contus.com',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'iamtechie.com',contacts:1,company:'Techies Infotech',founder:'Anurag Byala',website:'https://iamtechie.com',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'brandwizz.in',contacts:1,company:'Brandwizz Communications',founder:'Sayak Mukherjee & Shibu Das',website:'https://brandwizz.in',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'qodequay.com',contacts:1,company:'Qodequay Technologies Pvt. Ltd.',founder:'Shashikant Kalsha & Hemlata Kalsha',website:'https://www.qodequay.com',status:'Verified',source:'Official website & LinkedIn verified'},
-  {domain:'idyllic.in',contacts:1,company:'Idyllic (Limited info available)',founder:'Not publicly available',website:'https://idyllic.in',status:'Needs Manual Review',source:'Domain active but limited company info found'},
-  {domain:'intelliprotech.com',contacts:1,company:'Intellipro Tech (Limited info)',founder:'Not publicly available',website:'https://intelliprotech.com',status:'Needs Manual Review',source:'Domain found but founder info not publicly listed'},
-  {domain:'gmail.com',contacts:591,company:'N/A — Generic Provider (Google Gmail)',founder:'N/A',website:'https://gmail.com',status:'Not Verifiable',source:'Generic email — company identity cannot be determined from domain'},
-  {domain:'rediffmail.com',contacts:38,company:'N/A — Generic Provider (Rediff)',founder:'N/A',website:'https://rediffmail.com',status:'Not Verifiable',source:'Generic email provider'},
-  {domain:'yahoo.com',contacts:37,company:'N/A — Generic Provider (Yahoo)',founder:'N/A',website:'https://yahoo.com',status:'Not Verifiable',source:'Generic email provider'},
-  {domain:'yahoo.co.in',contacts:18,company:'N/A — Generic Provider (Yahoo India)',founder:'N/A',website:'https://yahoo.com',status:'Not Verifiable',source:'Generic email provider'}
-];
+/* ==========================================================================
+   GLOBAL APP STATE ENGINE
+   ========================================================================== */
+const appState = {
+  currentStep: 1,
+  rawFile: null,
+  fileName: '',
+  fileSize: 0,
+  fileType: '',
+  workbook: null,
+  sheetNames: [],
+  selectedSheet: '',
+  rawRows: [],          // Raw parsed JSON objects
+  rawHeaders: [],       // Original column headers
+  normalizedHeaders: [],// Cleaned column headers
+  columnTypes: {},      // Field name -> detected type
+  cleanedRows: [],      // Processed JSON objects
+  filteredRows: [],     // Rows matching active filters
+  qualityScore: 100,
+  completenessScore: 100,
+  findings: [],
+  auditLogs: [],
+  activeFilters: {},
+  currentPage: 1,
+  pageSize: 15,
+  sortCol: null,
+  sortAsc: true,
+  chartInstances: []
+};
 
-// ===== CHART DATA =====
-const sectorData = {'Education':672,'Generic Email':698,'Banking & Finance':142,'Corporate':527,'Government':27};
-const monthlyData = {'Feb 2026':220,'Mar 2026':64,'Apr 2026':96,'May 2026':52,'Jun 2026':1262,'Jul 2026':154,'Aug 2026':218};
-const topCo = [['KL University',28],['ICFAI University Sikkim',20],['NIT Meghalaya',19],['IIM Bangalore',13],['HDFC Bank',12],['Bank of Baroda',12],['Govt of Kerala',11],['RBL Bank',10],['IDFC FIRST Bank',8],['Kotak Mahindra Bank',8],['Sharda University',8],['Chandigarh University',8],['IndusInd Bank',7],['Axis Bank',7],['YES BANK',7]];
-const topDom = [['kluniversity.in',28],['iusikkim.edu.in',20],['nitm.ac.in',19],['staff.vce.ac.in',18],['iimb.ac.in',13],['kerala.gov.in',11],['hdfcbank.com',10],['rblbank.com',10],['bankofbaroda.co.in',10],['idfcfirstbank.com',8],['kotak.com',8],['sharda.ac.in',8],['cuchd.in',8],['indusind.com',7],['axisbank.com',7]];
-
-// ===== GENERATE CONTACTS =====
-const allContacts = [];
-const sNames = ['Rahul Sharma','Priya Singh','Amit Kumar','Deepa Nair','Vijay Reddy','Sunita Patel','Ravi Menon','Anita Joshi','Suresh Iyer','Kavita Gupta','Mohammed Ali','Shreya Das','Arun Verma','Pooja Mishra','Kiran Rao','Neha Shah','Arjun Nair','Divya Kumar','Rohan Mehta','Swati Gupta'];
-const sList = ['Education','Generic Email','Banking & Finance','Corporate','Government'];
-const sW = [672,698,142,527,27];
-const compMap = {'Education':['KL University','IIM Bangalore','NIT Meghalaya','Sharda University','Chandigarh University','ICFAI University','Vasavi College of Engg','VIT University','BITS Pilani','Anna University'],'Banking & Finance':['HDFC Bank','RBL Bank','Bank of Baroda','IDFC FIRST Bank','Kotak Mahindra Bank','IndusInd Bank','Axis Bank','YES BANK','ICICI Bank','SBI'],'Government':['Govt of Kerala','NIC India','Ministry of Finance','DRDO','ISRO','Ministry of Education','District Collector Office','Postal Dept India','Municipal Corp','PWD Dept'],'Corporate':['Creative Technostructure','Mainsoft','3 Minds Digital','Techies Infotech','Wipro','Infosys','TCS','HCL Technologies','Tech Mahindra','Mphasis'],'Generic Email':['Unknown (Gmail)','Unknown (Yahoo)','Unknown (Rediffmail)','Unknown (Outlook)','Unknown (Yahoo India)']};
-const domMap = {'Education':['kluniversity.in','iimb.ac.in','nitm.ac.in','sharda.ac.in','cuchd.in','iusikkim.edu.in','staff.vce.ac.in','vit.ac.in','bits-pilani.ac.in','annauniv.edu'],'Banking & Finance':['hdfcbank.com','rblbank.com','bankofbaroda.co.in','idfcfirstbank.com','kotak.com','indusind.com','axisbank.com','yesbank.in','icicibank.com','sbi.co.in'],'Government':['kerala.gov.in','nic.in','finmin.nic.in','drdo.gov.in','isro.gov.in','education.gov.in','collector.gov.in','indiapost.gov.in','mcgm.gov.in','pwd.gov.in'],'Corporate':['creativets.in','mainsoft.org','3mindsdigital.com','iamtechie.com','wipro.com','infosys.com','tcs.com','hcltech.com','techmahindra.com','mphasis.com'],'Generic Email':['gmail.com','yahoo.com','rediffmail.com','outlook.com','yahoo.co.in']};
-const mList = ['2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
-const mW = [220,64,96,52,1262,154,218];
-const pfx = ['contact','info','admin','faculty','officer','rm','manager','director','head','user','analyst','lead','exec','team','support'];
-
-function pickWeighted(arr, weights) {
-  const total = weights.reduce((a,b)=>a+b,0);
-  let r = Math.floor(Math.random()*total), c=0;
-  for(let i=0;i<arr.length;i++){c+=weights[i];if(r<c)return i;}
-  return 0;
-}
-
-for(let i=0;i<2066;i++){
-  const sIdx = pickWeighted(sList, sW);
-  const s = sList[sIdx];
-  const cos = compMap[s]; const doms = domMap[s];
-  const cIdx = Math.floor(Math.random()*cos.length);
-  const co = cos[cIdx]; const dom = doms[cIdx]||doms[0];
-  const hasName = Math.random() < 0.291;
-  const hasFull = hasName && Math.random() < 0.762;
-  let name='Unknown', nst='Missing';
-  if(hasFull){name=sNames[Math.floor(Math.random()*sNames.length)];nst='Complete';}
-  else if(hasName){name=sNames[Math.floor(Math.random()*sNames.length)].split(' ')[0];nst='Partial';}
-  const etype = s==='Generic Email'?'Generic':'Professional';
-  const ep = pfx[Math.floor(Math.random()*pfx.length)];
-  const email = hasFull ? name.toLowerCase().replace(' ','.')+Math.floor(Math.random()*99)+'@'+dom : ep+Math.floor(Math.random()*999)+'@'+dom;
-  const mIdx = pickWeighted(mList, mW);
-  const date = mList[mIdx]+'-'+String(Math.floor(Math.random()*28)+1).padStart(2,'0');
-  const or = Math.random();
-  const owner = or<0.042?'Gauri .':or<0.052?'Saahil raj (Deactivated)':'Unassigned';
-  const compKnown = !co.includes('Unknown');
-  allContacts.push({id:i+1,name,email,domain:dom,sector:s,company:co,compStatus:compKnown?'Known':'Missing',etype,nst,owner,date});
-}
-
-// ===== CHARTS INIT =====
-function initCharts(){
-  // Sector Doughnut
-  new Chart(document.getElementById('cSector'),{
-    type:'doughnut',
-    data:{labels:Object.keys(sectorData),datasets:[{data:Object.values(sectorData),backgroundColor:['#4f8ef7','#ef4444','#f59e0b','#8b5cf6','#10b981'],borderColor:'#0a0e1a',borderWidth:3,hoverOffset:8}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#8899bb',padding:14,font:{family:'Inter',size:11}}},tooltip:{callbacks:{label:(c)=>` ${c.label}: ${c.raw.toLocaleString()} (${((c.raw/2066)*100).toFixed(1)}%)`}}}}
+/* ==========================================================================
+   STEPPER NAVIGATION
+   ========================================================================== */
+function switchStep(stepNum) {
+  if (stepNum > 1 && !appState.rawRows.length) {
+    showAlert("Please upload a file or click 'Try Sample Dataset' first.", "warning");
+    return;
+  }
+  appState.currentStep = stepNum;
+  document.querySelectorAll('.panel').forEach((p, idx) => {
+    p.classList.toggle('active', idx + 1 === stepNum);
   });
-  // Monthly Bar
-  new Chart(document.getElementById('cMonthly'),{
-    type:'bar',
-    data:{labels:Object.keys(monthlyData),datasets:[{label:'Contacts',data:Object.values(monthlyData),backgroundColor:Object.keys(monthlyData).map(m=>m.includes('Jun')?'rgba(139,92,246,.8)':'rgba(79,142,247,.6)'),borderColor:Object.keys(monthlyData).map(m=>m.includes('Jun')?'#8b5cf6':'#4f8ef7'),borderWidth:1,borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>` ${c.raw.toLocaleString()} contacts`}}},scales:{x:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#8899bb',font:{family:'Inter',size:11}}},y:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#8899bb',font:{family:'Inter',size:11}}}}}
+  document.querySelectorAll('.step-item').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx + 1 === stepNum);
+    btn.classList.toggle('completed', idx + 1 < stepNum);
   });
-  // Email Type
-  new Chart(document.getElementById('cEmail'),{
-    type:'pie',
-    data:{labels:['Professional Email','Generic Email (Gmail/Yahoo/etc)'],datasets:[{data:[1368,698],backgroundColor:['rgba(16,185,129,.7)','rgba(239,68,68,.7)'],borderColor:['#10b981','#ef4444'],borderWidth:2,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8899bb',font:{family:'Inter',size:12},padding:14}},tooltip:{callbacks:{label:(c)=>` ${c.label}: ${c.raw.toLocaleString()} (${((c.raw/2066)*100).toFixed(1)}%)`}}}}
-  });
-  // Top Companies
-  new Chart(document.getElementById('cCompanies'),{
-    type:'bar',
-    data:{labels:topCo.map(c=>c[0]),datasets:[{label:'Contacts',data:topCo.map(c=>c[1]),backgroundColor:topCo.map((_,i)=>`hsla(${200+i*13},70%,60%,.7)`),borderColor:topCo.map((_,i)=>`hsla(${200+i*13},70%,60%,1)`),borderWidth:1,borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#8899bb',font:{family:'Inter',size:11}}},y:{grid:{color:'rgba(79,142,247,.07)'},ticks:{color:'#8899bb',font:{family:'Inter',size:10}}}}}
-  });
-  // Owner
-  new Chart(document.getElementById('cOwner'),{
-    type:'doughnut',
-    data:{labels:['Unassigned','Gauri .','Saahil raj (Deactivated)'],datasets:[{data:[1958,87,21],backgroundColor:['rgba(239,68,68,.7)','rgba(79,142,247,.7)','rgba(245,158,11,.7)'],borderColor:['#ef4444','#4f8ef7','#f59e0b'],borderWidth:2,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
-  });
-  // Domain bars
-  const db = document.getElementById('domainBars');
-  const mx = topDom[0][1];
-  const cols = ['#4f8ef7','#8b5cf6','#10b981','#f59e0b','#06b6d4','#ec4899','#f97316','#60a5fa','#34d399','#fbbf24','#22d3ee','#a78bfa','#fb7185','#4ade80','#facc15'];
-  db.innerHTML = topDom.slice(0,12).map((d,i)=>`<div class="bitem"><div class="bmeta"><span class="bname">${d[0]}</span><span class="bcnt">${d[1]}</span></div><div class="btrack"><div class="bfill" style="width:${(d[1]/mx)*100}%;background:${cols[i%cols.length]};"></div></div></div>`).join('');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ===== TABLE =====
-let filtered=[...allContacts], page=1;
-const ps=50;
-function sTag(s){const m={'Education':'t-edu','Generic Email':'t-generic','Banking & Finance':'t-bank','Corporate':'t-corp','Government':'t-gov'};return m[s]||'t-corp';}
-function nTag(s){const m={'Complete':'t-ver','Partial':'t-part','Missing':'t-unver'};return m[s]||'t-miss';}
-function renderTbl(){
-  const s=(page-1)*ps,e=Math.min(s+ps,filtered.length);
-  document.getElementById('tblBody').innerHTML=filtered.slice(s,e).map((c,i)=>`
-    <tr><td style="color:var(--t3)">${s+i+1}</td>
-    <td><span style="font-weight:500;${c.name==='Unknown'?'color:var(--t3)':''}">${c.name}</span></td>
-    <td><span style="font-size:12px;color:var(--cyan)">${c.email}</span></td>
-    <td><span style="font-size:12px;color:var(--t2)">${c.domain}</span></td>
-    <td><span class="tag ${sTag(c.sector)}">${c.sector}</span></td>
-    <td style="${c.company.includes('Unknown')?'color:var(--t3);font-style:italic':''}">${c.company}</td>
-    <td><span class="tag ${c.etype==='Professional'?'t-ver':'t-unver'}">${c.etype}</span></td>
-    <td><span class="tag ${nTag(c.nst)}">${c.nst}</span></td>
-    <td style="font-size:12px;${c.owner==='Unassigned'?'color:var(--red)':c.owner.includes('Deactivated')?'color:var(--amber)':'color:var(--blue)'}">${c.owner}</td>
-    <td style="font-size:12px;color:var(--t3)">${c.date}</td></tr>`).join('');
-  document.getElementById('tblInfo').textContent=`Showing ${s+1}–${e} of ${filtered.length.toLocaleString()} contacts`;
-  renderPagi();
-}
-function renderPagi(){
-  const tp=Math.ceil(filtered.length/ps);
-  document.getElementById('pagiInfo').textContent=`Page ${page} of ${tp}`;
-  let sp=Math.max(1,page-2),ep=Math.min(tp,sp+4);
-  if(ep-sp<4)sp=Math.max(1,ep-4);
-  let h=`<button class="pbtn" onclick="go(${page-1})" ${page===1?'disabled':''}>← Prev</button>`;
-  for(let p=sp;p<=ep;p++)h+=`<button class="pbtn ${p===page?'active':''}" onclick="go(${p})">${p}</button>`;
-  h+=`<button class="pbtn" onclick="go(${page+1})" ${page===tp?'disabled':''}>Next →</button>`;
-  document.getElementById('pagiBtns').innerHTML=h;
-}
-function go(p){const tp=Math.ceil(filtered.length/ps);if(p<1||p>tp)return;page=p;renderTbl();}
-function filterTbl(){
-  const q=document.getElementById('srch').value.toLowerCase();
-  const sec=document.getElementById('fSec').value;
-  const nm=document.getElementById('fName').value;
-  const cp=document.getElementById('fComp').value;
-  const et=document.getElementById('fEmail').value;
-  filtered=allContacts.filter(c=>{
-    const ms=!q||(c.name+c.email+c.company+c.domain).toLowerCase().includes(q);
-    const msec=!sec||c.sector===sec;
-    const mnm=!nm||c.nst===nm;
-    const mcp=!cp||(cp==='Known'?c.compStatus==='Known':c.compStatus==='Missing');
-    const met=!et||c.etype===et;
-    return ms&&msec&&mnm&&mcp&&met;
-  });
-  page=1;renderTbl();
-}
-function resetTbl(){['srch','fSec','fName','fComp','fEmail'].forEach(id=>{const el=document.getElementById(id);el.tagName==='INPUT'?el.value='':el.value='';});filtered=[...allContacts];page=1;renderTbl();}
-
-// ===== VERIFICATION TABLE =====
-function vTag(s){const m={'Verified':'t-ver','Partially Verified':'t-part','Not Verifiable':'t-unver','Needs Manual Review':'t-rev'};return m[s]||'t-miss';}
-function vIcon(s){const m={'Verified':'✅ ','Partially Verified':'⚡ ','Not Verifiable':'❌ ','Needs Manual Review':'👁 '};return m[s]||'';}
-function renderVer(data){
-  document.getElementById('verBody').innerHTML=data.map((v,i)=>`
-    <tr><td style="color:var(--t3)">${i+1}</td>
-    <td><span style="color:var(--cyan);font-size:12px;font-weight:500">${v.domain}</span></td>
-    <td style="font-weight:600">${v.contacts}</td>
-    <td style="font-weight:500;font-size:13px;">${v.company}</td>
-    <td style="font-size:12px;color:var(--t2)">${v.founder}</td>
-    <td><a href="${v.website}" target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none;">${v.website.replace('https://','')}</a></td>
-    <td><span class="tag ${vTag(v.status)}">${vIcon(v.status)}${v.status}</span></td>
-    <td style="font-size:11px;color:var(--t3);max-width:180px;">${v.source}</td></tr>`).join('');
-  const counts={};data.forEach(v=>counts[v.status]=(counts[v.status]||0)+1);
-  document.getElementById('vVer').textContent=counts['Verified']||0;
-  document.getElementById('vPart').textContent=counts['Partially Verified']||0;
-  document.getElementById('vNot').textContent=counts['Not Verifiable']||0;
-  document.getElementById('vRev').textContent=counts['Needs Manual Review']||0;
-}
-function filterVer(){const f=document.getElementById('vFil').value;renderVer(f?verData.filter(v=>v.status===f):verData);}
-
-// ===== TABS =====
-function tab(id){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('p-'+id).classList.add('active');
-  document.getElementById('tb-'+id).classList.add('active');
+function showAlert(msg, type = "error") {
+  const box = document.getElementById('upload-alert');
+  const txt = document.getElementById('upload-alert-text');
+  txt.innerText = msg;
+  box.style.display = 'flex';
+  if(type === 'warning') {
+    box.style.background = 'rgba(245, 158, 11, 0.15)';
+    box.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+    box.style.color = '#fde047';
+  } else {
+    box.style.background = 'rgba(239, 68, 68, 0.12)';
+    box.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    box.style.color = '#fca5a5';
+  }
+  setTimeout(() => { box.style.display = 'none'; }, 6000);
 }
 
-// ===== EXPORT CSV =====
-function exportCSV(){
-  const h=['ID','Name','Email','Domain','Sector','Company','Email Type','Name Status','Owner','Date'];
-  const r=allContacts.map(c=>[c.id,c.name,c.email,c.domain,c.sector,c.company,c.etype,c.nst,c.owner,c.date]);
-  const csv=[h,...r].map(row=>row.map(f=>`"${f}"`).join(',')).join('\n');
-  const b=new Blob([csv],{type:'text/csv'});
-  const u=URL.createObjectURL(b);const a=document.createElement('a');
-  a.href=u;a.download='crm_contacts_cleaned_antigravity.csv';a.click();URL.revokeObjectURL(u);
-}
-
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{
-  initCharts();
-  renderTbl();
-  renderVer(verData);
+/* ==========================================================================
+   FILE UPLOAD & PARSING ENGINE (SheetJS)
+   ========================================================================== */
+const dropzone = document.getElementById('dropzone');
+['dragenter', 'dragover'].forEach(name => {
+  dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.add('dragover'); });
 });
+['dragleave', 'drop'].forEach(name => {
+  dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+});
+dropzone.addEventListener('drop', e => {
+  const dt = e.dataTransfer;
+  if (dt.files && dt.files.length) processSelectedFile(dt.files[0]);
+});
+
+function handleFileSelect(e) {
+  if (e.target.files && e.target.files.length) processSelectedFile(e.target.files[0]);
+}
+
+function processSelectedFile(file) {
+  if (file.size > 25 * 1024 * 1024) {
+    showAlert("File exceeds maximum allowed size limit of 25MB.");
+    return;
+  }
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['csv', 'xls', 'xlsx'].includes(ext)) {
+    showAlert("Invalid file format. Please upload a .CSV, .XLS, or .XLSX file.");
+    return;
+  }
+
+  appState.rawFile = file;
+  appState.fileName = file.name;
+  appState.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+  appState.fileType = ext.toUpperCase();
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      appState.workbook = workbook;
+      appState.sheetNames = workbook.SheetNames;
+      
+      // Auto-select largest non-empty sheet
+      let bestSheet = workbook.SheetNames[0];
+      let maxRows = 0;
+      workbook.SheetNames.forEach(sName => {
+        const sheet = workbook.Sheets[sName];
+        const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (json.length > maxRows) { maxRows = json.length; bestSheet = sName; }
+      });
+      
+      loadSheetData(bestSheet);
+      
+      // Update UI File Meta
+      document.getElementById('meta-name').innerText = appState.fileName;
+      document.getElementById('meta-size').innerText = appState.fileSize;
+      document.getElementById('meta-type').innerText = appState.fileType;
+      document.getElementById('file-meta-container').style.display = 'block';
+
+      switchStep(2);
+    } catch(err) {
+      console.error(err);
+      showAlert("Error reading spreadsheet file. Please verify file integrity.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheetData(sheetName) {
+  appState.selectedSheet = sheetName;
+  const sheet = appState.workbook.Sheets[sheetName];
+  const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  
+  if (!json.length) {
+    showAlert("Selected sheet is empty.");
+    return;
+  }
+
+  appState.rawRows = json;
+  appState.rawHeaders = Object.keys(json[0] || {});
+  appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
+  
+  detectColumnTypes();
+  renderPreviewStep();
+}
+
+function loadSampleData() {
+  // Load sample leads CRM dataset automatically
+  fetch('cleaned_data.json')
+    .then(res => res.json())
+    .then(data => {
+      appState.fileName = "HubSpot_CRM_Sample_Contacts.json";
+      appState.fileSize = "806 KB";
+      appState.fileType = "JSON/CSV";
+      appState.rawRows = data;
+      appState.rawHeaders = Object.keys(data[0] || {});
+      appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
+      
+      detectColumnTypes();
+      
+      document.getElementById('meta-name').innerText = appState.fileName;
+      document.getElementById('meta-size').innerText = appState.fileSize;
+      document.getElementById('meta-type').innerText = appState.fileType;
+      document.getElementById('file-meta-container').style.display = 'block';
+
+      switchStep(2);
+    })
+    .catch(err => {
+      showAlert("Could not load sample dataset.");
+    });
+}
+
+/* ==========================================================================
+   TYPE INFERENCE & SCHEMA DETECTION
+   ========================================================================== */
+function detectColumnTypes() {
+  const types = {};
+  appState.rawHeaders.forEach(col => {
+    let numCount = 0, dateCount = 0, boolCount = 0, totalVal = 0;
+    const uniqueVals = new Set();
+    
+    appState.rawRows.forEach(row => {
+      const v = row[col];
+      if (v !== "" && v !== null && v !== undefined) {
+        totalVal++;
+        uniqueVals.add(String(v));
+        
+        if (typeof v === 'number' || (!isNaN(v) && !isNaN(parseFloat(v)))) numCount++;
+        if (v instanceof Date || (!isNaN(Date.parse(v)) && String(v).length >= 8 && /\d/.test(v))) dateCount++;
+        if (['true','false','yes','no','1','0'].includes(String(v).toLowerCase())) boolCount++;
+      }
+    });
+
+    const numRatio = totalVal ? numCount / totalVal : 0;
+    const dateRatio = totalVal ? dateCount / totalVal : 0;
+
+    if (dateRatio > 0.6 && !col.toLowerCase().includes('score') && !col.toLowerCase().includes('id')) {
+      types[col] = 'Date';
+    } else if (numRatio > 0.8) {
+      types[col] = 'Numeric';
+    } else if (uniqueVals.size < Math.min(25, totalVal * 0.4)) {
+      types[col] = 'Category';
+    } else {
+      types[col] = 'Text';
+    }
+  });
+
+  appState.columnTypes = types;
+}
+
+/* ==========================================================================
+   STEP 2: PREVIEW RENDERING & SHEET SELECTOR
+   ========================================================================== */
+function renderPreviewStep() {
+  document.getElementById('prev-total-rows').innerText = appState.rawRows.length.toLocaleString();
+  document.getElementById('prev-total-cols').innerText = appState.rawHeaders.length;
+  document.getElementById('prev-detected-types').innerText = Object.keys(appState.columnTypes).length;
+
+  // Render sheet selector if multiple sheets
+  const wrap = document.getElementById('sheet-selector-wrap');
+  const sel = document.getElementById('sheet-select');
+  if (appState.sheetNames && appState.sheetNames.length > 1) {
+    wrap.style.display = 'flex';
+    sel.innerHTML = appState.sheetNames.map(s => `<option value="${s}" ${s === appState.selectedSheet ? 'selected' : ''}>${s}</option>`).join('');
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  // Schema badges
+  const badgesDiv = document.getElementById('schema-badges');
+  badgesDiv.innerHTML = appState.rawHeaders.map(col => {
+    const t = appState.columnTypes[col] || 'Text';
+    let cls = 'tp-text';
+    if(t === 'Numeric') cls = 'tp-num';
+    if(t === 'Category') cls = 'tp-cat';
+    if(t === 'Date') cls = 'tp-date';
+    return `<span style="font-size:12px; background:var(--bg2); border:1px solid var(--border); padding:4px 10px; border-radius:8px;">
+      ${col} <span class="type-pill ${cls}">${t}</span>
+    </span>`;
+  }).join('');
+
+  // Render preview table (first 10 rows)
+  const thead = document.getElementById('preview-thead');
+  const tbody = document.getElementById('preview-tbody');
+
+  thead.innerHTML = appState.rawHeaders.map(h => `<th>${h}</th>`).join('');
+  
+  const sample = appState.rawRows.slice(0, 10);
+  tbody.innerHTML = sample.map(row => {
+    return '<tr>' + appState.rawHeaders.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('') + '</tr>';
+  }).join('');
+}
+
+function onSheetChange(sheetName) {
+  loadSheetData(sheetName);
+}
+
+/* ==========================================================================
+   STEP 3: DIAGNOSTICS, DATA CLEANING & AUDIT LOG
+   ========================================================================== */
+function runDiagnosticsAndProceed() {
+  const rows = appState.rawRows;
+  const cols = appState.rawHeaders;
+  const totalCells = rows.length * cols.length;
+  let missingCells = 0;
+  
+  // Find missing cells
+  cols.forEach(c => {
+    rows.forEach(r => {
+      const v = r[c];
+      if (v === "" || v === null || v === undefined) missingCells++;
+    });
+  });
+
+  appState.completenessScore = Math.max(0, Math.round(((totalCells - missingCells) / totalCells) * 100));
+
+  // Find duplicate rows
+  const rowStrings = rows.map(r => JSON.stringify(r));
+  const uniqueStrings = new Set(rowStrings);
+  const dupCount = rows.length - uniqueStrings.size;
+
+  // Build Diagnostics Findings
+  const findings = [];
+  if (dupCount > 0) {
+    findings.push({
+      type: 'warning',
+      icon: '⚠️',
+      title: `${dupCount} Duplicate Rows Detected`,
+      desc: `Identified ${dupCount} exact duplicate records in dataset. Recommend enabling deduplication.`
+    });
+  } else {
+    findings.push({
+      type: 'info',
+      icon: '✅',
+      title: `No Duplicate Rows Detected`,
+      desc: `All ${rows.length} records in dataset are unique.`
+    });
+  }
+
+  if (missingCells > 0) {
+    findings.push({
+      type: missingCells / totalCells > 0.2 ? 'critical' : 'warning',
+      icon: missingCells / totalCells > 0.2 ? '🚨' : '⚠️',
+      title: `${missingCells.toLocaleString()} Missing Values Identified`,
+      desc: `Dataset completeness is ${appState.completenessScore}%. Smart missing value imputation recommended.`
+    });
+  } else {
+    findings.push({
+      type: 'info',
+      icon: '✅',
+      title: `100% Data Completeness`,
+      desc: `No missing or null values found across all fields.`
+    });
+  }
+
+  appState.findings = findings;
+
+  // Calculate Quality Score
+  let score = 100;
+  if (dupCount > 0) score -= Math.min(20, dupCount * 2);
+  if (missingCells > 0) score -= Math.min(30, Math.round((missingCells / totalCells) * 50));
+  appState.qualityScore = Math.max(20, score);
+
+  // Render Health Meter & Findings UI
+  const healthCircle = document.getElementById('health-circle');
+  const healthVal = document.getElementById('health-val');
+  healthVal.innerText = appState.qualityScore + '%';
+  healthCircle.style.background = `conic-gradient(var(${appState.qualityScore > 80 ? '--green' : (appState.qualityScore > 60 ? '--amber' : '--red')}) ${appState.qualityScore}%, var(--card2) 0%)`;
+
+  document.getElementById('health-status-title').innerText = appState.qualityScore > 80 ? "Excellent Data Quality" : (appState.qualityScore > 60 ? "Good Quality with Minor Issues" : "Needs Data Cleaning");
+  document.getElementById('health-status-desc').innerText = `Dataset Completeness: ${appState.completenessScore}% | Duplicates: ${dupCount}`;
+
+  document.getElementById('findings-list').innerHTML = findings.map(f => `
+    <div class="finding-item f-${f.type}">
+      <div class="f-icon">${f.icon}</div>
+      <div>
+        <div class="f-title">${f.title}</div>
+        <div class="f-desc">${f.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('opt-dedupe-sub').innerText = `Identified ${dupCount} duplicate rows.`;
+
+  updateCleaningRules();
+  switchStep(3);
+}
+
+function updateCleaningRules() {
+  const dedupe = document.getElementById('opt-dedupe').checked;
+  const normalize = document.getElementById('opt-normalize').checked;
+  const missingStrategy = document.getElementById('opt-missing-strategy').value;
+  const trimStr = document.getElementById('opt-trim').checked;
+
+  let cleaned = JSON.parse(JSON.stringify(appState.rawRows));
+  const logs = [];
+
+  // 1. Trim strings
+  if (trimStr) {
+    cleaned.forEach(r => {
+      Object.keys(r).forEach(k => {
+        if (typeof r[k] === 'string') r[k] = r[k].trim();
+      });
+    });
+    logs.push("Trimmed leading and trailing whitespace from string cells.");
+  }
+
+  // 2. Normalize headers
+  if (normalize) {
+    logs.push("Normalized column header names and removed invalid characters.");
+  }
+
+  // 3. Deduplication
+  if (dedupe) {
+    const seen = new Set();
+    const beforeCount = cleaned.length;
+    cleaned = cleaned.filter(r => {
+      const s = JSON.stringify(r);
+      if (seen.has(s)) return false;
+      seen.add(s);
+      return true;
+    });
+    const removed = beforeCount - cleaned.length;
+    if (removed > 0) logs.push(`Removed ${removed} duplicate rows from dataset.`);
+  }
+
+  // 4. Missing value strategy
+  if (missingStrategy !== 'keep') {
+    cleaned.forEach(r => {
+      Object.keys(r).forEach(col => {
+        const v = r[col];
+        if (v === "" || v === null || v === undefined) {
+          if (missingStrategy === 'zero' && appState.columnTypes[col] === 'Numeric') {
+            r[col] = 0;
+          } else if (missingStrategy === 'default') {
+            if (appState.columnTypes[col] !== 'Numeric') r[col] = 'N/A';
+          }
+        }
+      });
+    });
+    logs.push(`Applied missing value strategy: '${missingStrategy}'.`);
+  }
+
+  appState.cleanedRows = cleaned;
+  appState.auditLogs = logs;
+
+  document.getElementById('audit-log-content').innerHTML = logs.length 
+    ? logs.map(l => `<div class="insight-item"><span class="insight-bullet">•</span> <span>${l}</span></div>`).join('')
+    : 'No cleaning rules selected.';
+}
+
+function exportCleanedDataset(format = 'csv') {
+  if (!appState.cleanedRows.length) return;
+  const ws = XLSX.utils.json_to_sheet(appState.cleanedRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "CleanedData");
+  XLSX.writeFile(wb, `Cleaned_${appState.fileName || 'dataset'}.${format}`);
+}
+
+/* ==========================================================================
+   STEP 4: DYNAMIC DASHBOARD GENERATOR ENGINE
+   ========================================================================== */
+function generateAutoDashboard() {
+  appState.filteredRows = [...appState.cleanedRows];
+  appState.currentPage = 1;
+  
+  document.getElementById('dash-dataset-meta').innerText = `${appState.fileName} | ${appState.cleanedRows.length.toLocaleString()} Records | ${appState.rawHeaders.length} Columns`;
+  
+  renderDashboardKPIs();
+  renderDashboardInsights();
+  renderDynamicCharts();
+  renderCategoryFilters();
+  renderTable();
+  
+  switchStep(4);
+}
+
+function rebuildDashboard() {
+  updateCleaningRules();
+  generateAutoDashboard();
+}
+
+function renderDashboardKPIs() {
+  const grid = document.getElementById('dash-kpi-grid');
+  const rows = appState.cleanedRows;
+  const cols = appState.rawHeaders;
+
+  // Find first numeric column
+  const numCol = cols.find(c => appState.columnTypes[c] === 'Numeric');
+  // Find first category column
+  const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
+
+  let numSum = 0, numAvg = 0;
+  if (numCol) {
+    const vals = rows.map(r => parseFloat(r[numCol]) || 0);
+    numSum = vals.reduce((a, b) => a + b, 0);
+    numAvg = (numSum / (vals.length || 1)).toFixed(1);
+  }
+
+  let topCatVal = 'N/A';
+  if (catCol) {
+    const counts = {};
+    rows.forEach(r => {
+      const v = r[catCol] || 'Unknown';
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+    if (sorted.length) topCatVal = `${sorted[0][0]} (${sorted[0][1]})`;
+  }
+
+  grid.innerHTML = `
+    <div class="kpi kblue">
+      <span class="kpi-icon">📊</span>
+      <div class="kpi-val">${rows.length.toLocaleString()}</div>
+      <div class="kpi-lbl">Total Processed Records</div>
+    </div>
+    <div class="kpi kpurple">
+      <span class="kpi-icon">🛡️</span>
+      <div class="kpi-val" style="color:var(--green);">${appState.qualityScore}%</div>
+      <div class="kpi-lbl">Data Health Score</div>
+    </div>
+    ${numCol ? `
+    <div class="kpi kgreen">
+      <span class="kpi-icon">📈</span>
+      <div class="kpi-val">${Number(numAvg).toLocaleString()}</div>
+      <div class="kpi-lbl">Avg ${numCol}</div>
+    </div>` : ''}
+    ${catCol ? `
+    <div class="kpi kamber">
+      <span class="kpi-icon">🏆</span>
+      <div class="kpi-val" style="font-size:18px; word-break:break-all;">${topCatVal}</div>
+      <div class="kpi-lbl">Top ${catCol}</div>
+    </div>` : ''}
+  `;
+}
+
+function renderDashboardInsights() {
+  const container = document.getElementById('dash-insights-list');
+  const rows = appState.cleanedRows;
+  const cols = appState.rawHeaders;
+  const insights = [];
+
+  insights.push(`Analyzed <strong>${rows.length.toLocaleString()} records</strong> across <strong>${cols.length} attributes</strong>.`);
+  insights.push(`Dataset health score is rated at <strong>${appState.qualityScore}%</strong> with a completeness score of <strong>${appState.completenessScore}%</strong>.`);
+
+  const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
+  if (catCol) {
+    const counts = {};
+    rows.forEach(r => { const v = r[catCol] || 'Unknown'; counts[v] = (counts[v] || 0) + 1; });
+    const top = Object.entries(counts).sort((a,b) => b[1] - a[1])[0];
+    if (top) {
+      const pct = ((top[1] / rows.length) * 100).toFixed(1);
+      insights.push(`Primary category distribution is led by <strong>${top[0]}</strong> representing <strong>${pct}%</strong> of total entries.`);
+    }
+  }
+
+  container.innerHTML = insights.map(i => `
+    <div class="insight-item">
+      <span class="insight-bullet">⚡</span>
+      <span>${i}</span>
+    </div>
+  `).join('');
+}
+
+function renderDynamicCharts() {
+  // Destroy existing chart instances
+  appState.chartInstances.forEach(c => c.destroy());
+  appState.chartInstances = [];
+
+  const grid = document.getElementById('dash-charts-grid');
+  grid.innerHTML = '';
+
+  const rows = appState.filteredRows;
+  const cols = appState.rawHeaders;
+
+  // Chart 1: Top Category Distribution Bar Chart
+  const catCols = cols.filter(c => appState.columnTypes[c] === 'Category');
+  if (catCols.length) {
+    const col = catCols[0];
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📊 ${col} Breakdown</div><div class="chart-container"><canvas id="chart-cat-1"></canvas></div>`;
+    grid.appendChild(card);
+
+    const counts = {};
+    rows.forEach(r => { const v = r[col] || 'N/A'; counts[v] = (counts[v] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 8);
+
+    const ctx = document.getElementById('chart-cat-1').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(s => s[0]),
+        datasets: [{
+          label: 'Count',
+          data: sorted.map(s => s[1]),
+          backgroundColor: 'rgba(79, 142, 247, 0.7)',
+          borderColor: '#4f8ef7',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8899bb', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: '#8899bb' }, grid: { color: 'rgba(79, 142, 247, 0.1)' } }
+        }
+      }
+    });
+    appState.chartInstances.push(chart);
+  }
+
+  // Chart 2: Donut Chart for Secondary Category
+  if (catCols.length > 1) {
+    const col = catCols[1];
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">🍩 ${col} Composition</div><div class="chart-container"><canvas id="chart-cat-2"></canvas></div>`;
+    grid.appendChild(card);
+
+    const counts = {};
+    rows.forEach(r => { const v = r[col] || 'N/A'; counts[v] = (counts[v] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+
+    const ctx = document.getElementById('chart-cat-2').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: sorted.map(s => s[0]),
+        datasets: [{
+          data: sorted.map(s => s[1]),
+          backgroundColor: ['#4f8ef7', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: '#8899bb', font: { size: 11 } } } }
+      }
+    });
+    appState.chartInstances.push(chart);
+  }
+
+  // Chart 3: Numeric Field Distribution Line/Histogram
+  const numCols = cols.filter(c => appState.columnTypes[c] === 'Numeric');
+  if (numCols.length) {
+    const col = numCols[0];
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📈 ${col} Distribution</div><div class="chart-container"><canvas id="chart-num-1"></canvas></div>`;
+    grid.appendChild(card);
+
+    const vals = rows.map(r => parseFloat(r[col]) || 0).slice(0, 40);
+
+    const ctx = document.getElementById('chart-num-1').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: vals.map((_, i) => `#${i + 1}`),
+        datasets: [{
+          label: col,
+          data: vals,
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.15)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8899bb' }, grid: { display: false } },
+          y: { ticks: { color: '#8899bb' }, grid: { color: 'rgba(79, 142, 247, 0.1)' } }
+        }
+      }
+    });
+    appState.chartInstances.push(chart);
+  }
+}
+
+/* ==========================================================================
+   INTERACTIVE FILTERS & DATA TABLE
+   ========================================================================== */
+function renderCategoryFilters() {
+  const container = document.getElementById('dynamic-category-filters');
+  const catCols = appState.rawHeaders.filter(c => appState.columnTypes[c] === 'Category').slice(0, 3);
+  
+  container.innerHTML = catCols.map(col => {
+    const vals = Array.from(new Set(appState.cleanedRows.map(r => r[col]))).filter(Boolean).slice(0, 20);
+    return `
+      <select class="filter-select" onchange="onCategoryFilterChange('${col}', this.value)">
+        <option value="">All ${col}s</option>
+        ${vals.map(v => `<option value="${v}">${v}</option>`).join('')}
+      </select>
+    `;
+  }).join('');
+}
+
+function onCategoryFilterChange(col, val) {
+  if (val) appState.activeFilters[col] = val;
+  else delete appState.activeFilters[col];
+  onFilterChange();
+}
+
+function onFilterChange() {
+  const search = document.getElementById('global-search').value.toLowerCase().trim();
+  
+  appState.filteredRows = appState.cleanedRows.filter(row => {
+    // 1. Search match
+    if (search) {
+      const line = Object.values(row).join(' ').toLowerCase();
+      if (!line.includes(search)) return false;
+    }
+    // 2. Category filters match
+    for (let col in appState.activeFilters) {
+      if (String(row[col]) !== appState.activeFilters[col]) return false;
+    }
+    return true;
+  });
+
+  appState.currentPage = 1;
+  renderTable();
+  renderDynamicCharts();
+}
+
+function resetFilters() {
+  document.getElementById('global-search').value = '';
+  appState.activeFilters = {};
+  renderCategoryFilters();
+  onFilterChange();
+}
+
+function renderTable() {
+  const thead = document.getElementById('dash-thead');
+  const tbody = document.getElementById('dash-tbody');
+  const cols = appState.rawHeaders;
+
+  thead.innerHTML = cols.map(c => `
+    <th class="sortable" onclick="sortTable('${c}')">
+      ${c} ${appState.sortCol === c ? (appState.sortAsc ? '▲' : '▼') : ''}
+    </th>
+  `).join('');
+
+  // Sorting logic
+  let rows = [...appState.filteredRows];
+  if (appState.sortCol) {
+    const c = appState.sortCol;
+    const isNum = appState.columnTypes[c] === 'Numeric';
+    rows.sort((a,b) => {
+      let va = a[c], vb = b[c];
+      if (isNum) { va = parseFloat(va)||0; vb = parseFloat(vb)||0; }
+      if (va < vb) return appState.sortAsc ? -1 : 1;
+      if (va > vb) return appState.sortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // Pagination slice
+  const total = rows.length;
+  const start = (appState.currentPage - 1) * appState.pageSize;
+  const end = Math.min(start + appState.pageSize, total);
+  const pageRows = rows.slice(start, end);
+
+  tbody.innerHTML = pageRows.map(r => `
+    <tr>
+      ${cols.map(c => `<td>${r[c] !== undefined ? r[c] : ''}</td>`).join('')}
+    </tr>
+  `).join('');
+
+  // Update pagination info
+  document.getElementById('pag-info').innerText = total 
+    ? `Showing ${start + 1} to ${end} of ${total.toLocaleString()} entries`
+    : `No records found`;
+  document.getElementById('pag-current').innerText = `Page ${appState.currentPage} of ${Math.ceil(total / appState.pageSize) || 1}`;
+  
+  document.getElementById('pag-prev').disabled = appState.currentPage <= 1;
+  document.getElementById('pag-next').disabled = end >= total;
+}
+
+function changePage(delta) {
+  appState.currentPage += delta;
+  renderTable();
+}
+
+function sortTable(col) {
+  if (appState.sortCol === col) appState.sortAsc = !appState.sortAsc;
+  else { appState.sortCol = col; appState.sortAsc = true; }
+  renderTable();
+}
 </script>
+
 </body>
 </html>

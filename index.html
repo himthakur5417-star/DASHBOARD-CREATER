@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anti-Gravity | Smart Auto-Dashboard & Data Studio</title>
-<meta name="description" content="Automated data upload, cleaning, validation, and dynamic Power BI-style dashboard generator for CSV, XLS, and XLSX files.">
+<meta name="description" content="Automated data upload, cleaning, validation, profiling, and dynamic Power BI-style dashboard generator for CSV, XLS, and XLSX files.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- SheetJS for Excel/CSV Parsing -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -160,6 +160,10 @@ header {
 }
 .dropzone-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
 .dropzone-desc { font-size: 13px; color: var(--t2); max-width: 450px; margin: 0 auto 20px; }
+
+.progress-bar-wrap { width: 100%; max-width: 400px; height: 8px; background: var(--card2); border-radius: 4px; overflow: hidden; margin: 16px auto 0; display: none; }
+.progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--cyan)); transition: width 0.3s ease; }
+
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 600;
@@ -183,7 +187,7 @@ header {
 .btn-success:hover { opacity: 0.92; transform: translateY(-2px); }
 
 /* FILE METADATA BOX */
-.file-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 20px; }
+.file-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 20px; }
 .meta-item { background: var(--bg2); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; }
 .meta-lbl { font-size: 11px; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .meta-val { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--t1); }
@@ -283,6 +287,12 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
   border: 1px solid var(--border); color: var(--t1); font-size: 13px; min-width: 150px;
 }
 
+/* PROFILING ACCORDION */
+.profiling-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+.profile-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.profile-col-name { font-weight: 700; font-size: 14px; color: var(--blue); display: flex; justify-content: space-between; align-items: center; }
+.profile-stat { font-size: 12px; color: var(--t2); margin-top: 4px; display: flex; justify-content: space-between; }
+
 /* AUDIT LOG & INSIGHTS */
 .insights-box {
   background: linear-gradient(135deg, rgba(79,142,247,0.08), rgba(139,92,246,0.08));
@@ -343,7 +353,7 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
       <div class="step-item active" id="step-btn-1" onclick="switchStep(1)">
         <div class="step-num">1</div>
         <div>
-          <div class="step-title">Upload File</div>
+          <div class="step-title">Upload Data</div>
           <div class="step-sub">CSV, XLS, XLSX</div>
         </div>
       </div>
@@ -391,6 +401,7 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
         <div class="dropzone-title">Drag & Drop Your Spreadsheet Here</div>
         <div class="dropzone-desc">Supports <strong>.CSV</strong>, <strong>.XLS</strong>, and <strong>.XLSX</strong> formats up to 25MB. All processing happens 100% privately in your browser.</div>
         <button class="btn btn-primary">Browse Computer</button>
+        <div class="progress-bar-wrap" id="progress-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
       </div>
 
       <div class="alert-box" id="upload-alert">
@@ -412,6 +423,14 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
           <div class="meta-item">
             <div class="meta-lbl">Format</div>
             <div class="meta-val" id="meta-type">-</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-lbl">Row Count</div>
+            <div class="meta-val" id="meta-rows">-</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-lbl">Column Count</div>
+            <div class="meta-val" id="meta-cols">-</div>
           </div>
           <div class="meta-item">
             <div class="meta-lbl">Status</div>
@@ -482,9 +501,12 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
       <div class="card-header">
         <div>
           <div class="card-title">🧼 Data Health & Automated Cleaning Studio</div>
-          <div class="card-sub">System-detected quality findings and configurable cleaning rules.</div>
+          <div class="card-sub">System-detected quality findings, profiling summaries, and configurable cleaning rules.</div>
         </div>
-        <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
+          <button class="btn btn-secondary" onclick="exportCleanedDataset('xlsx')">📥 Download XLSX</button>
+        </div>
       </div>
 
       <!-- Health Meter -->
@@ -505,8 +527,12 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
       <div class="card-title" style="font-size:15px; margin-bottom:10px;">Quality Diagnostics & Findings:</div>
       <div class="findings-list" id="findings-list"></div>
 
+      <!-- Column Profiling Summary -->
+      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Column-Level Data Profiling:</div>
+      <div class="profiling-grid" id="profiling-grid"></div>
+
       <!-- Cleaning Controls -->
-      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Configurable Cleaning Actions:</div>
+      <div class="card-title" style="font-size:15px; margin-top:20px; margin-bottom:10px;">Configurable Cleaning Actions:</div>
       <div class="cleaning-options-grid">
         <div class="opt-card">
           <label class="opt-label">
@@ -568,6 +594,7 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
           <div class="card-sub" id="dash-dataset-meta">Generated from processed dataset</div>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-secondary" id="toggle-data-mode-btn" onclick="toggleDataMode()">Viewing: Cleaned Data</button>
           <button class="btn btn-secondary" onclick="rebuildDashboard()">🔄 Refresh / Rebuild</button>
           <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
           <button class="btn btn-primary" onclick="switchStep(1)">➕ Upload New File</button>
@@ -638,8 +665,10 @@ const appState = {
   rawHeaders: [],       // Original column headers
   normalizedHeaders: [],// Cleaned column headers
   columnTypes: {},      // Field name -> detected type
+  columnProfiles: {},   // Detailed profiling data per column
   cleanedRows: [],      // Processed JSON objects
   filteredRows: [],     // Rows matching active filters
+  dataMode: 'cleaned',  // 'cleaned' or 'original'
   qualityScore: 100,
   completenessScore: 100,
   findings: [],
@@ -718,6 +747,12 @@ function processSelectedFile(file) {
     return;
   }
 
+  // Show progress animation
+  const pWrap = document.getElementById('progress-wrap');
+  const pFill = document.getElementById('progress-fill');
+  pWrap.style.display = 'block';
+  pFill.style.width = '30%';
+
   appState.rawFile = file;
   appState.fileName = file.name;
   appState.fileSize = (file.size / 1024).toFixed(1) + ' KB';
@@ -725,34 +760,41 @@ function processSelectedFile(file) {
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      appState.workbook = workbook;
-      appState.sheetNames = workbook.SheetNames;
-      
-      // Auto-select largest non-empty sheet
-      let bestSheet = workbook.SheetNames[0];
-      let maxRows = 0;
-      workbook.SheetNames.forEach(sName => {
-        const sheet = workbook.Sheets[sName];
-        const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-        if (json.length > maxRows) { maxRows = json.length; bestSheet = sName; }
-      });
-      
-      loadSheetData(bestSheet);
-      
-      // Update UI File Meta
-      document.getElementById('meta-name').innerText = appState.fileName;
-      document.getElementById('meta-size').innerText = appState.fileSize;
-      document.getElementById('meta-type').innerText = appState.fileType;
-      document.getElementById('file-meta-container').style.display = 'block';
+    pFill.style.width = '80%';
+    setTimeout(() => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        appState.workbook = workbook;
+        appState.sheetNames = workbook.SheetNames;
+        
+        let bestSheet = workbook.SheetNames[0];
+        let maxRows = 0;
+        workbook.SheetNames.forEach(sName => {
+          const sheet = workbook.Sheets[sName];
+          const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+          if (json.length > maxRows) { maxRows = json.length; bestSheet = sName; }
+        });
+        
+        loadSheetData(bestSheet);
+        
+        document.getElementById('meta-name').innerText = appState.fileName;
+        document.getElementById('meta-size').innerText = appState.fileSize;
+        document.getElementById('meta-type').innerText = appState.fileType;
+        document.getElementById('meta-rows').innerText = appState.rawRows.length.toLocaleString();
+        document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
+        document.getElementById('file-meta-container').style.display = 'block';
 
-      switchStep(2);
-    } catch(err) {
-      console.error(err);
-      showAlert("Error reading spreadsheet file. Please verify file integrity.");
-    }
+        pFill.style.width = '100%';
+        setTimeout(() => { pWrap.style.display = 'none'; pFill.style.width = '0%'; }, 400);
+
+        switchStep(2);
+      } catch(err) {
+        console.error(err);
+        pWrap.style.display = 'none';
+        showAlert("Error reading spreadsheet file. Please verify file integrity.");
+      }
+    }, 200);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -772,11 +814,11 @@ function loadSheetData(sheetName) {
   appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
   
   detectColumnTypes();
+  profileColumns();
   renderPreviewStep();
 }
 
 function loadSampleData() {
-  // Load sample leads CRM dataset automatically
   fetch('cleaned_data.json')
     .then(res => res.json())
     .then(data => {
@@ -788,10 +830,13 @@ function loadSampleData() {
       appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
       
       detectColumnTypes();
+      profileColumns();
       
       document.getElementById('meta-name').innerText = appState.fileName;
       document.getElementById('meta-size').innerText = appState.fileSize;
       document.getElementById('meta-type').innerText = appState.fileType;
+      document.getElementById('meta-rows').innerText = data.length.toLocaleString();
+      document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
       document.getElementById('file-meta-container').style.display = 'block';
 
       switchStep(2);
@@ -802,7 +847,7 @@ function loadSampleData() {
 }
 
 /* ==========================================================================
-   TYPE INFERENCE & SCHEMA DETECTION
+   TYPE INFERENCE & COLUMN PROFILING
    ========================================================================== */
 function detectColumnTypes() {
   const types = {};
@@ -839,6 +884,49 @@ function detectColumnTypes() {
   appState.columnTypes = types;
 }
 
+function profileColumns() {
+  const profiles = {};
+  const rows = appState.rawRows;
+  
+  appState.rawHeaders.forEach(col => {
+    let nullCount = 0;
+    const vals = [];
+    const counts = {};
+
+    rows.forEach(r => {
+      const v = r[col];
+      if (v === "" || v === null || v === undefined) nullCount++;
+      else {
+        vals.push(v);
+        counts[v] = (counts[v] || 0) + 1;
+      }
+    });
+
+    const type = appState.columnTypes[col];
+    let min = null, max = null, avg = null;
+
+    if (type === 'Numeric' && vals.length) {
+      const nums = vals.map(v => parseFloat(v)).filter(n => !isNaN(n));
+      if (nums.length) {
+        min = Math.min(...nums);
+        max = Math.max(...nums);
+        avg = (nums.reduce((a,b) => a+b, 0) / nums.length).toFixed(1);
+      }
+    }
+
+    profiles[col] = {
+      type,
+      nullCount,
+      nullPct: ((nullCount / (rows.length || 1)) * 100).toFixed(1),
+      uniqueCount: Object.keys(counts).length,
+      min, max, avg,
+      topValues: Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 3)
+    };
+  });
+
+  appState.columnProfiles = profiles;
+}
+
 /* ==========================================================================
    STEP 2: PREVIEW RENDERING & SHEET SELECTOR
    ========================================================================== */
@@ -847,7 +935,6 @@ function renderPreviewStep() {
   document.getElementById('prev-total-cols').innerText = appState.rawHeaders.length;
   document.getElementById('prev-detected-types').innerText = Object.keys(appState.columnTypes).length;
 
-  // Render sheet selector if multiple sheets
   const wrap = document.getElementById('sheet-selector-wrap');
   const sel = document.getElementById('sheet-select');
   if (appState.sheetNames && appState.sheetNames.length > 1) {
@@ -857,7 +944,6 @@ function renderPreviewStep() {
     wrap.style.display = 'none';
   }
 
-  // Schema badges
   const badgesDiv = document.getElementById('schema-badges');
   badgesDiv.innerHTML = appState.rawHeaders.map(col => {
     const t = appState.columnTypes[col] || 'Text';
@@ -870,7 +956,6 @@ function renderPreviewStep() {
     </span>`;
   }).join('');
 
-  // Render preview table (first 10 rows)
   const thead = document.getElementById('preview-thead');
   const tbody = document.getElementById('preview-tbody');
 
@@ -887,7 +972,7 @@ function onSheetChange(sheetName) {
 }
 
 /* ==========================================================================
-   STEP 3: DIAGNOSTICS, DATA CLEANING & AUDIT LOG
+   STEP 3: DIAGNOSTICS, DATA CLEANING & PROFILING
    ========================================================================== */
 function runDiagnosticsAndProceed() {
   const rows = appState.rawRows;
@@ -895,7 +980,6 @@ function runDiagnosticsAndProceed() {
   const totalCells = rows.length * cols.length;
   let missingCells = 0;
   
-  // Find missing cells
   cols.forEach(c => {
     rows.forEach(r => {
       const v = r[c];
@@ -903,63 +987,73 @@ function runDiagnosticsAndProceed() {
     });
   });
 
-  appState.completenessScore = Math.max(0, Math.round(((totalCells - missingCells) / totalCells) * 100));
+  appState.completenessScore = Math.max(0, Math.round(((totalCells - missingCells) / (totalCells || 1)) * 100));
 
-  // Find duplicate rows
   const rowStrings = rows.map(r => JSON.stringify(r));
   const uniqueStrings = new Set(rowStrings);
   const dupCount = rows.length - uniqueStrings.size;
 
-  // Build Diagnostics Findings
   const findings = [];
   if (dupCount > 0) {
     findings.push({
       type: 'warning',
       icon: '⚠️',
-      title: `${dupCount} Duplicate Rows Detected`,
-      desc: `Identified ${dupCount} exact duplicate records in dataset. Recommend enabling deduplication.`
-    });
-  } else {
-    findings.push({
-      type: 'info',
-      icon: '✅',
-      title: `No Duplicate Rows Detected`,
-      desc: `All ${rows.length} records in dataset are unique.`
+      title: `${dupCount} Duplicate Rows Identified`,
+      desc: `Identified ${dupCount} exact duplicate records. Deduplication recommended.`
     });
   }
+
+  // Constant / Single value columns check
+  cols.forEach(col => {
+    const prof = appState.columnProfiles[col];
+    if (prof.uniqueCount === 1) {
+      findings.push({
+        type: 'warning',
+        icon: '⚠️',
+        title: `Constant Field: '${col}'`,
+        desc: `Field '${col}' has only 1 unique value across all records.`
+      });
+    } else if (parseFloat(prof.nullPct) > 70) {
+      findings.push({
+        type: 'critical',
+        icon: '🚨',
+        title: `Mostly Empty Field: '${col}'`,
+        desc: `Field '${col}' is missing ${prof.nullPct}% of data values.`
+      });
+    }
+  });
 
   if (missingCells > 0) {
     findings.push({
       type: missingCells / totalCells > 0.2 ? 'critical' : 'warning',
       icon: missingCells / totalCells > 0.2 ? '🚨' : '⚠️',
       title: `${missingCells.toLocaleString()} Missing Values Identified`,
-      desc: `Dataset completeness is ${appState.completenessScore}%. Smart missing value imputation recommended.`
+      desc: `Overall completeness is ${appState.completenessScore}%. Imputation or cleaning recommended.`
     });
   } else {
     findings.push({
       type: 'info',
       icon: '✅',
       title: `100% Data Completeness`,
-      desc: `No missing or null values found across all fields.`
+      desc: `No missing cells found in dataset.`
     });
   }
 
   appState.findings = findings;
 
-  // Calculate Quality Score
   let score = 100;
   if (dupCount > 0) score -= Math.min(20, dupCount * 2);
-  if (missingCells > 0) score -= Math.min(30, Math.round((missingCells / totalCells) * 50));
+  if (missingCells > 0) score -= Math.min(30, Math.round((missingCells / (totalCells || 1)) * 50));
   appState.qualityScore = Math.max(20, score);
 
-  // Render Health Meter & Findings UI
+  // Render Health Meter
   const healthCircle = document.getElementById('health-circle');
   const healthVal = document.getElementById('health-val');
   healthVal.innerText = appState.qualityScore + '%';
   healthCircle.style.background = `conic-gradient(var(${appState.qualityScore > 80 ? '--green' : (appState.qualityScore > 60 ? '--amber' : '--red')}) ${appState.qualityScore}%, var(--card2) 0%)`;
 
-  document.getElementById('health-status-title').innerText = appState.qualityScore > 80 ? "Excellent Data Quality" : (appState.qualityScore > 60 ? "Good Quality with Minor Issues" : "Needs Data Cleaning");
-  document.getElementById('health-status-desc').innerText = `Dataset Completeness: ${appState.completenessScore}% | Duplicates: ${dupCount}`;
+  document.getElementById('health-status-title').innerText = appState.qualityScore > 80 ? "Excellent Data Quality" : (appState.qualityScore > 60 ? "Good Quality with Minor Warnings" : "Needs Attention");
+  document.getElementById('health-status-desc').innerText = `Completeness: ${appState.completenessScore}% | Duplicates: ${dupCount} | Columns: ${cols.length}`;
 
   document.getElementById('findings-list').innerHTML = findings.map(f => `
     <div class="finding-item f-${f.type}">
@@ -970,6 +1064,24 @@ function runDiagnosticsAndProceed() {
       </div>
     </div>
   `).join('');
+
+  // Render Profiling Accordion Cards
+  const profGrid = document.getElementById('profiling-grid');
+  profGrid.innerHTML = cols.map(col => {
+    const p = appState.columnProfiles[col];
+    return `
+      <div class="profile-card">
+        <div class="profile-col-name">
+          <span>${col}</span>
+          <span class="type-pill tp-${p.type.toLowerCase()}">${p.type}</span>
+        </div>
+        <div class="profile-stat"><span>Missing / Nulls:</span> <strong>${p.nullCount} (${p.nullPct}%)</strong></div>
+        <div class="profile-stat"><span>Unique Values:</span> <strong>${p.uniqueCount}</strong></div>
+        ${p.type === 'Numeric' ? `<div class="profile-stat"><span>Min / Max / Avg:</span> <strong>${p.min} / ${p.max} / ${p.avg}</strong></div>` : ''}
+        ${p.topValues.length ? `<div class="profile-stat"><span>Top Value:</span> <strong>${p.topValues[0][0]} (${p.topValues[0][1]})</strong></div>` : ''}
+      </div>
+    `;
+  }).join('');
 
   document.getElementById('opt-dedupe-sub').innerText = `Identified ${dupCount} duplicate rows.`;
 
@@ -986,22 +1098,19 @@ function updateCleaningRules() {
   let cleaned = JSON.parse(JSON.stringify(appState.rawRows));
   const logs = [];
 
-  // 1. Trim strings
   if (trimStr) {
     cleaned.forEach(r => {
       Object.keys(r).forEach(k => {
         if (typeof r[k] === 'string') r[k] = r[k].trim();
       });
     });
-    logs.push("Trimmed leading and trailing whitespace from string cells.");
+    logs.push("Trimmed leading & trailing spaces from text cells.");
   }
 
-  // 2. Normalize headers
   if (normalize) {
-    logs.push("Normalized column header names and removed invalid characters.");
+    logs.push("Normalized column header names.");
   }
 
-  // 3. Deduplication
   if (dedupe) {
     const seen = new Set();
     const beforeCount = cleaned.length;
@@ -1012,10 +1121,9 @@ function updateCleaningRules() {
       return true;
     });
     const removed = beforeCount - cleaned.length;
-    if (removed > 0) logs.push(`Removed ${removed} duplicate rows from dataset.`);
+    if (removed > 0) logs.push(`Removed ${removed} duplicate rows.`);
   }
 
-  // 4. Missing value strategy
   if (missingStrategy !== 'keep') {
     cleaned.forEach(r => {
       Object.keys(r).forEach(col => {
@@ -1041,11 +1149,12 @@ function updateCleaningRules() {
 }
 
 function exportCleanedDataset(format = 'csv') {
-  if (!appState.cleanedRows.length) return;
-  const ws = XLSX.utils.json_to_sheet(appState.cleanedRows);
+  const data = appState.dataMode === 'original' ? appState.rawRows : appState.cleanedRows;
+  if (!data.length) return;
+  const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "CleanedData");
-  XLSX.writeFile(wb, `Cleaned_${appState.fileName || 'dataset'}.${format}`);
+  XLSX.utils.book_append_sheet(wb, ws, "ProcessedData");
+  XLSX.writeFile(wb, `${appState.dataMode}_${appState.fileName || 'dataset'}.${format}`);
 }
 
 /* ==========================================================================
@@ -1054,9 +1163,11 @@ function exportCleanedDataset(format = 'csv') {
 function generateAutoDashboard() {
   appState.filteredRows = [...appState.cleanedRows];
   appState.currentPage = 1;
+  appState.dataMode = 'cleaned';
   
-  document.getElementById('dash-dataset-meta').innerText = `${appState.fileName} | ${appState.cleanedRows.length.toLocaleString()} Records | ${appState.rawHeaders.length} Columns`;
-  
+  document.getElementById('dash-dataset-meta').innerText = `${appState.fileName} | ${appState.cleanedRows.length.toLocaleString()} Processed Records | ${appState.rawHeaders.length} Columns`;
+  document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Cleaned Data";
+
   renderDashboardKPIs();
   renderDashboardInsights();
   renderDynamicCharts();
@@ -1064,6 +1175,20 @@ function generateAutoDashboard() {
   renderTable();
   
   switchStep(4);
+}
+
+function toggleDataMode() {
+  if (appState.dataMode === 'cleaned') {
+    appState.dataMode = 'original';
+    appState.filteredRows = [...appState.rawRows];
+    document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Original Data";
+  } else {
+    appState.dataMode = 'cleaned';
+    appState.filteredRows = [...appState.cleanedRows];
+    document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Cleaned Data";
+  }
+  renderTable();
+  renderDynamicCharts();
 }
 
 function rebuildDashboard() {
@@ -1076,9 +1201,7 @@ function renderDashboardKPIs() {
   const rows = appState.cleanedRows;
   const cols = appState.rawHeaders;
 
-  // Find first numeric column
   const numCol = cols.find(c => appState.columnTypes[c] === 'Numeric');
-  // Find first category column
   const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
 
   let numSum = 0, numAvg = 0;
@@ -1132,7 +1255,7 @@ function renderDashboardInsights() {
   const insights = [];
 
   insights.push(`Analyzed <strong>${rows.length.toLocaleString()} records</strong> across <strong>${cols.length} attributes</strong>.`);
-  insights.push(`Dataset health score is rated at <strong>${appState.qualityScore}%</strong> with a completeness score of <strong>${appState.completenessScore}%</strong>.`);
+  insights.push(`Dataset health score is <strong>${appState.qualityScore}%</strong> with <strong>${appState.completenessScore}% completeness</strong>.`);
 
   const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
   if (catCol) {
@@ -1141,7 +1264,7 @@ function renderDashboardInsights() {
     const top = Object.entries(counts).sort((a,b) => b[1] - a[1])[0];
     if (top) {
       const pct = ((top[1] / rows.length) * 100).toFixed(1);
-      insights.push(`Primary category distribution is led by <strong>${top[0]}</strong> representing <strong>${pct}%</strong> of total entries.`);
+      insights.push(`Dominant segment in <strong>${catCol}</strong> is <strong>${top[0]}</strong> representing <strong>${pct}%</strong> of all records.`);
     }
   }
 
@@ -1154,7 +1277,6 @@ function renderDashboardInsights() {
 }
 
 function renderDynamicCharts() {
-  // Destroy existing chart instances
   appState.chartInstances.forEach(c => c.destroy());
   appState.chartInstances = [];
 
@@ -1164,13 +1286,16 @@ function renderDynamicCharts() {
   const rows = appState.filteredRows;
   const cols = appState.rawHeaders;
 
-  // Chart 1: Top Category Distribution Bar Chart
   const catCols = cols.filter(c => appState.columnTypes[c] === 'Category');
+  const numCols = cols.filter(c => appState.columnTypes[c] === 'Numeric');
+  const dateCols = cols.filter(c => appState.columnTypes[c] === 'Date');
+
+  // Chart 1: Bar Chart for primary category
   if (catCols.length) {
     const col = catCols[0];
     const card = document.createElement('div');
     card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📊 ${col} Breakdown</div><div class="chart-container"><canvas id="chart-cat-1"></canvas></div>`;
+    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📊 ${col} Distribution</div><div class="chart-container"><canvas id="chart-cat-1"></canvas></div>`;
     grid.appendChild(card);
 
     const counts = {};
@@ -1204,7 +1329,7 @@ function renderDynamicCharts() {
     appState.chartInstances.push(chart);
   }
 
-  // Chart 2: Donut Chart for Secondary Category
+  // Chart 2: Donut Chart for secondary category
   if (catCols.length > 1) {
     const col = catCols[1];
     const card = document.createElement('div');
@@ -1235,13 +1360,12 @@ function renderDynamicCharts() {
     appState.chartInstances.push(chart);
   }
 
-  // Chart 3: Numeric Field Distribution Line/Histogram
-  const numCols = cols.filter(c => appState.columnTypes[c] === 'Numeric');
+  // Chart 3: Line / Time Series Chart
   if (numCols.length) {
     const col = numCols[0];
     const card = document.createElement('div');
     card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📈 ${col} Distribution</div><div class="chart-container"><canvas id="chart-num-1"></canvas></div>`;
+    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📈 ${col} Value Trend</div><div class="chart-container"><canvas id="chart-num-1"></canvas></div>`;
     grid.appendChild(card);
 
     const vals = rows.map(r => parseFloat(r[col]) || 0).slice(0, 40);
@@ -1300,14 +1424,13 @@ function onCategoryFilterChange(col, val) {
 
 function onFilterChange() {
   const search = document.getElementById('global-search').value.toLowerCase().trim();
-  
-  appState.filteredRows = appState.cleanedRows.filter(row => {
-    // 1. Search match
+  const source = appState.dataMode === 'cleaned' ? appState.cleanedRows : appState.rawRows;
+
+  appState.filteredRows = source.filter(row => {
     if (search) {
       const line = Object.values(row).join(' ').toLowerCase();
       if (!line.includes(search)) return false;
     }
-    // 2. Category filters match
     for (let col in appState.activeFilters) {
       if (String(row[col]) !== appState.activeFilters[col]) return false;
     }
@@ -1337,7 +1460,6 @@ function renderTable() {
     </th>
   `).join('');
 
-  // Sorting logic
   let rows = [...appState.filteredRows];
   if (appState.sortCol) {
     const c = appState.sortCol;
@@ -1351,7 +1473,6 @@ function renderTable() {
     });
   }
 
-  // Pagination slice
   const total = rows.length;
   const start = (appState.currentPage - 1) * appState.pageSize;
   const end = Math.min(start + appState.pageSize, total);
@@ -1363,7 +1484,6 @@ function renderTable() {
     </tr>
   `).join('');
 
-  // Update pagination info
   document.getElementById('pag-info').innerText = total 
     ? `Showing ${start + 1} to ${end} of ${total.toLocaleString()} entries`
     : `No records found`;

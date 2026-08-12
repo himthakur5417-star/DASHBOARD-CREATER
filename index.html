@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anti-Gravity | Smart Auto-Dashboard & Data Studio</title>
+<title>Infinito | Smart Auto-Dashboard & Data Studio</title>
 <meta name="description" content="Automated data upload, cleaning, validation, profiling, and dynamic Power BI-style dashboard generator for CSV, XLS, and XLSX files.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- SheetJS for Excel/CSV Parsing -->
@@ -328,10 +328,10 @@ tr:hover td { background: rgba(79, 142, 247, 0.04); }
 <header>
   <div class="wrap hdr">
     <div class="logo">
-      <div class="logo-icon">⚡</div>
+      <div class="logo-icon">♾️</div>
       <div>
-        <div class="logo-title">Anti-Gravity | Smart Auto-Dashboard & Data Studio</div>
-        <div class="logo-sub">Automated File Processing, Data Cleaning & Dynamic Visualizations</div>
+        <div class="logo-title">Infinito | Smart Auto-Dashboard & Data Studio</div>
+        <div class="logo-sub">Clean your data. Verify every detail. Turn insights into Power BI-style dashboards.</div>
       </div>
     </div>
     
@@ -1507,6 +1507,13 @@ function sortTable(col) {
   else { appState.sortCol = col; appState.sortAsc = true; }
   renderTable();
 }
+</script>
+
+<div id="footer-mount"></div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
+});
 </script>
 
 </body>

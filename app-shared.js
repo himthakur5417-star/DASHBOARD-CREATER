@@ -1,13 +1,14 @@
 /* ==========================================================================
-   ANTI-GRAVITY SHARED WORKSPACE ENGINE & PERSISTENCE LAYER
+   INFINITO SHARED ENGINE & PERSISTENCE LAYER
    Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2
+   Rebranded from Anti-Gravity to INFINITO
    ========================================================================== */
 
 class WorkspaceStore {
   constructor(workspaceId) {
     this.workspaceId = workspaceId;
-    this.storageKey = `ag_workspace_${workspaceId}`;
-    this.historyKey = `ag_history_${workspaceId}`;
+    this.storageKey = `infinito_workspace_${workspaceId}`;
+    this.historyKey = `infinito_history_${workspaceId}`;
   }
 
   getData() {
@@ -50,7 +51,6 @@ class WorkspaceStore {
     localStorage.removeItem(this.historyKey);
   }
 
-  // Merge new valid rows into existing dataset with deduplication
   mergeData(newRows, fileName, sheetName = "") {
     const existing = this.getData();
     const history = this.getHistory();
@@ -62,16 +62,17 @@ class WorkspaceStore {
     let newlyAdded = [];
 
     newRows.forEach(row => {
-      // Basic validity check
       if (!row || Object.keys(row).length === 0) return;
       validCount++;
 
-      const hash = this.getRowHash(row);
+      const mappedRow = mapFields(row);
+      const hash = this.getRowHash(mappedRow);
+      
       if (existingHashes.has(hash)) {
         duplicateCount++;
       } else {
         existingHashes.add(hash);
-        newlyAdded.push(row);
+        newlyAdded.push(mappedRow);
       }
     });
 
@@ -94,28 +95,64 @@ class WorkspaceStore {
     history.unshift(logEntry);
     this.saveHistory(history);
 
-    return {
-      logEntry,
-      combinedData: combined
-    };
+    return { logEntry, combinedData: combined };
   }
 
   getRowHash(row) {
-    // Check if there is an explicit Email, ID, or Phone identifier
-    const keys = Object.keys(row);
-    const emailKey = keys.find(k => k.toLowerCase().includes('email'));
-    const idKey = keys.find(k => k.toLowerCase() === 'id' || k.toLowerCase().includes('identifier'));
-    
-    if (emailKey && row[emailKey]) return `email_${String(row[emailKey]).toLowerCase().trim()}`;
-    if (idKey && row[idKey]) return `id_${String(row[idKey]).trim()}`;
-    
-    // Otherwise fallback to full JSON string representation
+    const email = row.email || row.Email || row.contact_email;
+    const company = row.companyName || row.Company || row.company_name;
+    const phone = row.contactNumber || row.Phone || row.contact_number;
+
+    if (email && String(email).trim()) return `email_${String(email).toLowerCase().trim()}`;
+    if (company && String(company).trim()) return `comp_${String(company).toLowerCase().trim()}`;
+    if (phone && String(phone).trim()) return `phone_${String(phone).trim()}`;
     return `hash_${JSON.stringify(row)}`;
   }
 }
 
 /* ==========================================================================
-   SHARED UI COMPONENTS (Navigation, Modals, Export)
+   INTELLIGENT FIELD MAPPING & NORMALIZATION
+   ========================================================================== */
+function mapFields(row) {
+  const mapped = { ...row };
+  const keys = Object.keys(row);
+
+  function findVal(patterns) {
+    const foundKey = keys.find(k => {
+      const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return patterns.some(p => lk === p || lk.includes(p));
+    });
+    return foundKey ? row[foundKey] : undefined;
+  }
+
+  mapped.companyName = findVal(['companyname', 'company', 'organization', 'accountname', 'firm']) || row.companyName || '—';
+  mapped.website = findVal(['website', 'domain', 'companywebsite', 'url']) || row.website || '—';
+  mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche']) || row.industry || '—';
+  mapped.location = findVal(['location', 'city', 'country', 'address', 'state']) || row.location || '—';
+  
+  // Founder name detection (must NOT fabricate names)
+  mapped.founderName = findVal(['foundername', 'founder', 'cofounder']) || row.founderName || '—';
+  mapped.contactName = findVal(['contactname', 'name', 'fullname', 'personname', 'leadname', 'firstname']) || row.contactName || '—';
+  mapped.jobTitle = findVal(['jobtitle', 'title', 'designation', 'role']) || row.jobTitle || '—';
+  
+  mapped.email = findVal(['email', 'emailaddress', 'contactemail']) || row.email || '—';
+  mapped.contactNumber = findVal(['contactnumber', 'phone', 'phonenumber', 'mobile', 'telephone']) || row.contactNumber || '—';
+  
+  mapped.linkedInUrl = findVal(['linkedinurl', 'linkedin', 'profilelink', 'linkedinprofile']) || row.linkedInUrl || '—';
+  
+  // Determine LinkedIn Found status
+  const hasLinkedin = (mapped.linkedInUrl && mapped.linkedInUrl !== '—' && String(mapped.linkedInUrl).includes('linkedin.com')) || 
+                      String(findVal(['linkedinfound', 'haslinkedin'])).toLowerCase() === 'yes';
+  mapped.linkedInFound = hasLinkedin ? 'Found' : 'Not Found';
+
+  // Email verification status
+  mapped.emailStatus = findVal(['emailstatus', 'verificationstatus', 'isverified']) || (mapped.email && mapped.email !== '—' ? 'Verified' : 'Unverified');
+
+  return mapped;
+}
+
+/* ==========================================================================
+   UI HEADER & CREATOR FOOTER COMPONENTS
    ========================================================================== */
 
 function renderAppHeader(activeId, pageTitle, pageSub) {
@@ -123,10 +160,10 @@ function renderAppHeader(activeId, pageTitle, pageSub) {
   <header>
     <div class="wrap hdr">
       <div class="logo">
-        <div class="logo-icon">⚡</div>
+        <div class="logo-icon">♾️</div>
         <div>
-          <div class="logo-title">${pageTitle}</div>
-          <div class="logo-sub">${pageSub}</div>
+          <div class="logo-title">Infinito</div>
+          <div class="logo-sub">Clean your data. Verify every detail. Turn insights into Power BI-style dashboards.</div>
         </div>
       </div>
 
@@ -144,8 +181,34 @@ function renderAppHeader(activeId, pageTitle, pageSub) {
   </header>`;
 }
 
-/* Modal: Share Via Email */
-function openShareEmailModal(workspaceTitle, summaryStats = {}) {
+function renderCreatorFooter() {
+  return `
+  <footer class="creator-footer">
+    <div class="wrap footer-content">
+      <div class="creator-badge">
+        <div class="creator-avatar">HT</div>
+        <div>
+          <div class="creator-title">Created by <strong>Himanshu Thakur</strong></div>
+          <div class="creator-sub">Creator of Infinito — a platform that helps turn raw spreadsheet data into clean, verified, insightful Power BI-style dashboards.</div>
+        </div>
+      </div>
+      <div class="creator-links">
+        <a href="https://www.linkedin.com/in/-himanshu-thakur-" target="_blank" rel="noopener" class="creator-link">
+          🔗 LinkedIn Profile
+        </a>
+        <a href="mailto:himthakur5417@gmail.com" class="creator-link">
+          📧 Email Himanshu
+        </a>
+      </div>
+    </div>
+  </footer>`;
+}
+
+/* ==========================================================================
+   MODALS: SHARE VIA EMAIL & IMPORT SUMMARY
+   ========================================================================== */
+
+function openShareEmailModal(workspaceTitle) {
   let modal = document.getElementById('share-email-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -154,18 +217,18 @@ function openShareEmailModal(workspaceTitle, summaryStats = {}) {
     document.body.appendChild(modal);
   }
 
-  const defaultSubject = `Shared Dashboard: ${workspaceTitle}`;
+  const defaultSubject = `Shared Dashboard: Infinito — ${workspaceTitle}`;
 
   modal.innerHTML = `
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">📧 Share via Email — ${workspaceTitle}</div>
+        <div class="modal-title">📧 Share via Email — Infinito ${workspaceTitle}</div>
         <button class="modal-close" onclick="closeShareEmailModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Recipient Email Address(es):</label>
-          <input type="email" id="share-to" class="search-input" placeholder="e.g. manager@company.com, team@org.com">
+          <input type="email" id="share-to" class="search-input" placeholder="e.g. client@company.com, executive@org.com">
         </div>
         <div class="form-group">
           <label class="form-label">Subject Line:</label>
@@ -173,7 +236,7 @@ function openShareEmailModal(workspaceTitle, summaryStats = {}) {
         </div>
         <div class="form-group">
           <label class="form-label">Optional Message:</label>
-          <textarea id="share-message" class="search-input" rows="3" placeholder="Add a personal note or key highlights..."></textarea>
+          <textarea id="share-message" class="search-input" rows="3" placeholder="Infinito analytics report summary attached..."></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Select What to Share:</label>
@@ -186,7 +249,7 @@ function openShareEmailModal(workspaceTitle, summaryStats = {}) {
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeShareEmailModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="sendShareEmail('${workspaceTitle}')">📧 Send Email Report</button>
+        <button class="btn btn-primary" onclick="sendShareEmail('${workspaceTitle}')">📧 Send Infinito Report</button>
       </div>
     </div>
   `;
@@ -209,18 +272,14 @@ function sendShareEmail(workspaceTitle) {
     return;
   }
 
-  // Simulated Email Dispatch Toast Feedback
-  const body = encodeURIComponent(`Hi,\n\nHere is the shared report for ${workspaceTitle}:\n\n${message}\n\nGenerated via Anti-Gravity Multi-Workspace Dashboard System.`);
+  const body = encodeURIComponent(`Hi,\n\nHere is the shared dashboard report for Infinito [${workspaceTitle}]:\n\n${message}\n\nGenerated via Infinito Data & Intelligence Platform.`);
   const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${body}`;
   
-  // Trigger mailto client as fallback & show success toast
   window.open(mailtoUrl, '_blank');
-
   closeShareEmailModal();
   showToastNotification(`✅ Email dispatch initiated for ${to}!`);
 }
 
-/* Modal: Import Summary Toast */
 function showImportSummaryModal(summary) {
   let modal = document.getElementById('import-summary-modal');
   if (!modal) {
@@ -233,12 +292,12 @@ function showImportSummaryModal(summary) {
   modal.innerHTML = `
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">📥 Data Import Summary</div>
+        <div class="modal-title">📥 Infinito Import Summary</div>
         <button class="modal-close" onclick="closeImportSummaryModal()">✕</button>
       </div>
       <div class="modal-body">
         <div style="font-size:13px; color:var(--t2); margin-bottom:16px;">
-          Successfully processed and merged file: <strong>${summary.fileName}</strong> (${summary.sheetName})
+          Processed and merged file: <strong>${summary.fileName}</strong> (${summary.sheetName})
         </div>
         <div class="kpi-grid" style="grid-template-columns:repeat(2, 1fr); gap:12px;">
           <div class="kpi kblue" style="padding:14px;">
@@ -251,7 +310,7 @@ function showImportSummaryModal(summary) {
           </div>
           <div class="kpi kamber" style="padding:14px;">
             <div class="kpi-val" style="font-size:20px; color:var(--amber);">${summary.duplicateRows}</div>
-            <div class="kpi-lbl">Duplicate Rows Skipped</div>
+            <div class="kpi-lbl">Duplicates Skipped</div>
           </div>
           <div class="kpi kpurple" style="padding:14px;">
             <div class="kpi-val" style="font-size:20px;">${summary.totalStoredRows}</div>
@@ -273,7 +332,83 @@ function closeImportSummaryModal() {
   if (modal) modal.style.display = 'none';
 }
 
-/* Standalone HTML Export */
+/* ==========================================================================
+   RECORD DETAIL DRAWER / MODAL
+   ========================================================================== */
+
+function openRecordDetailModal(record) {
+  let modal = document.getElementById('record-detail-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'record-detail-modal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  const rec = mapFields(record);
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:680px;">
+      <div class="modal-header">
+        <div class="modal-title">🏢 Contact Intelligence — ${rec.companyName !== '—' ? rec.companyName : (rec.contactName !== '—' ? rec.contactName : 'Record Detail')}</div>
+        <button class="modal-close" onclick="closeRecordDetailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <button class="pag-btn active" onclick="switchDetailTab('tab-comp')">1. Company Details</button>
+          <button class="pag-btn" onclick="switchDetailTab('tab-cont')">2. Contact Details</button>
+          <button class="pag-btn" onclick="switchDetailTab('tab-comm')">3. Email & Phone</button>
+          <button class="pag-btn" onclick="switchDetailTab('tab-link')">4. LinkedIn & Verify</button>
+        </div>
+
+        <div id="tab-comp" class="detail-tab-content">
+          <div class="profile-stat"><span>Company Name:</span> <strong>${rec.companyName}</strong></div>
+          <div class="profile-stat"><span>Website:</span> <strong>${rec.website !== '—' ? `<a href="${rec.website.startsWith('http')?rec.website:'http://'+rec.website}" target="_blank" style="color:var(--blue);">${rec.website}</a>` : '—'}</strong></div>
+          <div class="profile-stat"><span>Industry:</span> <strong>${rec.industry}</strong></div>
+          <div class="profile-stat"><span>Location:</span> <strong>${rec.location}</strong></div>
+        </div>
+
+        <div id="tab-cont" class="detail-tab-content" style="display:none;">
+          <div class="profile-stat"><span>Founder Name:</span> <strong>${rec.founderName}</strong></div>
+          <div class="profile-stat"><span>Primary Contact Name:</span> <strong>${rec.contactName}</strong></div>
+          <div class="profile-stat"><span>Job Title / Role:</span> <strong>${rec.jobTitle}</strong></div>
+        </div>
+
+        <div id="tab-comm" class="detail-tab-content" style="display:none;">
+          <div class="profile-stat"><span>Email Address:</span> <strong>${rec.email !== '—' ? `<a href="mailto:${rec.email}" style="color:var(--blue);">${rec.email}</a>` : '—'}</strong></div>
+          <div class="profile-stat"><span>Phone / Contact Number:</span> <strong>${rec.contactNumber}</strong></div>
+        </div>
+
+        <div id="tab-link" class="detail-tab-content" style="display:none;">
+          <div class="profile-stat"><span>LinkedIn Found:</span> <strong style="color:${rec.linkedInFound === 'Found' ? 'var(--green)' : 'var(--amber)'};">${rec.linkedInFound}</strong></div>
+          <div class="profile-stat"><span>LinkedIn Profile URL:</span> <strong>${rec.linkedInUrl !== '—' ? `<a href="${rec.linkedInUrl.startsWith('http')?rec.linkedInUrl:'https://'+rec.linkedInUrl}" target="_blank" style="color:var(--blue);">${rec.linkedInUrl}</a>` : '—'}</strong></div>
+          <div class="profile-stat"><span>Email Verification Status:</span> <strong style="color:var(--green);">${rec.emailStatus}</strong></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeRecordDetailModal()">Close Detail Drawer</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+function switchDetailTab(tabId) {
+  document.querySelectorAll('.detail-tab-content').forEach(el => el.style.display = 'none');
+  document.getElementById(tabId).style.display = 'block';
+}
+
+function closeRecordDetailModal() {
+  const modal = document.getElementById('record-detail-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+/* ==========================================================================
+   STANDALONE HTML EXPORT
+   ========================================================================== */
+
 function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
   if (!rows || !rows.length) {
     alert("No dataset available to export HTML.");
@@ -287,11 +422,11 @@ function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>${workspaceTitle} — Exported Dashboard Report</title>
+<title>Infinito | ${workspaceTitle} — Exported Dashboard Report</title>
 <style>
   body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0e1a; color: #f0f4ff; padding: 30px; }
   h1 { font-size: 24px; color: #4f8ef7; border-bottom: 1px solid rgba(79,142,247,0.3); padding-bottom: 10px; }
-  .meta { font-size: 12px; color: #8899bb; margin-bottom: 20px; }
+  .tagline { font-size: 12px; color: #8899bb; margin-bottom: 20px; font-style: italic; }
   .kpi-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
   .kpi-card { background: #131c35; border: 1px solid rgba(79,142,247,0.2); border-radius: 8px; padding: 15px 20px; min-width: 180px; }
   .kpi-val { font-size: 24px; font-weight: bold; color: #fff; }
@@ -300,11 +435,13 @@ function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
   table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
   th { background: #0f1629; color: #8899bb; text-align: left; padding: 10px; border-bottom: 1px solid #1a2440; }
   td { padding: 10px; border-bottom: 1px solid rgba(79,142,247,0.1); }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(79,142,247,0.2); font-size: 12px; color: #8899bb; text-align: center; }
 </style>
 </head>
 <body>
-  <h1>📊 ${workspaceTitle} — Exported Report</h1>
-  <div class="meta">Export Timestamp: ${new Date().toLocaleString()} | Total Stored Records: ${rows.length.toLocaleString()}</div>
+  <h1>♾️ Infinito | ${workspaceTitle} — Executive Report</h1>
+  <div class="tagline">Clean your data. Verify every detail. Turn insights into Power BI-style dashboards.</div>
+  <div class="meta">Export Timestamp: ${new Date().toLocaleString()} | Total Records: ${rows.length.toLocaleString()}</div>
   
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-val">${rows.length.toLocaleString()}</div><div class="kpi-lbl">Total Records</div></div>
@@ -318,13 +455,17 @@ function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
     <ul>${insights.map(i => `<li>${i}</li>`).join('')}</ul>
   </div>` : ''}
 
-  <h3>📋 Data Preview (First 50 Records)</h3>
+  <h3>📋 Contact Intelligence Preview</h3>
   <table>
     <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>
       ${sampleRows.map(r => `<tr>${headers.map(h => `<td>${r[h] !== undefined ? r[h] : ''}</td>`).join('')}</tr>`).join('')}
     </tbody>
   </table>
+
+  <footer>
+    Created by <strong>Himanshu Thakur</strong> — Creator of Infinito.
+  </footer>
 </body>
 </html>`;
 
@@ -332,7 +473,7 @@ function exportWorkspaceHTML(workspaceTitle, rows, kpis = [], insights = []) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${workspaceTitle.replace(/\s+/g, '_')}_Report_${Date.now()}.html`;
+  a.download = `Infinito_${workspaceTitle.replace(/\s+/g, '_')}_Report_${Date.now()}.html`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -355,9 +496,9 @@ function showToastNotification(message) {
   setTimeout(() => { toast.style.display = 'none'; }, 4000);
 }
 
-/* Modal CSS Styles Injection */
-const modalStyles = document.createElement('style');
-modalStyles.innerHTML = `
+/* Modal & Footer Styles */
+const extraStyles = document.createElement('style');
+extraStyles.innerHTML = `
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(10px);
@@ -365,7 +506,7 @@ modalStyles.innerHTML = `
 }
 .modal-card {
   background: var(--card, #131c35); border: 1px solid var(--border, rgba(79,142,247,0.3));
-  border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  border-radius: 14px; width: 100%; max-width: 540px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
   animation: fi 0.25s ease;
 }
 .modal-header {
@@ -379,5 +520,29 @@ modalStyles.innerHTML = `
 .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border, rgba(79,142,247,0.2)); display: flex; justify-content: flex-end; gap: 10px; }
 .form-group { margin-bottom: 14px; }
 .form-label { font-size: 12px; font-weight: 600; color: #8899bb; margin-bottom: 6px; display: block; }
+
+/* CREATOR FOOTER STYLING */
+.creator-footer {
+  margin-top: 60px; padding: 30px 0; background: rgba(13, 20, 45, 0.95);
+  border-top: 1px solid var(--border, rgba(79,142,247,0.15)); text-align: center;
+}
+.footer-content { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.creator-badge { display: flex; align-items: center; gap: 12px; text-align: left; }
+.creator-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #4f8ef7, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: #fff;
+}
+.creator-title { font-size: 14px; color: #f0f4ff; }
+.creator-sub { font-size: 12px; color: #8899bb; max-width: 500px; margin-top: 2px; }
+.creator-links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.creator-link {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+  background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3);
+  border-radius: 8px; font-size: 12px; font-weight: 600; color: #4f8ef7; text-decoration: none;
+  transition: all 0.2s;
+}
+.creator-link:hover { background: rgba(79,142,247,0.22); transform: translateY(-1px); }
 `;
-document.head.appendChild(modalStyles);
+document.head.appendChild(extraStyles);

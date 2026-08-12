@@ -1,4 +1,4 @@
-# ⚡ Anti-Gravity | Multi-Workspace Cumulative Dashboard Suite
+# ♾️ Infinito | Multi-Workspace Cumulative Dashboard Suite
 
 An enterprise-grade, multi-workspace web application designed for **Automated Data Upload, Data Cleaning, Quality Diagnostics, and Cumulative Workspace Dashboards**.
 

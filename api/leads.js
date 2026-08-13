@@ -50,8 +50,11 @@ export default async function handler(req, res) {
     targetState = '',
     targetCity = '',
     industry = '',
-    limit = 25
+    limit = 20
   } = body;
+
+  /* Clamp to 20 on free Vercel plan — fits within 10s timeout */
+  const effectiveLimit = Math.min(Number(limit) || 20, 20);
 
   // Build a precise, structured prompt for real B2B company discovery
   const icpDescriptions = {
@@ -64,27 +67,26 @@ export default async function handler(req, res) {
   const locationStr = [targetCity, targetState, targetCountry].filter(Boolean).join(', ');
   const industryStr = industry ? `Industry focus: ${industry}.` : '';
 
-  const systemPrompt = `You are a B2B lead research assistant. Your job is to return ONLY real, publicly known companies that match the exact search criteria. 
+  const systemPrompt = `You are a B2B lead research assistant. Return ONLY real, publicly known companies matching the search criteria.
 
-STRICT RULES:
-- Return ONLY real companies that genuinely exist and are located in the specified location
-- NEVER fabricate, invent, or hallucinate company names, LinkedIn URLs, emails, or founders
-- If a founder name or email is not publicly known, leave those fields as empty string ""
-- LinkedIn URL must be the real official company page if known, otherwise empty string ""
-- Source URL must be a real verifiable public URL (company website, LinkedIn, Crunchbase, etc.)
-- Verification Status: "Verified" if company name + location + source are confirmed; "Needs Review" if uncertain
-- Return ONLY companies that match the location criteria: ${locationStr}
-- Return ONLY companies matching the ICP: ${icpDesc}
-- ${industryStr}
-- Do NOT repeat companies
-- Do NOT include companies from different locations than requested`;
-
-  const userPrompt = `Find up to ${Math.min(limit, 50)} real B2B companies matching these criteria:
+RULES:
+- Only real companies that exist in the specified location
+- NEVER fabricate company names, LinkedIn URLs, emails, or founders
+- Founder name/email: leave as "" if not publicly known
+- LinkedIn URL: real company page or ""
+- Source URL: real verifiable URL (website, LinkedIn, Crunchbase)
+- Verification: "Verified" if confirmed, "Needs Review" if uncertain
 - Location: ${locationStr}
-- ICP Profile: ${icpDesc}
+- ICP: ${icpDesc}
+- ${industryStr}
+- No duplicates`;
+
+  const userPrompt = `Find up to ${effectiveLimit} real B2B companies matching:
+- Location: ${locationStr}
+- ICP: ${icpDesc}
 - ${industryStr}
 
-Return a JSON array with exactly these fields for each company:
+Return a JSON array:
 [
   {
     "companyName": "Exact real company name",
@@ -96,7 +98,7 @@ Return a JSON array with exactly these fields for each company:
   }
 ]
 
-Only return the JSON array. No explanation, no markdown, no extra text.`;
+Return ONLY the JSON array. No text, no markdown.`;
 
   let openaiResponse;
   try {
@@ -112,8 +114,8 @@ Only return the JSON array. No explanation, no markdown, no extra text.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.2,
-        max_tokens: 4000,
+        temperature: 0.1,
+        max_tokens: 2500,
         response_format: { type: 'json_object' }
       })
     });
@@ -193,7 +195,7 @@ Only return the JSON array. No explanation, no markdown, no extra text.`;
       sourceUrl: isValidUrl(lead.sourceUrl) ? lead.sourceUrl.trim() : '',
       verificationStatus: lead.verificationStatus === 'Verified' ? 'Verified' : 'Needs Review'
     }))
-    .slice(0, Math.min(limit, 100));
+    .slice(0, effectiveLimit);
 
   return res.status(200).json({
     leads: cleanLeads,

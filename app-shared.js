@@ -1,6 +1,6 @@
 /* ==========================================================================
    INFINITO SHARED ENGINE & PERSISTENCE LAYER
-   Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2 | ICP 3
+   Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2 | ICP 3 | Lead Gen
    ========================================================================== */
 
 class WorkspaceStore {
@@ -146,16 +146,24 @@ function mapFields(row) {
   mapped.companyName = findVal(['companyname', 'company', 'organization', 'accountname', 'firm']) || row.companyName || '—';
   mapped.website = findVal(['website', 'domain', 'companywebsite', 'url']) || row.website || '—';
   mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche', 'itservicetype', 'subindustry']) || row.industry || '—';
-  mapped.location = findVal(['location', 'city', 'address', 'state', 'indialocation']) || row.location || '—';
-  mapped.city = findVal(['city', 'indiacity']) || row.city || '—';
-  mapped.state = findVal(['state', 'usstate']) || row.state || '—';
   
+  // Flexible Global Location Fields
+  mapped.country = findVal(['country', 'nation', 'targetcountry']) || row.country || '—';
+  mapped.state = findVal(['state', 'province', 'region', 'usstate']) || row.state || '—';
+  mapped.city = findVal(['city', 'indiacity', 'town']) || row.city || '—';
+  mapped.postalCode = findVal(['postalcode', 'zip', 'zipcode', 'pincode']) || row.postalCode || '—';
+  mapped.timeZone = findVal(['timezone', 'tz']) || row.timeZone || '—';
+
+  // Computed Combined Location String
+  const locParts = [mapped.city, mapped.state, mapped.country].filter(p => p && p !== '—');
+  mapped.location = locParts.length ? locParts.join(', ') : (findVal(['location', 'address']) || row.location || '—');
+
   // Numbers
   const empVal = findVal(['employeecount', 'employees', 'companyemployees', 'totalemployees', 'size', 'headcount']);
-  mapped.employeeCount = empVal !== undefined && empVal !== "" ? parseInt(empVal) || empVal : (row.employeeCount || '—');
+  mapped.employeeCount = empVal !== undefined && empVal !== "" ? (parseInt(empVal) || empVal) : (row.employeeCount || '—');
 
   const engVal = findVal(['engineeringstaffcount', 'engineeringstaff', 'engineers', 'developers', 'techstaff']);
-  mapped.engineeringStaff = engVal !== undefined && engVal !== "" ? parseInt(engVal) || engVal : (row.engineeringStaff || '—');
+  mapped.engineeringStaff = engVal !== undefined && engVal !== "" ? (parseInt(engVal) || engVal) : (row.engineeringStaff || '—');
 
   const revVal = findVal(['annualrevenue', 'revenue', 'turnover', 'revenuecrore', 'revenuecr']);
   mapped.annualRevenue = revVal !== undefined && revVal !== "" ? (parseFloat(revVal) || revVal) : (row.annualRevenue || '—');
@@ -174,17 +182,48 @@ function mapFields(row) {
                       String(findVal(['linkedinfound', 'haslinkedin'])).toLowerCase() === 'yes';
   mapped.linkedInFound = hasLinkedin ? 'Found' : 'Not Found';
 
-  mapped.emailStatus = findVal(['emailstatus', 'verificationstatus', 'isverified']) || (mapped.email && mapped.email !== '—' ? 'Verified' : 'Unverified');
+  mapped.emailStatus = verifyEmailSyntax(mapped.email);
 
   // AI & Digital Maturity
   mapped.aiRelevance = findVal(['airelevance', 'automationrelevance', 'aimaturity']) || row.aiRelevance || 'High';
   mapped.digitalMaturity = findVal(['digitalmaturity', 'itmaturity']) || row.digitalMaturity || 'Moderate';
 
-  // Qualifications
+  // Qualifications & Metadata
   mapped.qualificationStatus = row.qualificationStatus || 'Review Needed';
   mapped.qualificationReason = row.qualificationReason || 'Initial Data Inspection';
+  mapped.sourceLink = findVal(['source', 'sourcelink', 'urlsource']) || row.sourceLink || 'Public Directory / Web Search';
+  mapped.extractionDate = row.extractionDate || new Date().toISOString().split('T')[0];
+
+  mapped.confidenceScore = calculateConfidenceScore(mapped);
 
   return mapped;
+}
+
+/* ==========================================================================
+   VERIFICATION & SCORING HELPERS
+   ========================================================================== */
+
+function verifyEmailSyntax(email) {
+  if (!email || email === '—') return 'Not available';
+  const emailStr = String(email).trim();
+  const basicRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!basicRegex.test(emailStr)) return 'Invalid';
+  
+  const commonDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+  const domain = emailStr.split('@')[1] ? emailStr.split('@')[1].toLowerCase() : '';
+  if (commonDomains.includes(domain)) return 'Valid format (Public Provider)';
+  return 'Verified (Corporate Domain)';
+}
+
+function calculateConfidenceScore(lead) {
+  let score = 30; // Base score for valid company record
+  if (lead.website && lead.website !== '—') score += 20;
+  if (lead.emailStatus === 'Verified (Corporate Domain)') score += 25;
+  else if (lead.emailStatus.includes('Valid')) score += 15;
+  if (lead.contactNumber && lead.contactNumber !== '—') score += 10;
+  if (lead.linkedInFound === 'Found') score += 10;
+  if (lead.founderName && lead.founderName !== '—') score += 5;
+  return Math.min(score, 100);
 }
 
 /* ==========================================================================
@@ -204,7 +243,6 @@ function qualifyICP1(row) {
 
   row.tier = tier;
 
-  const isIT = true; // ICP 1 is Indian IT
   const hasEngStaff = row.engineeringStaff !== '—' ? (parseInt(row.engineeringStaff) >= 5) : (row.employeeCount !== '—' ? parseInt(row.employeeCount) >= 10 : false);
 
   if (tier !== 'Other / Unclassified' && hasEngStaff) {
@@ -248,25 +286,33 @@ function qualifyICP2(row) {
   return row;
 }
 
-const US_TARGET_STATES = ['california', 'ca', 'texas', 'tx', 'new york', 'ny', 'new jersey', 'nj', 'minnesota', 'mn'];
-
-function qualifyICP3(row) {
+/* GLOBAL ICP 3 QUALIFICATION ENGINE (SUPPORTS ANY COUNTRY WORLDWIDE) */
+function qualifyICP3(row, criteria = {}) {
   if (row.userOverridden) return row;
-  const stateStr = (String(row.state) + ' ' + String(row.location)).toLowerCase();
-  
-  const isTargetState = US_TARGET_STATES.some(s => stateStr.includes(s));
-  const emp = parseInt(row.employeeCount) || 0;
-  const is50Plus = emp >= 50;
 
-  if (isTargetState && is50Plus) {
+  const countryStr = String(row.country || criteria.targetCountry || '').toLowerCase();
+  const stateStr = String(row.state || row.location || criteria.targetState || '').toLowerCase();
+  const cityStr = String(row.city || criteria.targetCity || '').toLowerCase();
+  const emp = parseInt(row.employeeCount) || 0;
+
+  // Custom user search criteria or default Global SME criteria (50+ staff)
+  const minEmpReq = criteria.minEmployees ? parseInt(criteria.minEmployees) : 50;
+  const reqCountry = criteria.targetCountry ? String(criteria.targetCountry).toLowerCase() : '';
+  const reqState = criteria.targetState ? String(criteria.targetState).toLowerCase() : '';
+
+  const countryMatch = !reqCountry || reqCountry === 'any' || reqCountry === 'global' || countryStr.includes(reqCountry);
+  const stateMatch = !reqState || stateStr.includes(reqState);
+  const empMatch = emp >= minEmpReq;
+
+  if (countryMatch && stateMatch && empMatch) {
     row.qualificationStatus = 'Qualified';
-    row.qualificationReason = `US SME in target state (${row.state || row.location}) with 50+ employees (${emp} staff).`;
-  } else if (!stateStr || stateStr.includes('—') || !emp) {
+    row.qualificationReason = `Global SME (${row.country !== '—' ? row.country : 'Worldwide'}) meeting size threshold (${emp} employees ≥ ${minEmpReq}).`;
+  } else if ((!countryStr || countryStr === '—') && !emp) {
     row.qualificationStatus = 'Review Needed';
-    row.qualificationReason = `Missing state location or employee count. Requires manual review.`;
+    row.qualificationReason = `Missing country/location or employee count. Requires manual review.`;
   } else {
     row.qualificationStatus = 'Not Qualified';
-    row.qualificationReason = `Outside target states (CA, TX, NY, NJ, MN) or company size under 50 employees (${emp || '<50'}). Preserved for review.`;
+    row.qualificationReason = `Location (${row.location}) or headcount (${emp || '<' + minEmpReq}) below criteria. Preserved for review.`;
   }
 
   return row;
@@ -294,6 +340,7 @@ function renderAppHeader(activeId, pageTitle, pageSub) {
         <a href="icp1.html" class="nav-link ${activeId === 'icp1' ? 'active' : ''}">🎯 ICP 1</a>
         <a href="icp2.html" class="nav-link ${activeId === 'icp2' ? 'active' : ''}">🚀 ICP 2</a>
         <a href="icp3.html" class="nav-link ${activeId === 'icp3' ? 'active' : ''}">🌐 ICP 3</a>
+        <a href="lead_gen.html" class="nav-link ${activeId === 'lead_gen' ? 'active' : ''}">🔍 Lead Gen</a>
       </div>
 
       <div class="badge b-green">
@@ -656,8 +703,9 @@ function openRecordDetailModal(record, currentWorkspaceStore = null) {
           <div class="profile-stat"><span>Company Name:</span> <strong>${rec.companyName}</strong></div>
           <div class="profile-stat"><span>Website:</span> <strong>${rec.website !== '—' ? `<a href="${rec.website.startsWith('http')?rec.website:'http://'+rec.website}" target="_blank" style="color:var(--blue);">${rec.website}</a>` : '—'}</strong></div>
           <div class="profile-stat"><span>Industry:</span> <strong>${rec.industry}</strong></div>
-          <div class="profile-stat"><span>Location / City:</span> <strong>${rec.location}</strong></div>
-          <div class="profile-stat"><span>State / Tier:</span> <strong>${rec.tier || rec.state || '—'}</strong></div>
+          <div class="profile-stat"><span>Country:</span> <strong>${rec.country !== '—' ? rec.country : 'Global / Worldwide'}</strong></div>
+          <div class="profile-stat"><span>State / Province / Region:</span> <strong>${rec.state}</strong></div>
+          <div class="profile-stat"><span>City:</span> <strong>${rec.city}</strong></div>
         </div>
 
         <div id="tab-cont" class="detail-tab-content" style="display:none;">
@@ -668,6 +716,7 @@ function openRecordDetailModal(record, currentWorkspaceStore = null) {
 
         <div id="tab-comm" class="detail-tab-content" style="display:none;">
           <div class="profile-stat"><span>Work Email Address:</span> <strong>${rec.email !== '—' ? `<a href="mailto:${rec.email}" style="color:var(--blue);">${rec.email}</a>` : '—'}</strong></div>
+          <div class="profile-stat"><span>Email Verification:</span> <strong style="color:var(--green);">${rec.emailStatus}</strong></div>
           <div class="profile-stat"><span>Phone / Contact Number:</span> <strong>${rec.contactNumber}</strong></div>
           <div class="profile-stat"><span>LinkedIn Found:</span> <strong style="color:${rec.linkedInFound === 'Found' ? 'var(--green)' : 'var(--amber)'};">${rec.linkedInFound}</strong></div>
           <div class="profile-stat"><span>LinkedIn Profile URL:</span> <strong>${rec.linkedInUrl !== '—' ? `<a href="${rec.linkedInUrl.startsWith('http')?rec.linkedInUrl:'https://'+rec.linkedInUrl}" target="_blank" style="color:var(--blue);">${rec.linkedInUrl}</a>` : '—'}</strong></div>
@@ -675,9 +724,8 @@ function openRecordDetailModal(record, currentWorkspaceStore = null) {
 
         <div id="tab-icp" class="detail-tab-content" style="display:none;">
           <div class="profile-stat"><span>Employee Count:</span> <strong>${rec.employeeCount}</strong></div>
-          <div class="profile-stat"><span>Engineering Staff Count:</span> <strong>${rec.engineeringStaff}</strong></div>
-          <div class="profile-stat"><span>Annual Revenue (Cr):</span> <strong>${rec.annualRevenue !== '—' ? '₹' + rec.annualRevenue + ' Cr' : '—'}</strong></div>
-          <div class="profile-stat"><span>AI / Automation Fit:</span> <strong>${rec.aiRelevance}</strong></div>
+          <div class="profile-stat"><span>Verification Confidence:</span> <strong>${rec.confidenceScore}%</strong></div>
+          <div class="profile-stat"><span>Source Link:</span> <strong>${rec.sourceLink}</strong></div>
         </div>
       </div>
       <div class="modal-footer">

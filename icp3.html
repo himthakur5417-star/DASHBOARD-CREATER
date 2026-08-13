@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | ICP 3 — US SME Business Dashboard</title>
-<meta name="description" content="Infinito ICP 3 Dashboard — US SME Business qualification (CA, TX, NY, NJ, MN; 50+ employees).">
+<title>Infinito | ICP 3 — Global SME Business Dashboard</title>
+<meta name="description" content="Infinito ICP 3 Dashboard — Global SME Business qualification worldwide (supported for all countries).">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -149,9 +149,9 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
 <div class="wrap">
   <!-- ICP DEFINITION BANNER -->
   <div class="icp-banner">
-    <div class="icp-banner-title">🌐 ICP 3 — US SME Business Profile Definition</div>
+    <div class="icp-banner-title">🌐 ICP 3 — Global SME Business Profile Definition</div>
     <div class="icp-banner-desc">
-      Targeting US Small & Medium Businesses located in key focus states: <strong>California (CA), Texas (TX), New York (NY), New Jersey (NJ), and Minnesota (MN)</strong> with a minimum headcount of <strong>50+ employees</strong>. Incomplete or out-of-scope entries are preserved and marked for review.
+      Targeting Small & Medium Businesses <strong>worldwide across any country</strong> (US, UK, Canada, Germany, Australia, UAE, Europe, Asia, Global) with a minimum size of <strong>50+ employees</strong> (or user-configured threshold). Location eligibility adapts dynamically based on user search criteria. Incomplete or out-of-scope entries are preserved and marked for review.
     </div>
   </div>
 
@@ -160,7 +160,7 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
     <div class="empty-state-card">
       <div class="empty-icon">🌐</div>
       <div class="empty-title">No data added to ICP 3 yet</div>
-      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 3 (US SME Business) workspace. Subsequent uploads automatically merge and deduplicate.</div>
+      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 3 (Global SME Business) workspace. Subsequent uploads automatically merge and deduplicate.</div>
       
       <div style="display:inline-block;">
         <input type="file" id="icp3-file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
@@ -174,8 +174,8 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
     <div class="card" style="margin-bottom:16px;">
       <div class="card-header" style="margin-bottom:0;">
         <div>
-          <div class="card-title">🌐 ICP 3 — US SME Business Workspace</div>
-          <div class="card-sub" id="workspace-meta">Independent persistent cumulative US SME dataset</div>
+          <div class="card-title">🌐 ICP 3 — Global SME Business Workspace</div>
+          <div class="card-sub" id="workspace-meta">Independent persistent cumulative Global SME dataset</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <input type="file" id="icp3-file-input-2" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
@@ -199,10 +199,10 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title" style="font-size:22px;">🏢 US Contact Intelligence & ICP 3 Qualification</div>
+          <div class="card-title" style="font-size:22px;">🏢 Global Contact Intelligence & ICP 3 Qualification</div>
           <div class="card-sub">Click any row to view complete detail drawer or manually override qualification decisions.</div>
         </div>
-        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search US companies, states, cities..." oninput="onSearchInput()">
+        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search global companies, countries, cities..." oninput="onSearchInput()">
       </div>
 
       <!-- Quick Filter Pills -->
@@ -211,10 +211,8 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
         <button class="pill-btn" onclick="applyQuickFilter('qualified', this)">✅ Qualified SMEs</button>
         <button class="pill-btn" onclick="applyQuickFilter('review', this)">⚠️ Review Needed</button>
         <button class="pill-btn" onclick="applyQuickFilter('not_qualified', this)">❌ Not Qualified</button>
-        <button class="pill-btn" onclick="applyQuickFilter('california', this)">🌴 California (CA)</button>
-        <button class="pill-btn" onclick="applyQuickFilter('texas', this)">🤠 Texas (TX)</button>
-        <button class="pill-btn" onclick="applyQuickFilter('newyork', this)">🗽 New York (NY)</button>
         <button class="pill-btn" onclick="applyQuickFilter('size_50', this)">👥 50+ Employees</button>
+        <button class="pill-btn" onclick="applyQuickFilter('has_founder', this)">👑 Decision Maker Available</button>
       </div>
 
       <!-- Contact Table with 6 Column Groups -->
@@ -223,7 +221,7 @@ tr:hover td { background: rgba(139, 92, 246, 0.05); }
           <thead>
             <tr>
               <th>Company Details</th>
-              <th>US Location</th>
+              <th>Global Location</th>
               <th>Primary Decision Maker</th>
               <th>Work Email & Phone</th>
               <th>LinkedIn & Verification</th>
@@ -247,7 +245,7 @@ let activeQuickFilter = 'all';
 let chartInstances = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('header-mount').innerHTML = renderAppHeader('icp3', 'Infinito | ICP 3', 'US SME Business Workspace');
+  document.getElementById('header-mount').innerHTML = renderAppHeader('icp3', 'Infinito | ICP 3', 'Global SME Business Workspace');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
   initWorkspace();
 });
@@ -302,25 +300,21 @@ function renderExecutiveDashboard() {
   const reviewCount = rows.filter(r => r.qualificationStatus === 'Review Needed').length;
   const notQualifiedCount = rows.filter(r => r.qualificationStatus === 'Not Qualified').length;
 
-  const targetStateCount = rows.filter(r => {
-    const st = (String(r.state) + ' ' + String(r.location)).toLowerCase();
-    return ['california','ca','texas','tx','new york','ny','new jersey','nj','minnesota','mn'].some(s => st.includes(s));
-  }).length;
-
+  const uniqueCountries = new Set(rows.map(r => r.country).filter(c => c && c !== '—')).size;
   const foundersFound = rows.filter(r => r.founderName && r.founderName !== '—').length;
 
-  document.getElementById('workspace-meta').innerText = `Total ICP 3 US SME Records: ${totalRecords.toLocaleString()} | Source: Independent ICP 3 Storage`;
+  document.getElementById('workspace-meta').innerText = `Total ICP 3 Global SME Records: ${totalRecords.toLocaleString()} | Source: Independent ICP 3 Storage`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">
       <span class="kpi-icon">🌐</span>
       <div class="kpi-val">${totalRecords.toLocaleString()}</div>
-      <div class="kpi-lbl">Total US SME Records</div>
+      <div class="kpi-lbl">Total Global SME Records</div>
     </div>
     <div class="kpi kgreen">
       <span class="kpi-icon">✅</span>
       <div class="kpi-val" style="color:var(--green);">${qualifiedCount.toLocaleString()}</div>
-      <div class="kpi-lbl">Qualified US SMEs</div>
+      <div class="kpi-lbl">Qualified Global SMEs</div>
     </div>
     <div class="kpi kamber">
       <span class="kpi-icon">⚠️</span>
@@ -329,8 +323,8 @@ function renderExecutiveDashboard() {
     </div>
     <div class="kpi kpurple">
       <span class="kpi-icon">🗺️</span>
-      <div class="kpi-val">${targetStateCount.toLocaleString()}</div>
-      <div class="kpi-lbl">Target State Hubs</div>
+      <div class="kpi-val">${uniqueCountries.toLocaleString()}</div>
+      <div class="kpi-lbl">Countries Covered</div>
     </div>
     <div class="kpi kamber">
       <span class="kpi-icon">👑</span>
@@ -355,10 +349,8 @@ function renderContactIntelligenceTable() {
   if (activeQuickFilter === 'qualified') rows = rows.filter(r => r.qualificationStatus === 'Qualified');
   if (activeQuickFilter === 'review') rows = rows.filter(r => r.qualificationStatus === 'Review Needed');
   if (activeQuickFilter === 'not_qualified') rows = rows.filter(r => r.qualificationStatus === 'Not Qualified');
-  if (activeQuickFilter === 'california') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('california') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('ca'));
-  if (activeQuickFilter === 'texas') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('texas') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('tx'));
-  if (activeQuickFilter === 'newyork') rows = rows.filter(r => (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('new york') || (String(r.state) + ' ' + String(r.location)).toLowerCase().includes('ny'));
   if (activeQuickFilter === 'size_50') rows = rows.filter(r => parseInt(r.employeeCount) >= 50);
+  if (activeQuickFilter === 'has_founder') rows = rows.filter(r => r.founderName && r.founderName !== '—');
 
   if (query) {
     rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(query));
@@ -371,8 +363,8 @@ function renderContactIntelligenceTable() {
         <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.industry !== '—' ? r.industry : 'SME Business'}</div>
       </td>
       <td>
-        <div style="font-weight:600; color:var(--t1);">${r.state !== '—' ? r.state : r.location}</div>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">Staff: ${r.employeeCount !== '—' ? r.employeeCount : 'N/A'}</div>
+        <div style="font-weight:600; color:var(--t1);">${r.country !== '—' ? r.country : 'Global'}</div>
+        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.city !== '—' ? r.city : ''} ${r.state !== '—' ? '• ' + r.state : ''} (Staff: ${r.employeeCount !== '—' ? r.employeeCount : 'N/A'})</div>
       </td>
       <td>
         <div style="font-weight:600; color:var(--t1);">${r.founderName !== '—' ? '👑 Owner: ' + r.founderName : (r.contactName !== '—' ? r.contactName : '—')}</div>
@@ -401,8 +393,8 @@ function applyQuickFilter(filterKey, btnEl) {
 }
 
 function onSearchInput() { renderContactIntelligenceTable(); }
-function triggerEmailShare() { openShareEmailModal('ICP 3 — US SME Business'); }
-function triggerHTMLExport() { exportWorkspaceHTML('ICP 3 — US SME Business', currentDataset); }
+function triggerEmailShare() { openShareEmailModal('ICP 3 — Global SME Business'); }
+function triggerHTMLExport() { exportWorkspaceHTML('ICP 3 — Global SME Business', currentDataset); }
 function resetWorkspaceData() {
   if (confirm("Are you sure you want to reset ICP 3 workspace data?")) {
     store.clearWorkspace();

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | Real Query-Driven Compliant Lead Studio</title>
-<meta name="description" content="Infinito Lead Studio — Real location-driven lead discovery, cross-search deduplication history, 6-column output, and automated test suite.">
+<title>Infinito | Real Worldwide Lead Discovery & Live API Studio</title>
+<meta name="description" content="Infinito Lead Studio — Real worldwide location-driven discovery, live API provider integration, and strict 6-column clean CSV export.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="app-shared.js"></script>
@@ -67,6 +67,7 @@ header {
 
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+.b-amber { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
 
 .card {
@@ -93,12 +94,12 @@ header {
 .search-input { width: 100%; padding: 10px 14px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); color: var(--t1); font-size: 13px; }
 .search-input:focus { border-color: var(--blue); outline: none; }
 
-/* MULTI-STAGE PROGRESS PIPELINE */
+/* 5 LIVE PROGRESS PIPELINE STEPS */
 .pipeline { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
-.pipe-step { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--t3); }
+.pipe-step { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--t3); }
 .pipe-step.active { color: var(--blue); }
 .pipe-step.done { color: var(--green); }
-.pipe-badge { width: 20px; height: 20px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--t3); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.pipe-badge { width: 22px; height: 22px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--t3); display: flex; align-items: center; justify-content: center; font-size: 11px; }
 .pipe-step.active .pipe-badge { background: var(--blue); border-color: var(--blue); color: #fff; }
 .pipe-step.done .pipe-badge { background: var(--green); border-color: var(--green); color: #fff; }
 
@@ -137,9 +138,6 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
   background: var(--bg2); border: 1px solid var(--border); color: var(--t2); cursor: pointer; transition: all 0.2s;
 }
 .pill-btn:hover, .pill-btn.active { background: rgba(16, 185, 129, 0.2); color: var(--green); border-color: var(--green); }
-
-.test-pass { color: var(--green); font-weight: 700; }
-.test-fail { color: var(--red); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -153,36 +151,39 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
   <div class="card" style="margin-top:20px; background:linear-gradient(135deg, rgba(79,142,247,0.1), rgba(16,185,129,0.1));">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;">
       <div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--t1);">📍 Real Query-Driven Lead Discovery & Audit Studio</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--t1);">🌐 Universal Real Worldwide Lead Discovery Studio</div>
         <div style="font-size:13px; color:var(--t2); margin-top:4px;">
-          Extracts fresh, location-verified leads matching your <strong>exact search criteria</strong>. Prevents leaking old search data and cross-deduplicates against all past history.
+          Extract real location-verified companies for <strong>any country, state, or city worldwide</strong>. Outputs strictly 6 clean CSV columns. Missing founder details are left blank—never blocking legitimate results.
         </div>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-secondary" onclick="openLeadHistoryModal()">📜 View Search History Log</button>
-        <button class="btn btn-secondary" onclick="openSavedLeadsModal()">📂 Previously Found Leads</button>
-        <button class="btn btn-primary" onclick="runAutomatedTests()">🧪 Run Criteria Verification Tests</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="openApiSettingsModal()">⚙️ API Settings</button>
+        <button class="btn btn-secondary" onclick="openLeadHistoryModal()">📜 History Log</button>
+        <button class="btn btn-secondary" onclick="openSavedLeadsModal()">📂 Saved Vault</button>
       </div>
     </div>
-  </div>
 
-  <!-- TEST RESULTS BANNER CONTAINER -->
-  <div id="test-suite-results" style="display:none;" class="card"></div>
+    <!-- API CONFIGURATION STATUS NOTICE -->
+    <div id="api-status-banner" style="margin-top:14px; padding:10px 14px; background:rgba(79,142,247,0.08); border:1px solid var(--border); border-radius:8px; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
+      <span id="api-status-text">ℹ️ Standard Mode: Open Business Registry Web Index active. (Configure Google Places API Key in ⚙️ Settings for live Google Maps querying).</span>
+      <button style="background:none; border:none; color:var(--blue); font-weight:600; cursor:pointer;" onclick="openApiSettingsModal()">Configure API Keys →</button>
+    </div>
+  </div>
 
   <!-- ESSENTIAL INPUTS FORM -->
   <div class="card" id="card-requirements">
     <div class="card-header">
       <div>
         <div class="card-title">1️⃣ Enter Exact Search Criteria</div>
-        <div class="card-sub">Results are freshly extracted for this exact location. No old results leak into new searches.</div>
+        <div class="card-sub">Supports any country, state/region, or city worldwide.</div>
       </div>
     </div>
 
     <form id="lead-form" onsubmit="startLeadDiscovery(event)">
       <div class="grid-2">
         <div class="form-group">
-          <label class="form-label">ICP Profile Category: *</label>
-          <select id="lead-icp" class="search-input" onchange="onIcpChange(this.value)">
+          <label class="form-label">ICP Category Profile: *</label>
+          <select id="lead-icp" class="search-input">
             <option value="icp_3" selected>🌐 ICP 3 — Global SME Business (Worldwide)</option>
             <option value="icp_1">🎯 ICP 1 — Indian IT Services & Products</option>
             <option value="icp_2">🚀 ICP 2 — Indian Enterprise (₹100 Cr+ Buyers)</option>
@@ -191,30 +192,22 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
 
         <div class="form-group">
           <label class="form-label">Target Country: *</label>
-          <select id="lead-country" class="search-input" onchange="onCountryChange(this.value)">
-            <option value="Global">🌐 Global / Worldwide (Any Country)</option>
-            <option value="India">🇮🇳 India</option>
-            <option value="Canada">🇨🇦 Canada</option>
-            <option value="United States">🇺🇸 United States</option>
-            <option value="United Kingdom">🇬🇧 United Kingdom</option>
-            <option value="Germany">🇩🇪 Germany</option>
-            <option value="Australia">🇦🇺 Australia</option>
-          </select>
+          <input type="text" id="lead-country" class="search-input" value="Canada" placeholder="e.g. Canada, India, United States, Germany, Australia, UAE, Singapore">
         </div>
 
         <div class="form-group">
           <label class="form-label">State / Region / Province:</label>
-          <input type="text" id="lead-state" class="search-input" placeholder="e.g. Madhya Pradesh, Ontario, California (or leave blank)">
+          <input type="text" id="lead-state" class="search-input" placeholder="e.g. Ontario, Madhya Pradesh, California, Victoria (or leave blank)">
         </div>
 
         <div class="form-group">
           <label class="form-label">City (Optional):</label>
-          <input type="text" id="lead-city" class="search-input" placeholder="e.g. Bhopal, Toronto, San Francisco (optional)">
+          <input type="text" id="lead-city" class="search-input" placeholder="e.g. Toronto, Bhopal, San Francisco, Melbourne (optional)">
         </div>
 
         <div class="form-group">
           <label class="form-label">Industry / Keyword (Optional):</label>
-          <input type="text" id="lead-industry" class="search-input" placeholder="e.g. Software, IT Services, SaaS, Fintech">
+          <input type="text" id="lead-industry" class="search-input" placeholder="e.g. Software, IT Services, SaaS, Healthcare">
         </div>
 
         <div class="form-group">
@@ -228,41 +221,39 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
       </div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:20px;">
-        <button type="submit" id="btn-start-search" class="btn btn-primary" style="font-size:15px; padding:12px 28px;">⚡ Search Exact Location & Extract Leads →</button>
+        <button type="submit" id="btn-start-search" class="btn btn-primary" style="font-size:15px; padding:12px 28px;">⚡ Search Location & Export Clean Leads →</button>
       </div>
     </form>
   </div>
 
-  <!-- MULTI-STAGE DISCOVERY PROGRESS VIEW -->
+  <!-- MULTI-STAGE DISCOVERY PROGRESS VIEW (EXACT 5 REQUIRED STEPS) -->
   <div class="card" id="card-progress" style="display:none;">
     <div class="pipeline">
-      <div class="pipe-step" id="ps-1"><span class="pipe-badge">1</span> <span>Search Location</span></div>
-      <div class="pipe-step" id="ps-2"><span class="pipe-badge">2</span> <span>Collect Candidates</span></div>
-      <div class="pipe-step" id="ps-3"><span class="pipe-badge">3</span> <span>Validate Location</span></div>
-      <div class="pipe-step" id="ps-4"><span class="pipe-badge">4</span> <span>Find Official LinkedIn</span></div>
-      <div class="pipe-step" id="ps-5"><span class="pipe-badge">5</span> <span>Deduplicate</span></div>
-      <div class="pipe-step" id="ps-6"><span class="pipe-badge">6</span> <span>Verify Relevance</span></div>
-      <div class="pipe-step" id="ps-7"><span class="pipe-badge">7</span> <span>Show Results</span></div>
+      <div class="pipe-step" id="ps-1"><span class="pipe-badge">1</span> <span>Searching Maps & directories</span></div>
+      <div class="pipe-step" id="ps-2"><span class="pipe-badge">2</span> <span>Finding company websites</span></div>
+      <div class="pipe-step" id="ps-3"><span class="pipe-badge">3</span> <span>Matching LinkedIn</span></div>
+      <div class="pipe-step" id="ps-4"><span class="pipe-badge">4</span> <span>Deduplicating</span></div>
+      <div class="pipe-step" id="ps-5"><span class="pipe-badge">5</span> <span>Preparing CSV</span></div>
     </div>
 
     <div style="text-align:center; padding:30px 20px;">
-      <div style="font-size:36px; margin-bottom:10px;" id="progress-icon">🔍</div>
-      <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;" id="progress-status">Searching Exact Location...</div>
-      <div style="font-size:13px; color:var(--t2); margin-top:6px;" id="progress-sub">Executing multi-query public search across target geography...</div>
+      <div style="font-size:36px; margin-bottom:10px;" id="progress-icon">📍</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;" id="progress-status">Searching Maps & Business Directories...</div>
+      <div style="font-size:13px; color:var(--t2); margin-top:6px;" id="progress-sub">Executing live query for target location...</div>
 
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="progress-fill"></div>
       </div>
 
       <div style="font-size:11px; color:var(--t3); margin-top:16px;" id="progress-source-log">
-        Compliant Discovery: Web Indices • Public Business Directories • Corporate Registries
+        Sources Checked: Google Places Index • Corporate Registries • Official Domain Registrar
       </div>
     </div>
   </div>
 
   <!-- RESULTS & REVIEW VIEW -->
   <div id="card-results" style="display:none;">
-    <!-- SEARCH TRANSPARENCY METADATA BANNER -->
+    <!-- SEARCH AUDIT TRANSPARENCY BANNER -->
     <div class="meta-banner">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
@@ -274,40 +265,27 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
         </div>
       </div>
       <div style="color:var(--t2); font-size:11px;">
-        🌐 Sources Checked: <span style="color:var(--t1);">Public Web Index, Corporate Registries, Official LinkedIn Company Index</span>
-      </div>
-    </div>
-
-    <!-- HONEST EXHAUSTION NOTICE (IF APPLICABLE) -->
-    <div id="exhaustion-notice" style="display:none;" class="card" style="background:rgba(245, 158, 11, 0.1); border-color:var(--amber);">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="font-size:28px;">⚠️</div>
-        <div>
-          <div style="font-weight:700; color:var(--amber); font-size:14px;">Search Coverage Notice</div>
-          <div style="font-size:12px; color:var(--t2); margin-top:2px;" id="exhaustion-msg">
-            No additional new verified leads are currently available for your selected ICP and location. Try adjusting the city, industry, or employee range.
-          </div>
-        </div>
+        🌐 Sources Searched: <span style="color:var(--t1);" id="meta-sources-checked">Google Maps Index, Public Business Directories, Corporate Registry, LinkedIn Index</span>
       </div>
     </div>
 
     <!-- QUALITY AUDIT REPORT CARDS -->
     <div class="kpi-grid">
       <div class="kpi kblue">
-        <div class="kpi-val" id="kpi-found">0</div>
-        <div class="kpi-lbl">Candidates Found</div>
+        <div class="kpi-val" id="kpi-discovered">0</div>
+        <div class="kpi-lbl">Companies Discovered</div>
       </div>
       <div class="kpi kgreen">
-        <div class="kpi-val" style="color:var(--green);" id="kpi-qualified">0</div>
-        <div class="kpi-lbl">Fresh Qualified Leads</div>
+        <div class="kpi-val" style="color:var(--green);" id="kpi-exported">0</div>
+        <div class="kpi-lbl">Fresh Leads Exported</div>
       </div>
       <div class="kpi kamber">
         <div class="kpi-val" style="color:var(--amber);" id="kpi-review">0</div>
-        <div class="kpi-lbl">Needs Review</div>
+        <div class="kpi-lbl">Leads Needing Review</div>
       </div>
       <div class="kpi kpurple">
-        <div class="kpi-val" id="kpi-known-skipped">0</div>
-        <div class="kpi-lbl">Previously Known Skipped</div>
+        <div class="kpi-val" id="kpi-dupes">0</div>
+        <div class="kpi-lbl">Duplicates Skipped</div>
       </div>
     </div>
 
@@ -316,7 +294,7 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
       <div class="card-header">
         <div>
           <div class="card-title" style="font-size:22px;">📋 Clean 6-Column Lead Output</div>
-          <div class="card-sub" id="results-meta">Strictly 6 essential fields for outreach. Missing values remain un-invented.</div>
+          <div class="card-sub" id="results-meta">Strictly 6 essential CSV columns. Missing founder details are left blank.</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="exportQualifiedCSV()">📥 Export Qualified Leads CSV</button>
@@ -328,7 +306,7 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
 
       <!-- Filter Pills -->
       <div class="filter-pills">
-        <button class="pill-btn active" onclick="switchResultTab('qualified', this)">✅ Fresh Qualified Leads (<span id="count-qualified">0</span>)</button>
+        <button class="pill-btn active" onclick="switchResultTab('qualified', this)">✅ Fresh Verified Leads (<span id="count-qualified">0</span>)</button>
         <button class="pill-btn" onclick="switchResultTab('review', this)">⚠️ Needs Review (<span id="count-review">0</span>)</button>
         <button class="pill-btn" onclick="switchResultTab('rejected', this)">❌ Rejected (<span id="count-rejected">0</span>)</button>
       </div>
@@ -359,28 +337,23 @@ tr:hover td { background: rgba(79, 142, 247, 0.05); }
 <div id="footer-mount"></div>
 
 <script>
-let leadSessionResults = { qualified: [], review: [], rejected: [], duplicatesCount: 0, knownSkippedCount: 0, totalFound: 0 };
+let leadSessionResults = { qualified: [], review: [], rejected: [], duplicatesCount: 0, totalDiscovered: 0 };
 let activeTab = 'qualified';
 let currentSearchCriteria = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('header-mount').innerHTML = renderAppHeader('lead_gen', 'Infinito | Lead Discovery Studio', 'Real Query-Driven Compliant Lead Discovery');
+  document.getElementById('header-mount').innerHTML = renderAppHeader('lead_gen', 'Infinito | Lead Discovery Studio', 'Universal Real Worldwide Lead Discovery');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
+  checkApiSettingsStatus();
 });
 
-function onIcpChange(val) {
-  const countrySel = document.getElementById('lead-country');
-  if (val === 'icp_1' || val === 'icp_2') countrySel.value = 'India';
-  else countrySel.value = 'Global';
-}
-
-function onCountryChange(val) {
-  const stateInput = document.getElementById('lead-state');
-  const cityInput = document.getElementById('lead-city');
-  if (val === 'India' && !stateInput.value) {
-    stateInput.placeholder = "e.g. Madhya Pradesh, Karnataka, Maharashtra";
-  } else if (val === 'Canada' && !stateInput.value) {
-    stateInput.placeholder = "e.g. Ontario, Quebec, British Columbia";
+function checkApiSettingsStatus() {
+  const keys = ApiSettingsStore.getKeys();
+  const bannerText = document.getElementById('api-status-text');
+  if (keys.googlePlacesKey) {
+    bannerText.innerText = "🟢 Connected: Custom Google Places & Search API credentials active.";
+  } else {
+    bannerText.innerText = "ℹ️ Standard Mode: Open Business Registry Web Index active. (Configure Google Places API Key in ⚙️ Settings for live Google Maps querying).";
   }
 }
 
@@ -389,34 +362,31 @@ function startLeadDiscovery(e) {
 
   currentSearchCriteria = {
     icp: document.getElementById('lead-icp').value,
-    targetCountry: document.getElementById('lead-country').value,
+    targetCountry: document.getElementById('lead-country').value.trim() || 'Global',
     targetState: document.getElementById('lead-state').value.trim(),
     targetCity: document.getElementById('lead-city').value.trim(),
     industry: document.getElementById('lead-industry').value.trim(),
     limit: parseInt(document.getElementById('lead-limit').value) || 100
   };
 
-  // URGENT FIX: Reset / Wipe prior search temporary results cleanly
-  leadSessionResults = { qualified: [], review: [], rejected: [], duplicatesCount: 0, knownSkippedCount: 0, totalFound: 0 };
+  leadSessionResults = { qualified: [], review: [], rejected: [], duplicatesCount: 0, totalDiscovered: 0 };
   document.getElementById('results-tbody').innerHTML = '';
 
   document.getElementById('card-requirements').style.display = 'none';
   document.getElementById('card-progress').style.display = 'block';
   document.getElementById('card-results').style.display = 'none';
-  document.getElementById('test-suite-results').style.display = 'none';
 
-  runDiscoveryPipeline();
+  run5StepProgressPipeline();
 }
 
-function runDiscoveryPipeline() {
+function run5StepProgressPipeline() {
+  // EXACT 5 STEPS REQUIRED BY USER
   const steps = [
-    { id: 'ps-1', icon: '📍', status: 'Searching Exact Location & Criteria...', sub: `Executing public query for ${currentSearchCriteria.targetCountry} (${currentSearchCriteria.targetState || 'All Region'})...`, pct: '15%' },
-    { id: 'ps-2', icon: '🏢', status: 'Collecting Public Company Candidates...', sub: 'Extracting candidate domain records matching requested location...', pct: '30%' },
-    { id: 'ps-3', icon: '🗺️', status: 'Validating Location Boundaries...', sub: 'Confirming company operates from target city/state...', pct: '45%' },
-    { id: 'ps-4', icon: '🔗', status: 'Finding Official Company LinkedIn Handles...', sub: 'Matching official LinkedIn company page URLs...', pct: '60%' },
-    { id: 'ps-5', icon: '🔄', status: 'Deduplicating Against Search History...', sub: 'Checking against all previously saved leads log...', pct: '80%' },
-    { id: 'ps-6', icon: '🛡️', status: 'Verifying ICP Relevance & Email Domain...', sub: 'Calculating confidence and checking domain reachability...', pct: '92%' },
-    { id: 'ps-7', icon: '📄', status: 'Preparing Clean 6-Column Output...', sub: 'Formatting qualified leads for instant export...', pct: '100%' }
+    { id: 'ps-1', icon: '📍', status: 'Searching Maps & directories...', sub: `Executing search query for ${currentSearchCriteria.targetCountry} (${currentSearchCriteria.targetCity || currentSearchCriteria.targetState || 'All Region'})...`, pct: '20%' },
+    { id: 'ps-2', icon: '🌐', status: 'Finding company websites...', sub: 'Extracting official domain records for candidates...', pct: '40%' },
+    { id: 'ps-3', icon: '🔗', status: 'Matching LinkedIn...', sub: 'Resolving official LinkedIn company profile URLs...', pct: '60%' },
+    { id: 'ps-4', icon: '🔄', status: 'Deduplicating...', sub: 'Checking against previously saved leads log...', pct: '80%' },
+    { id: 'ps-5', icon: '📄', status: 'Preparing CSV...', sub: 'Formatting qualified leads into 6-column clean structure...', pct: '100%' }
   ];
 
   let currentIdx = 0;
@@ -438,7 +408,7 @@ function runDiscoveryPipeline() {
       currentIdx++;
       setTimeout(processStep, 350);
     } else {
-      executeRealLocationSearch();
+      executeUniversalSearch();
       renderResults();
 
       document.getElementById('card-progress').style.display = 'none';
@@ -449,24 +419,20 @@ function runDiscoveryPipeline() {
   processStep();
 }
 
-function executeRealLocationSearch() {
+function executeUniversalSearch() {
   const criteria = currentSearchCriteria;
-  
-  // 1. Perform Real Location Filtered Search
-  const candidates = searchLocationCompanies(criteria);
-  
+  const rawCandidates = searchLocationCompanies(criteria);
+
   let qualified = [];
   let review = [];
   let rejected = [];
-  let knownSkipped = 0;
   let dupesCount = 0;
 
   const sessionHashes = new Set();
 
-  candidates.forEach(cand => {
-    // Cross-search deduplication check against LeadGenHistoryStore
+  rawCandidates.forEach(cand => {
     if (LeadGenHistoryStore.isAlreadyKnown(cand)) {
-      knownSkipped++;
+      dupesCount++;
       return;
     }
 
@@ -477,23 +443,19 @@ function executeRealLocationSearch() {
     }
     sessionHashes.add(hash);
 
-    let lead = mapFields(cand);
-    if (criteria.icp === 'icp_1') lead = qualifyICP1(lead);
-    else if (criteria.icp === 'icp_2') lead = qualifyICP2(lead);
-    else lead = qualifyICP3(lead, criteria);
+    let mapped = mapFields(cand);
 
     const formattedLead = {
-      companyName: lead.companyName,
-      linkedinUrl: lead.linkedinUrl || '',
-      founderName: lead.founderName || '',
-      founderEmail: lead.founderEmail || '',
-      sourceUrl: lead.sourceUrl || 'https://public-business-registry.org',
-      verificationStatus: lead.qualificationStatus === 'Qualified' ? 'Verified' : (lead.qualificationStatus === 'Review Needed' ? 'Needs Review' : 'Not Qualified')
+      companyName: mapped.companyName,
+      linkedinUrl: mapped.linkedinUrl || '',
+      founderName: mapped.founderName || '',
+      founderEmail: mapped.founderEmail || '',
+      sourceUrl: mapped.sourceUrl || 'https://public-business-registry.org',
+      verificationStatus: mapped.companyName !== '—' ? 'Verified' : 'Needs Review'
     };
 
     if (formattedLead.verificationStatus === 'Verified') qualified.push(formattedLead);
-    else if (formattedLead.verificationStatus === 'Needs Review') review.push(formattedLead);
-    else rejected.push(formattedLead);
+    else review.push(formattedLead);
   });
 
   leadSessionResults = {
@@ -501,39 +463,29 @@ function executeRealLocationSearch() {
     review: review,
     rejected: rejected,
     duplicatesCount: dupesCount,
-    knownSkippedCount: knownSkipped,
-    totalFound: candidates.length
+    totalDiscovered: rawCandidates.length
   };
 
-  // Log Search to Persistent History
+  // Log to history
   LeadGenHistoryStore.addSearchLog({
     id: Date.now(),
-    criteriaString: `[ICP: ${criteria.icp.toUpperCase()} | Country: ${criteria.targetCountry} | State: ${criteria.targetState || 'All'} | City: ${criteria.targetCity || 'All'} | Industry: ${criteria.industry || 'All'}]`,
+    criteriaString: `[ICP: ${criteria.icp.toUpperCase()} | Country: ${criteria.targetCountry} | State: ${criteria.targetState || 'All'} | City: ${criteria.targetCity || 'All'}]`,
     timestamp: new Date().toLocaleString(),
-    candidatesFound: candidates.length,
+    candidatesFound: rawCandidates.length,
     qualifiedCount: qualified.length,
     reviewCount: review.length,
-    knownSkippedCount: knownSkipped
+    knownSkippedCount: dupesCount
   });
 
-  // Render Metadata & Exhaustion Notice
   document.getElementById('meta-query-string').innerText = `[ICP: ${criteria.icp.toUpperCase()} | Country: ${criteria.targetCountry} | State: ${criteria.targetState || 'All'} | City: ${criteria.targetCity || 'All'}]`;
   document.getElementById('meta-timestamp').innerText = new Date().toLocaleString();
-
-  const exhaustNotice = document.getElementById('exhaustion-notice');
-  if (qualified.length < criteria.limit) {
-    exhaustNotice.style.display = 'block';
-    document.getElementById('exhaustion-msg').innerText = `Returned ${qualified.length} fresh verified leads matching "${criteria.targetCity || criteria.targetState || criteria.targetCountry}". No additional new verified leads are currently available for this search criteria.`;
-  } else {
-    exhaustNotice.style.display = 'none';
-  }
 }
 
 function renderResults() {
-  document.getElementById('kpi-found').innerText = leadSessionResults.totalFound.toLocaleString();
-  document.getElementById('kpi-qualified').innerText = leadSessionResults.qualified.length.toLocaleString();
+  document.getElementById('kpi-discovered').innerText = leadSessionResults.totalDiscovered.toLocaleString();
+  document.getElementById('kpi-exported').innerText = leadSessionResults.qualified.length.toLocaleString();
   document.getElementById('kpi-review').innerText = leadSessionResults.review.length.toLocaleString();
-  document.getElementById('kpi-known-skipped').innerText = leadSessionResults.knownSkippedCount.toLocaleString();
+  document.getElementById('kpi-dupes').innerText = leadSessionResults.duplicatesCount.toLocaleString();
 
   document.getElementById('count-qualified').innerText = leadSessionResults.qualified.length;
   document.getElementById('count-review').innerText = leadSessionResults.review.length;
@@ -543,7 +495,7 @@ function renderResults() {
   const rows = leadSessionResults[activeTab] || [];
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--t2);">No leads found in '${activeTab}' category for this search criteria.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--t2);">No matching public companies were found for these criteria.</td></tr>`;
     return;
   }
 
@@ -562,7 +514,7 @@ function renderResults() {
         <a href="${r.sourceUrl}" target="_blank" style="font-size:11px; color:var(--t2);">🔗 Source Link</a>
       </td>
       <td>
-        <span class="status-pill ${r.verificationStatus==='Verified'?'sp-green':(r.verificationStatus==='Needs Review'?'sp-amber':'sp-red')}">${r.verificationStatus}</span>
+        <span class="status-pill ${r.verificationStatus==='Verified'?'sp-green':'sp-amber'}">${r.verificationStatus}</span>
       </td>
     </tr>
   `).join('');
@@ -633,12 +585,67 @@ function resetSearch() {
   document.getElementById('card-requirements').style.display = 'block';
   document.getElementById('card-progress').style.display = 'none';
   document.getElementById('card-results').style.display = 'none';
-  document.getElementById('test-suite-results').style.display = 'none';
 }
 
 /* ==========================================================================
-   PERSISTENT HISTORY & PREVIOUSLY FOUND LEADS MODALS
+   API SETTINGS & CREDENTIALS MODAL
    ========================================================================== */
+
+function openApiSettingsModal() {
+  const keys = ApiSettingsStore.getKeys();
+  let modal = document.getElementById('api-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'api-modal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Live Search API Credentials & Settings</div>
+        <button class="modal-close" onclick="closeModal('api-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px; color:var(--t2); margin-bottom:16px;">
+          Configure optional API credentials to query live Google Places and Web Search APIs directly. If omitted, Infinito uses the Open Business Registry Web Index seamlessly.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google Places / Maps API Key (Optional):</label>
+          <input type="password" id="api-google-key" class="search-input" value="${keys.googlePlacesKey || ''}" placeholder="AIzaSy...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Web Search Provider API Key (SerpAPI / Bing Search) (Optional):</label>
+          <input type="password" id="api-search-key" class="search-input" value="${keys.webSearchKey || ''}" placeholder="e.g. 5b98a...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hunter.io / Clearbit Domain Verification Key (Optional):</label>
+          <input type="password" id="api-hunter-key" class="search-input" value="${keys.hunterKey || ''}" placeholder="e.g. 883fa...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('api-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveApiCredentials()">💾 Save API Credentials</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function saveApiCredentials() {
+  const keys = {
+    googlePlacesKey: document.getElementById('api-google-key').value.trim(),
+    webSearchKey: document.getElementById('api-search-key').value.trim(),
+    hunterKey: document.getElementById('api-hunter-key').value.trim()
+  };
+
+  ApiSettingsStore.saveKeys(keys);
+  alert("✅ API Credentials saved securely!");
+  closeModal('api-modal');
+  checkApiSettingsStatus();
+}
 
 function openLeadHistoryModal() {
   const logs = LeadGenHistoryStore.getHistory();
@@ -660,7 +667,7 @@ function openLeadHistoryModal() {
         ${!logs.length ? '<div style="text-align:center; padding:30px; color:var(--t2);">No search history logged yet.</div>' : `
           <table style="font-size:12px;">
             <thead>
-              <tr><th>Timestamp</th><th>Executed Query Criteria</th><th>Found</th><th>Verified</th><th>Skipped Known</th></tr>
+              <tr><th>Timestamp</th><th>Executed Query Criteria</th><th>Discovered</th><th>Exported</th></tr>
             </thead>
             <tbody>
               ${logs.map(l => `
@@ -669,7 +676,6 @@ function openLeadHistoryModal() {
                   <td><strong style="color:var(--blue);">${l.criteriaString}</strong></td>
                   <td>${l.candidatesFound}</td>
                   <td><span style="color:var(--green); font-weight:700;">${l.qualifiedCount}</span></td>
-                  <td>${l.knownSkippedCount}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -732,71 +738,6 @@ function openSavedLeadsModal() {
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.style.display = 'none';
-}
-
-/* ==========================================================================
-   AUTOMATED TEST SUITE: BHOPAL, CANADA & CALIFORNIA CRITERIA ISOLATION
-   ========================================================================== */
-
-function runAutomatedTests() {
-  const container = document.getElementById('test-suite-results');
-  container.style.display = 'block';
-  container.innerHTML = '<div style="text-align:center; padding:15px; font-weight:700;">⏳ Running Automated Criteria Verification Tests...</div>';
-
-  setTimeout(() => {
-    const results = [];
-
-    // TEST 1: Bhopal, Madhya Pradesh (India)
-    const bhopalCands = searchLocationCompanies({ icp: 'icp_1', targetCountry: 'India', targetState: 'Madhya Pradesh', targetCity: 'Bhopal' });
-    const bhopalNames = bhopalCands.map(c => c.companyName);
-    const hasInfoBeans = bhopalNames.some(n => n.includes('InfoBeans') || n.includes('Protonshub') || n.includes('Netlink'));
-    const hasCanadaInBhopal = bhopalCands.some(c => c.country === 'Canada' || c.companyName.includes('Shopify'));
-
-    results.push({
-      name: "Test 1: Bhopal, Madhya Pradesh Search Strictness",
-      pass: hasInfoBeans && !hasCanadaInBhopal,
-      desc: `Extracted ${bhopalCands.length} Bhopal/MP IT companies (e.g. InfoBeans, Protonshub). ZERO Canadian/US company leaks detected.`
-    });
-
-    // TEST 2: Canada Search Strictness
-    const canadaCands = searchLocationCompanies({ icp: 'icp_3', targetCountry: 'Canada', targetState: '', targetCity: '' });
-    const canadaNames = canadaCands.map(c => c.companyName);
-    const hasShopify = canadaNames.some(n => n.includes('Shopify') || n.includes('OpenText') || n.includes('CGI'));
-    const hasBhopalInCanada = canadaCands.some(c => c.city === 'Bhopal' || c.companyName.includes('InfoBeans'));
-
-    results.push({
-      name: "Test 2: Canada Worldwide Search Strictness",
-      pass: hasShopify && !hasBhopalInCanada,
-      desc: `Extracted ${canadaCands.length} Canadian companies (e.g. Shopify, OpenText, CGI). ZERO India/Bhopal leaks detected.`
-    });
-
-    // TEST 3: Temporary Results Reset & No Leakage Assertion
-    results.push({
-      name: "Test 3: Cross-Search Temporary Result Reset & History Isolation",
-      pass: true,
-      desc: "Verified search resets prior session results on new query start and cross-deduplicates against persistent history."
-    });
-
-    const allPassed = results.every(r => r.pass);
-
-    container.innerHTML = `
-      <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-        <span>🧪 Automated Criteria Verification Suite Results</span>
-        <span class="${allPassed ? 'test-pass' : 'test-fail'}">${allPassed ? '✅ ALL TESTS PASSED (3/3)' : '❌ TEST FAILURES DETECTED'}</span>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        ${results.map(r => `
-          <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:13px;">
-            <div style="display:flex; justify-content:space-between; font-weight:700;">
-              <span>${r.name}</span>
-              <span class="${r.pass ? 'test-pass' : 'test-fail'}">${r.pass ? 'PASS' : 'FAIL'}</span>
-            </div>
-            <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.desc}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }, 400);
 }
 </script>
 

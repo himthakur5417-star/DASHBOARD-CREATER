@@ -83,69 +83,80 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
   }
 ]`;
 
-  let geminiResponse;
-  try {
-    geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 2500
-          }
-        })
+  // Candidate models to try in sequence for resilient compatibility
+  const candidateModels = [
+    'gemini-1.5-flash-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro'
+  ];
+
+  let lastError = null;
+  let lastStatus = 500;
+  let rawText = '';
+  let successfulModel = '';
+
+  for (const model of candidateModels) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 2500
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        const completion = await response.json();
+        rawText = completion?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (rawText) {
+          successfulModel = model;
+          break; // Success!
+        }
+      } else {
+        const errBody = await response.json().catch(() => ({}));
+        lastStatus = response.status;
+        lastError = errBody?.error?.message || `HTTP ${response.status} for model ${model}`;
+
+        // If invalid key or rate limit, fail immediately without retrying other models
+        if (response.status === 401 || (response.status === 400 && errBody?.error?.message?.includes('API_KEY'))) {
+          return res.status(401).json({
+            error: 'INVALID_API_KEY',
+            message: 'The Gemini API key is invalid. Update GEMINI_API_KEY in Vercel Environment Variables.',
+            detail: errBody?.error?.message
+          });
+        }
+        if (response.status === 429) {
+          return res.status(429).json({
+            error: 'RATE_LIMIT',
+            message: 'Gemini free tier rate limit hit. Wait 1 minute and try again. Free limit: 15 requests/minute.',
+            detail: errBody?.error?.message
+          });
+        }
       }
-    );
-  } catch (fetchError) {
-    return res.status(502).json({
-      error: 'GEMINI_UNREACHABLE',
-      message: 'Could not reach Google Gemini API. Check network or Google API status.',
-      detail: fetchError.message
-    });
+    } catch (e) {
+      lastError = e.message;
+    }
   }
 
-  if (!geminiResponse.ok) {
-    const errBody = await geminiResponse.json().catch(() => ({}));
-    const status = geminiResponse.status;
-
-    if (status === 400 && errBody?.error?.message?.includes('API_KEY')) {
-      return res.status(401).json({
-        error: 'INVALID_API_KEY',
-        message: 'The Gemini API key is invalid. Update GEMINI_API_KEY in Vercel Environment Variables.',
-        detail: errBody?.error?.message
-      });
-    }
-    if (status === 429) {
-      return res.status(429).json({
-        error: 'RATE_LIMIT',
-        message: 'Gemini free tier rate limit hit. Wait 1 minute and try again. Free limit: 15 requests/minute.',
-        detail: errBody?.error?.message
-      });
-    }
-    if (status === 403) {
-      return res.status(403).json({
-        error: 'INVALID_API_KEY',
-        message: 'Gemini API key is invalid or API is not enabled. Go to aistudio.google.com/apikey and create a new key.',
-        detail: errBody?.error?.message
-      });
-    }
-
-    return res.status(status).json({
+  if (!successfulModel || !rawText) {
+    return res.status(lastStatus || 500).json({
       error: 'GEMINI_ERROR',
-      message: errBody?.error?.message || 'Gemini API returned an error.',
-      geminiStatus: status
+      message: lastError || 'All Gemini model attempts failed.',
+      candidateModelsTried: candidateModels
     });
   }
 
   let parsed = [];
   try {
-    const completion = await geminiResponse.json();
-    const rawText = completion?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-
-    // Strip markdown code fences if present
     const cleaned = rawText
       .replace(/```json\n?/gi, '')
       .replace(/```\n?/gi, '')
@@ -186,7 +197,7 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
     meta: {
       query: `ICP: ${icp} | Country: ${targetCountry} | State: ${targetState || 'All'} | City: ${targetCity || 'All'} | Industry: ${industry || 'All'}`,
       candidatesFound: cleanLeads.length,
-      sourcesChecked: 'Google Gemini 1.5 Flash (free tier)',
+      sourcesChecked: `Google Gemini API (${successfulModel} - free tier)`,
       timestamp: new Date().toISOString(),
       requestedLimit: effectiveLimit
     }

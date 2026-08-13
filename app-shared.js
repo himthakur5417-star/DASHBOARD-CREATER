@@ -1,8 +1,11 @@
 /* ==========================================================================
-   INFINITO SHARED ENGINE & PERSISTENCE LAYER
-   Supports: Auto Studio | Overall Emails Sent | ICP 1 | ICP 2 | ICP 3 | Lead Gen
+   INFINITO SHARED ENGINE — app-shared.js
+   Supports: Auto Studio | Overall Emails | ICP 1 | ICP 2 | ICP 3 | Lead Gen
    ========================================================================== */
 
+/* ==========================================================================
+   WORKSPACE STORE — persistent per-ICP storage with deduplication
+   ========================================================================== */
 class WorkspaceStore {
   constructor(workspaceId) {
     this.workspaceId = workspaceId;
@@ -12,37 +15,22 @@ class WorkspaceStore {
 
   getData() {
     try {
-      const raw = localStorage.getItem(this.storageKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) {
-      console.error("Error reading workspace data:", e);
-      return [];
-    }
+      return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+    } catch { return []; }
   }
 
   saveData(rows) {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(rows));
-    } catch(e) {
-      console.error("Error saving workspace data:", e);
-    }
+    try { localStorage.setItem(this.storageKey, JSON.stringify(rows)); } catch {}
   }
 
   getHistory() {
     try {
-      const raw = localStorage.getItem(this.historyKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) {
-      return [];
-    }
+      return JSON.parse(localStorage.getItem(this.historyKey) || '[]');
+    } catch { return []; }
   }
 
   saveHistory(history) {
-    try {
-      localStorage.setItem(this.historyKey, JSON.stringify(history));
-    } catch(e) {
-      console.error("Error saving history:", e);
-    }
+    try { localStorage.setItem(this.historyKey, JSON.stringify(history)); } catch {}
   }
 
   clearWorkspace() {
@@ -50,35 +38,25 @@ class WorkspaceStore {
     localStorage.removeItem(this.historyKey);
   }
 
-  mergeData(newRows, fileName, sheetName = "") {
+  mergeData(newRows, fileName, sheetName = '') {
     const existing = this.getData();
     const history = this.getHistory();
-
     const existingHashes = new Set(existing.map(r => this.getRowHash(r)));
-    
-    let validCount = 0;
+
     let duplicateCount = 0;
-    let newlyAdded = [];
+    const newlyAdded = [];
 
     newRows.forEach(row => {
-      if (!row || Object.keys(row).length === 0) return;
-      validCount++;
-
+      if (!row || !Object.keys(row).length) return;
       let mappedRow = mapFields(row);
-      
-      // Auto Qualify based on Workspace ID
       if (this.workspaceId === 'icp_1') mappedRow = qualifyICP1(mappedRow);
       else if (this.workspaceId === 'icp_2') mappedRow = qualifyICP2(mappedRow);
       else if (this.workspaceId === 'icp_3') mappedRow = qualifyICP3(mappedRow);
 
       const hash = this.getRowHash(mappedRow);
-      
-      if (existingHashes.has(hash)) {
-        duplicateCount++;
-      } else {
-        existingHashes.add(hash);
-        newlyAdded.push(mappedRow);
-      }
+      if (existingHashes.has(hash)) { duplicateCount++; return; }
+      existingHashes.add(hash);
+      newlyAdded.push(mappedRow);
     });
 
     const combined = [...existing, ...newlyAdded];
@@ -86,303 +64,232 @@ class WorkspaceStore {
 
     const logEntry = {
       id: Date.now(),
-      fileName: fileName || "Imported_Dataset",
-      sheetName: sheetName || "Sheet1",
+      fileName: fileName || 'Imported_Dataset',
+      sheetName: sheetName || 'Sheet1',
       timestamp: new Date().toLocaleString(),
       rowsReceived: newRows.length,
-      validRows: validCount,
-      skippedRows: newRows.length - validCount,
       duplicateRows: duplicateCount,
       newlyAddedRows: newlyAdded.length,
       totalStoredRows: combined.length
     };
-
     history.unshift(logEntry);
     this.saveHistory(history);
-
     return { logEntry, combinedData: combined };
   }
 
-  updateRecordStatus(recordId, newStatus, newReason = "Manual User Override") {
-    const data = this.getData();
-    const updated = data.map((r, idx) => {
-      const id = r.id || idx;
-      if (String(id) === String(recordId) || r.companyName === recordId) {
-        return { ...r, qualificationStatus: newStatus, qualificationReason: newReason, userOverridden: true };
-      }
-      return r;
-    });
-    this.saveData(updated);
-    return updated;
-  }
-
   getRowHash(row) {
-    const linkedin = row.linkedinUrl || row.linkedInUrl || row.CompanyLinkedIn;
-    const website = row.website || row.Website;
-    const company = row.companyName || row.Company;
-
-    if (linkedin && String(linkedin).trim() && String(linkedin) !== '—') return `li_${String(linkedin).toLowerCase().trim().replace(/https?:\/\//, '')}`;
-    if (website && String(website).trim() && String(website) !== '—') return `web_${String(website).toLowerCase().trim().replace(/https?:\/\//, '')}`;
-    if (company && String(company).trim() && String(company) !== '—') return `comp_${String(company).toLowerCase().trim()}`;
-    return `hash_${JSON.stringify(row)}`;
+    const li = row.linkedinUrl || row.linkedInUrl || '';
+    const web = row.website || '';
+    const co = row.companyName || '';
+    if (li && li !== '—') return `li_${li.toLowerCase().replace(/https?:\/\/(www\.)?/, '')}`;
+    if (web && web !== '—') return `web_${web.toLowerCase().replace(/https?:\/\/(www\.)?/, '')}`;
+    return `co_${co.toLowerCase().trim()}`;
   }
 }
 
 /* ==========================================================================
-   API SETTINGS & CREDENTIALS STORE
+   LEAD GEN HISTORY STORE — cross-search deduplication & persistent vault
+   NOTE: All old/mock lead gen data is wiped on load
    ========================================================================== */
-
-class ApiSettingsStore {
-  static key = 'infinito_leadgen_apikeys';
-
-  static getKeys() {
-    try {
-      const raw = localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : { googlePlacesKey: '', webSearchKey: '', hunterKey: '' };
-    } catch(e) { return { googlePlacesKey: '', webSearchKey: '', hunterKey: '' }; }
-  }
-
-  static saveKeys(keys) {
-    localStorage.setItem(this.key, JSON.stringify(keys));
-  }
-}
-
-/* ==========================================================================
-   LEAD GENERATION PERSISTENT HISTORY ENGINE & CROSS-SEARCH DEDUPLICATION
-   ========================================================================== */
-
 class LeadGenHistoryStore {
-  static storageKey = 'infinito_leadgen_history_log';
-  static savedLeadsKey = 'infinito_leadgen_all_saved_leads';
+  static HISTORY_KEY = 'infinito_lg_history_v2';
+  static VAULT_KEY = 'infinito_lg_vault_v2';
+
+  /** Wipe all old v1 keys (mock/demo/static data from previous versions) */
+  static wipeLegacyData() {
+    const legacyKeys = [
+      'infinito_leadgen_history_log',
+      'infinito_leadgen_all_saved_leads',
+      'infinito_leadgen_apikeys'
+    ];
+    legacyKeys.forEach(k => localStorage.removeItem(k));
+  }
 
   static getHistory() {
-    try {
-      const raw = localStorage.getItem(this.storageKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) { return []; }
+    try { return JSON.parse(localStorage.getItem(this.HISTORY_KEY) || '[]'); } catch { return []; }
   }
 
-  static addSearchLog(logEntry) {
-    const history = this.getHistory();
-    history.unshift(logEntry);
-    localStorage.setItem(this.storageKey, JSON.stringify(history));
+  static addLog(entry) {
+    const h = this.getHistory();
+    h.unshift(entry);
+    localStorage.setItem(this.HISTORY_KEY, JSON.stringify(h.slice(0, 200)));
   }
 
-  static getAllSavedLeads() {
-    try {
-      const raw = localStorage.getItem(this.savedLeadsKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) { return []; }
+  static getVault() {
+    try { return JSON.parse(localStorage.getItem(this.VAULT_KEY) || '[]'); } catch { return []; }
   }
 
-  static saveLeads(leads) {
-    const existing = this.getAllSavedLeads();
-    const existingHashes = new Set(existing.map(r => this.getLeadHash(r)));
-
-    let newCount = 0;
+  static saveToVault(leads) {
+    const vault = this.getVault();
+    const hashes = new Set(vault.map(r => this.hash(r)));
+    let added = 0;
     leads.forEach(l => {
-      const hash = this.getLeadHash(l);
-      if (!existingHashes.has(hash)) {
-        existingHashes.add(hash);
-        existing.push(l);
-        newCount++;
-      }
+      const h = this.hash(l);
+      if (!hashes.has(h)) { hashes.add(h); vault.push(l); added++; }
     });
-
-    localStorage.setItem(this.savedLeadsKey, JSON.stringify(existing));
-    return newCount;
+    localStorage.setItem(this.VAULT_KEY, JSON.stringify(vault));
+    return added;
   }
 
-  static getLeadHash(row) {
-    const linkedin = row.linkedinUrl || row.CompanyLinkedIn || row.linkedInUrl;
-    const website = row.website || row.Website;
-    const company = row.companyName || row.Company;
-    const city = row.city || row.location;
-
-    if (linkedin && String(linkedin).trim() && String(linkedin) !== '—') return `li_${String(linkedin).toLowerCase().trim().replace(/https?:\/\/(www\.)?/, '')}`;
-    if (website && String(website).trim() && String(website) !== '—') return `web_${String(website).toLowerCase().trim().replace(/https?:\/\/(www\.)?/, '')}`;
-    return `comp_${String(company).toLowerCase().trim()}_${String(city).toLowerCase().trim()}`;
+  static isKnown(lead) {
+    return this.getVault().some(v => this.hash(v) === this.hash(lead));
   }
 
-  static isAlreadyKnown(candidateRow) {
-    const savedLeads = this.getAllSavedLeads();
-    const targetHash = this.getLeadHash(candidateRow);
-    return savedLeads.some(s => this.getLeadHash(s) === targetHash);
+  static hash(lead) {
+    const li = (lead.linkedinUrl || '').toLowerCase().replace(/https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    const web = (lead.website || lead.sourceUrl || '').toLowerCase().replace(/https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    const co = (lead.companyName || '').toLowerCase().trim();
+    if (li) return `li_${li}`;
+    if (web) return `web_${web}`;
+    return `co_${co}`;
+  }
+
+  static clearAll() {
+    localStorage.removeItem(this.HISTORY_KEY);
+    localStorage.removeItem(this.VAULT_KEY);
   }
 }
 
 /* ==========================================================================
-   INTELLIGENT FIELD MAPPING & NORMALIZATION
+   API SETTINGS STORE — stores only non-secret config (not the API key)
+   The actual API key lives in Vercel env vars only
+   ========================================================================== */
+class ApiSettingsStore {
+  static KEY = 'infinito_api_cfg_v2';
+
+  static get() {
+    try { return JSON.parse(localStorage.getItem(this.KEY) || '{}'); } catch { return {}; }
+  }
+
+  static save(cfg) {
+    localStorage.setItem(this.KEY, JSON.stringify(cfg));
+  }
+}
+
+/* ==========================================================================
+   FIELD MAPPING — normalizes any CSV/Excel column name to standard fields
    ========================================================================== */
 function mapFields(row) {
   const mapped = { ...row };
   const keys = Object.keys(row);
 
-  function findVal(patterns) {
-    const foundKey = keys.find(k => {
+  function find(patterns) {
+    const k = keys.find(k => {
       const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
       return patterns.some(p => lk === p || lk.includes(p));
     });
-    return foundKey ? row[foundKey] : undefined;
+    return k ? (row[k] || '') : '';
   }
 
-  mapped.companyName = findVal(['companyname', 'company', 'organization', 'accountname', 'firm']) || row.companyName || '—';
-  mapped.website = findVal(['website', 'domain', 'companywebsite', 'url']) || row.website || '—';
-  mapped.industry = findVal(['industry', 'sector', 'domaincategory', 'niche', 'itservicetype', 'subindustry']) || row.industry || '—';
-  
-  mapped.country = findVal(['country', 'nation', 'targetcountry']) || row.country || '—';
-  mapped.state = findVal(['state', 'province', 'region', 'usstate']) || row.state || '—';
-  mapped.city = findVal(['city', 'indiacity', 'town']) || row.city || '—';
+  mapped.companyName   = find(['companyname','company','organization','firm','accountname']) || row.companyName || '—';
+  mapped.website       = find(['website','domain','companywebsite','url']) || row.website || '—';
+  mapped.industry      = find(['industry','sector','niche','itservicetype']) || row.industry || '—';
+  mapped.country       = find(['country','nation']) || row.country || '—';
+  mapped.state         = find(['state','province','region']) || row.state || '—';
+  mapped.city          = find(['city','town']) || row.city || '—';
 
   const locParts = [mapped.city, mapped.state, mapped.country].filter(p => p && p !== '—');
-  mapped.location = locParts.length ? locParts.join(', ') : (findVal(['location', 'address']) || row.location || '—');
+  mapped.location = locParts.join(', ') || find(['location','address']) || '—';
 
-  // Founder & Contact Name (Never fabricates names - leaves blank if unavailable)
-  const founderVal = findVal(['foundername', 'founder', 'cofounder', 'owner', 'primarydecisionmaker']) || row.founderName;
-  mapped.founderName = founderVal && founderVal !== '—' ? founderVal : '';
+  mapped.employeeCount = find(['employeecount','employees','headcount','size']) || row.employeeCount || '—';
+  mapped.annualRevenue = find(['annualrevenue','revenue','turnover']) || row.annualRevenue || '—';
 
-  const emailVal = findVal(['email', 'emailaddress', 'contactemail', 'workemail', 'founderemail']) || row.founderEmail || row.email;
-  mapped.founderEmail = emailVal && emailVal !== '—' ? emailVal : '';
-  mapped.email = mapped.founderEmail;
+  // Founder — strictly blank if not available
+  const fv = find(['foundername','founder','cofounder','owner']) || row.founderName || '';
+  mapped.founderName  = (fv && fv !== '—') ? fv : '';
 
-  const liVal = findVal(['linkedinurl', 'linkedin', 'profilelink', 'linkedinprofile', 'companylinkedin']) || row.linkedinUrl || row.linkedInUrl;
-  mapped.linkedinUrl = liVal && liVal !== '—' ? liVal : '';
-  mapped.linkedInUrl = mapped.linkedinUrl;
+  const ev = find(['email','founderemail','workemail','contactemail']) || row.founderEmail || row.email || '';
+  mapped.founderEmail = (ev && ev !== '—') ? ev : '';
+  mapped.email        = mapped.founderEmail;
 
-  mapped.qualificationStatus = row.qualificationStatus || (mapped.companyName !== '—' ? 'Verified' : 'Needs Review');
-  mapped.qualificationReason = row.qualificationReason || 'Validated Public Business Record';
-  mapped.sourceUrl = findVal(['source', 'sourceurl', 'sourcelink', 'urlsource']) || row.sourceUrl || row.sourceLink || 'https://public-business-registry.org';
+  const lv = find(['linkedinurl','linkedin','companylinkedin']) || row.linkedinUrl || row.linkedInUrl || '';
+  mapped.linkedinUrl  = (lv && lv !== '—') ? lv : '';
+  mapped.linkedInUrl  = mapped.linkedinUrl;
+
+  mapped.sourceUrl  = find(['sourceurl','source','sourcelink']) || row.sourceUrl || row.sourceLink || '';
   mapped.sourceLink = mapped.sourceUrl;
+
+  mapped.qualificationStatus = row.qualificationStatus || 'Review Needed';
+  mapped.qualificationReason = row.qualificationReason || '';
 
   return mapped;
 }
 
 /* ==========================================================================
-   QUALIFICATION LOGIC
+   ICP QUALIFICATION LOGIC
    ========================================================================== */
+const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
+const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
 
 function qualifyICP1(row) {
   if (row.userOverridden) return row;
+  const loc = `${row.location || ''} ${row.city || ''} ${row.state || ''}`.toLowerCase();
+  let tier = 'Other';
+  if (TIER1.some(c => loc.includes(c))) tier = 'Tier 1';
+  else if (TIER2.some(c => loc.includes(c))) tier = 'Tier 2';
+  row.tier = tier;
   row.qualificationStatus = 'Verified';
-  row.qualificationReason = `Indian IT company matching location criteria (${row.location || row.city}).`;
+  row.qualificationReason = `Indian IT — ${tier} location (${row.city || row.location}).`;
   return row;
 }
 
 function qualifyICP2(row) {
   if (row.userOverridden) return row;
-  row.qualificationStatus = 'Verified';
-  row.qualificationReason = `Indian Enterprise buyer matching location criteria (${row.location || row.city}).`;
+  const ind = (row.industry || '').toLowerCase();
+  const isPureIT = ['it services','software dev','outsourcing','it consulting'].some(t => ind.includes(t));
+  if (isPureIT) {
+    row.qualificationStatus = 'Not Qualified';
+    row.qualificationReason = 'Pure IT — ICP 2 targets non-IT enterprise buyers.';
+  } else {
+    row.qualificationStatus = 'Verified';
+    row.qualificationReason = `Indian Enterprise buyer (${row.industry || 'General'}) — high AI adoption potential.`;
+  }
   return row;
 }
 
 function qualifyICP3(row, criteria = {}) {
   if (row.userOverridden) return row;
   row.qualificationStatus = 'Verified';
-  row.qualificationReason = `Global SME matching target location (${row.country !== '—' ? row.country : 'Worldwide'}).`;
+  row.qualificationReason = `Global SME in ${row.country || 'target region'} — matches ICP 3 criteria.`;
   return row;
 }
 
 /* ==========================================================================
-   UNIVERSAL WORLDWIDE LIVE LOCATION COMPANY GENERATOR
-   Supports ANY Country, State, and City Worldwide without returning 0 results
+   LIVE API CALL — calls /api/leads (Vercel serverless)
+   API key never touches the frontend
    ========================================================================== */
+async function fetchLeadsFromAPI(criteria) {
+  const response = await fetch('/api/leads', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      icp:           criteria.icp || 'icp_3',
+      targetCountry: criteria.targetCountry || 'Global',
+      targetState:   criteria.targetState || '',
+      targetCity:    criteria.targetCity || '',
+      industry:      criteria.industry || '',
+      limit:         criteria.limit || 25
+    })
+  });
 
-function searchLocationCompanies(criteria) {
-  const country = criteria.targetCountry || 'Global';
-  const state = criteria.targetState || '';
-  const city = criteria.targetCity || '';
-  const ind = criteria.industry || 'Technology & Business Services';
-  const limit = criteria.limit || 100;
+  const data = await response.json();
 
-  // Curated Known Regional Anchor Databases
-  const ANCHOR_DATABASE = {
-    "bhopal": [
-      { name: "InfoBeans Technologies", domain: "infobeans.com", linkedin: "linkedin.com/company/infobeans", founder: "Avinash Sethi", email: "avinash@infobeans.com", source: "https://public-registry.in/co/infobeans-bhopal" },
-      { name: "Protonshub Innovations", domain: "protonshub.com", linkedin: "linkedin.com/company/protonshub", founder: "Vikalp Sharma", email: "vikalp@protonshub.com", source: "https://public-registry.in/co/protonshub-bhopal" },
-      { name: "Netlink Software Group", domain: "netlink.com", linkedin: "linkedin.com/company/netlink", founder: "Anurag Srivastava", email: "anurag@netlink.com", source: "https://public-registry.in/co/netlink-bhopal" },
-      { name: "Walkover / MSG91", domain: "msg91.com", linkedin: "linkedin.com/company/msg91", founder: "Pushpendra Agrawal", email: "pushpendra@msg91.com", source: "https://public-registry.in/co/msg91-mp" },
-      { name: "TaskUs Bhopal Operations", domain: "taskus.com", linkedin: "linkedin.com/company/taskus", founder: "", email: "", source: "https://public-registry.in/co/taskus-bhopal" },
-      { name: "Systematix Infotech Bhopal", domain: "systematixinfotech.com", linkedin: "linkedin.com/company/systematix-infotech", founder: "Sunil Rawat", email: "sunil@systematix.com", source: "https://public-registry.in/co/systematix-bhopal" },
-      { name: "Consultadd Services Bhopal", domain: "consultadd.com", linkedin: "linkedin.com/company/consultadd", founder: "Himanshu Jain", email: "himanshu@consultadd.com", source: "https://public-registry.in/co/consultadd-bhopal" }
-    ],
-    "canada": [
-      { name: "Shopify Inc", domain: "shopify.com", linkedin: "linkedin.com/company/shopify", founder: "Tobi Lütke", email: "tobi@shopify.com", source: "https://public-registry.ca/co/shopify" },
-      { name: "OpenText Corporation", domain: "opentext.com", linkedin: "linkedin.com/company/opentext", founder: "Mark Barrenechea", email: "mark@opentext.com", source: "https://public-registry.ca/co/opentext" },
-      { name: "CGI Group Canada", domain: "cgi.com", linkedin: "linkedin.com/company/cgi", founder: "Serge Godin", email: "", source: "https://public-registry.ca/co/cgi-group" },
-      { name: "Lightspeed Commerce", domain: "lightspeedhq.com", linkedin: "linkedin.com/company/lightspeedhq", founder: "Dax Dasilva", email: "dax@lightspeedhq.com", source: "https://public-registry.ca/co/lightspeed" },
-      { name: "Hootsuite Media", domain: "hootsuite.com", linkedin: "linkedin.com/company/hootsuite", founder: "Ryan Holmes", email: "ryan@hootsuite.com", source: "https://public-registry.ca/co/hootsuite" },
-      { name: "FreshBooks Canada", domain: "freshbooks.com", linkedin: "linkedin.com/company/freshbooks", founder: "Mike McDerment", email: "mike@freshbooks.com", source: "https://public-registry.ca/co/freshbooks" }
-    ]
-  };
-
-  const locKey = (city || state || country).toLowerCase();
-  let baseCandidates = [];
-
-  if (locKey.includes('bhopal') || locKey.includes('madhya pradesh')) {
-    baseCandidates = ANCHOR_DATABASE['bhopal'];
-  } else if (locKey.includes('canada')) {
-    baseCandidates = ANCHOR_DATABASE['canada'];
+  if (!response.ok) {
+    // Surface precise error to user — never expose the API key
+    const err = new Error(data.message || 'Lead API error');
+    err.code    = data.error || 'API_ERROR';
+    err.steps   = data.setupSteps || [];
+    err.status  = response.status;
+    throw err;
   }
 
-  // Dynamic Universal Live Generator for ANY Country, State, City Worldwide
-  let results = [];
-  const totalToGenerate = Math.min(limit, 100);
-
-  const prefixNames = ['Apex', 'Zenith', 'Novus', 'Vanguard', 'BlueHorizon', 'Starlight', 'Orion', 'Prism', 'Matrix', 'Crestview', 'Nexus', 'Vertex', 'Pinnacle', 'Summit', 'Equinox', 'Catalyst'];
-  const suffixTypes = ['Solutions', 'Technologies', 'Systems', 'Global', 'Enterprises', 'Networks', 'Digital', 'Labs', 'Holdings', 'Ventures', 'Group', 'Logistics'];
-
-  for (let i = 0; i < totalToGenerate; i++) {
-    let companyName = "";
-    let domain = "";
-    let linkedin = "";
-    let founder = "";
-    let email = "";
-    let source = "";
-
-    if (i < baseCandidates.length) {
-      const b = baseCandidates[i];
-      companyName = b.name;
-      domain = b.domain;
-      linkedin = b.linkedin ? `https://${b.linkedin}` : '';
-      founder = b.founder || '';
-      email = b.email || '';
-      source = b.source || `https://public-business-registry.org/co/${domain}`;
-    } else {
-      const p = prefixNames[i % prefixNames.length];
-      const s = suffixTypes[i % suffixTypes.length];
-      const cleanLoc = (city || state || country).replace(/[^a-zA-Z0-9]/g, '');
-
-      companyName = `${p} ${s} ${city ? city : country}`;
-      domain = `${p.toLowerCase()}${s.toLowerCase()}-${cleanLoc.toLowerCase()}.com`;
-      linkedin = `https://linkedin.com/company/${p.toLowerCase()}-${s.toLowerCase()}-${cleanLoc.toLowerCase()}`;
-      
-      // Leave founder/email blank for ~40% of records to simulate real public data
-      const hasFounder = (i % 3 !== 0);
-      founder = hasFounder ? `Executive Director ${i+1}` : '';
-      email = hasFounder ? `contact@${domain}` : '';
-      source = `https://public-business-registry.org/co/${cleanLoc.toLowerCase()}/${domain}`;
-    }
-
-    results.push({
-      companyName: companyName,
-      website: `https://${domain}`,
-      linkedinUrl: linkedin,
-      founderName: founder,
-      founderEmail: email,
-      city: city || (country === 'Canada' ? 'Toronto' : 'Central Hub'),
-      state: state || (country === 'Canada' ? 'Ontario' : 'Region'),
-      country: country !== 'Global' ? country : 'Worldwide',
-      industry: ind,
-      sourceUrl: source,
-      verificationStatus: 'Verified'
-    });
-  }
-
-  return results;
+  return data; // { leads: [...], meta: {...} }
 }
 
-/* UI HEADER & FOOTER */
-function renderAppHeader(activeId, pageTitle, pageSub) {
+/* ==========================================================================
+   UI — HEADER & FOOTER (shared across all pages)
+   ========================================================================== */
+function renderAppHeader(activeId) {
   return `
   <header>
     <div class="wrap hdr">
@@ -390,22 +297,18 @@ function renderAppHeader(activeId, pageTitle, pageSub) {
         <div class="logo-icon">♾️</div>
         <div>
           <div class="logo-title">Infinito</div>
-          <div class="logo-sub">Clean your data. Verify every detail. Turn insights into Power BI-style dashboards.</div>
+          <div class="logo-sub">Clean · Verify · Qualify · Export</div>
         </div>
       </div>
-
       <div class="nav-links">
-        <a href="index.html" class="nav-link ${activeId === 'auto_studio' ? 'active' : ''}">⚡ Auto Studio</a>
-        <a href="overall_emails.html" class="nav-link ${activeId === 'overall_emails' ? 'active' : ''}">📧 Overall Emails Sent</a>
-        <a href="icp1.html" class="nav-link ${activeId === 'icp1' ? 'active' : ''}">🎯 ICP 1</a>
-        <a href="icp2.html" class="nav-link ${activeId === 'icp2' ? 'active' : ''}">🚀 ICP 2</a>
-        <a href="icp3.html" class="nav-link ${activeId === 'icp3' ? 'active' : ''}">🌐 ICP 3</a>
-        <a href="lead_gen.html" class="nav-link ${activeId === 'lead_gen' ? 'active' : ''}">🔍 Lead Gen</a>
+        <a href="index.html"         class="nav-link ${activeId==='auto_studio'?'active':''}">⚡ Auto Studio</a>
+        <a href="overall_emails.html" class="nav-link ${activeId==='overall_emails'?'active':''}">📧 Overall Emails</a>
+        <a href="icp1.html"          class="nav-link ${activeId==='icp1'?'active':''}">🎯 ICP 1</a>
+        <a href="icp2.html"          class="nav-link ${activeId==='icp2'?'active':''}">🚀 ICP 2</a>
+        <a href="icp3.html"          class="nav-link ${activeId==='icp3'?'active':''}">🌐 ICP 3</a>
+        <a href="lead_gen.html"      class="nav-link ${activeId==='lead_gen'?'active':''}">🔍 Lead Gen</a>
       </div>
-
-      <div class="badge b-green">
-        <div class="dot"></div> System Online
-      </div>
+      <div class="badge b-green"><div class="dot"></div> System Online</div>
     </div>
   </header>`;
 }
@@ -415,76 +318,45 @@ function renderCreatorFooter() {
   <footer class="creator-footer">
     <div class="wrap footer-content">
       <div class="creator-badge">
-        <img src="himanshu_thakur_creator.jpg" 
-             alt="Himanshu Thakur, Creator of Infinito" 
-             class="creator-photo" 
-             onerror="this.onerror=null; this.outerHTML='<div class=\\'creator-avatar\\'>HT</div>';" />
+        <img src="himanshu_thakur_creator.jpg"
+             alt="Himanshu Thakur, Creator of Infinito"
+             class="creator-photo"
+             onerror="this.onerror=null;this.outerHTML='<div class=\\'creator-avatar\\'>HT</div>';" />
         <div>
           <div class="creator-title">Created by <strong>Himanshu Thakur</strong></div>
-          <div class="creator-sub">Creator of Infinito — a platform that helps turn raw spreadsheet data into clean, verified, insightful Power BI-style dashboards.</div>
+          <div class="creator-sub">Creator of Infinito — turn raw spreadsheet data into clean, verified, Power BI-style dashboards.</div>
         </div>
       </div>
       <div class="creator-links">
-        <a href="https://www.linkedin.com/in/-himanshu-thakur-" target="_blank" rel="noopener" class="creator-link">
-          🔗 LinkedIn Profile
-        </a>
-        <a href="mailto:himthakur5417@gmail.com" class="creator-link">
-          📧 Email Himanshu
-        </a>
+        <a href="https://www.linkedin.com/in/-himanshu-thakur-" target="_blank" rel="noopener" class="creator-link">🔗 LinkedIn</a>
+        <a href="mailto:himthakur5417@gmail.com" class="creator-link">📧 Email</a>
       </div>
     </div>
   </footer>`;
 }
 
-/* Modal Styles */
-const extraStyles = document.createElement('style');
-extraStyles.innerHTML = `
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(10px);
-  z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-card {
-  background: var(--card, #131c35); border: 1px solid var(--border, rgba(79,142,247,0.3));
-  border-radius: 14px; width: 100%; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-  animation: fi 0.25s ease;
-}
-.modal-header {
-  padding: 18px 20px; border-bottom: 1px solid var(--border, rgba(79,142,247,0.2));
-  display: flex; align-items: center; justify-content: space-between;
-}
-.modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #fff; }
-.modal-close { background: none; border: none; color: #8899bb; font-size: 18px; cursor: pointer; }
-.modal-close:hover { color: #fff; }
-.modal-body { padding: 20px; }
-.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border, rgba(79,142,247,0.2)); display: flex; justify-content: flex-end; gap: 10px; }
-
-.creator-footer {
-  margin-top: 60px; padding: 30px 0; background: rgba(13, 20, 45, 0.95);
-  border-top: 1px solid var(--border, rgba(79,142,247,0.15)); text-align: center;
-}
-.footer-content { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-.creator-badge { display: flex; align-items: center; gap: 14px; text-align: left; }
-.creator-photo {
-  width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--blue, #4f8ef7); box-shadow: 0 0 15px rgba(79,142,247,0.4);
-  flex-shrink: 0;
-}
-.creator-avatar {
-  width: 54px; height: 54px; border-radius: 50%;
-  background: linear-gradient(135deg, #4f8ef7, #8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 16px; color: #fff; flex-shrink: 0;
-}
-.creator-title { font-size: 14px; color: #f0f4ff; }
-.creator-sub { font-size: 12px; color: #8899bb; max-width: 500px; margin-top: 2px; }
-.creator-links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.creator-link {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
-  background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3);
-  border-radius: 8px; font-size: 12px; font-weight: 600; color: #4f8ef7; text-decoration: none;
-  transition: all 0.2s;
-}
-.creator-link:hover { background: rgba(79,142,247,0.22); transform: translateY(-1px); }
+/* Inject shared modal & footer styles */
+(function injectStyles() {
+  const s = document.createElement('style');
+  s.innerHTML = `
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,14,26,.88);backdrop-filter:blur(10px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-card{background:var(--card,#131c35);border:1px solid var(--border,rgba(79,142,247,.3));border-radius:14px;width:100%;max-width:620px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border,rgba(79,142,247,.2));display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:#8899bb;font-size:18px;cursor:pointer}
+.modal-close:hover{color:#fff}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border,rgba(79,142,247,.2));display:flex;justify-content:flex-end;gap:10px}
+.creator-footer{margin-top:60px;padding:30px 0;background:rgba(13,20,45,.95);border-top:1px solid var(--border,rgba(79,142,247,.15))}
+.footer-content{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.creator-badge{display:flex;align-items:center;gap:14px;text-align:left}
+.creator-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--blue,#4f8ef7);box-shadow:0 0 15px rgba(79,142,247,.4);flex-shrink:0}
+.creator-avatar{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex-shrink:0}
+.creator-title{font-size:14px;color:#f0f4ff}
+.creator-sub{font-size:12px;color:#8899bb;max-width:500px;margin-top:2px}
+.creator-links{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.creator-link{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:8px;font-size:12px;font-weight:600;color:#4f8ef7;text-decoration:none;transition:all .2s}
+.creator-link:hover{background:rgba(79,142,247,.22);transform:translateY(-1px)}
 `;
-document.head.appendChild(extraStyles);
+  document.head.appendChild(s);
+})();

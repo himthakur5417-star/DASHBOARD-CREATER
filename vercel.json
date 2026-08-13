@@ -1,6 +1,13 @@
 {
   "cleanUrls": true,
+  "functions": {
+    "api/leads.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
+    { "source": "/api/leads", "destination": "/api/leads" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/emails", "destination": "/overall_emails.html" },
     { "source": "/icp1", "destination": "/icp1.html" },

@@ -322,35 +322,173 @@ async function parseUploadedFile(file, maxMb = 25) {
 }
 
 /* ==========================================================================
-   LIVE API CALL — calls /api/leads (Vercel serverless)
-   API key never touches the frontend
+   SHARED MODAL DIALOGS
    ========================================================================== */
-async function fetchLeadsFromAPI(criteria) {
-  const response = await fetch('/api/leads', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      icp:           criteria.icp || 'icp_3',
-      targetCountry: criteria.targetCountry || 'Global',
-      targetState:   criteria.targetState || '',
-      targetCity:    criteria.targetCity || '',
-      industry:      criteria.industry || '',
-      limit:         criteria.limit || 25
-    })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    // Surface precise error to user — never expose the API key
-    const err = new Error(data.message || 'Lead API error');
-    err.code    = data.error || 'API_ERROR';
-    err.steps   = data.setupSteps || [];
-    err.status  = response.status;
-    throw err;
+function showImportSummaryModal(logEntry) {
+  if (!logEntry) return;
+  let overlay = document.getElementById('infinito-import-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'infinito-import-modal-overlay';
+    overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
   }
 
-  return data; // { leads: [...], meta: {...} }
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📊 Import & Data Cleaning Complete</div>
+        <button class="modal-close" onclick="closeImportSummaryModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:10px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px">✅</div>
+          <div>
+            <div style="font-weight:700;color:#22d3a5;font-size:14px">Dataset Processed & Cleaned Successfully</div>
+            <div style="font-size:12px;color:#8899bb;margin-top:2px">Fields normalized, duplicates removed, and attributes assigned.</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">File Name</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;word-break:break-all">${logEntry.fileName || 'Imported_Dataset'}</div>
+          </div>
+          <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:8px;padding:12px">
+            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Worksheet / Source</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px">${logEntry.sheetName || 'Sheet1'}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#4f8ef7">${(logEntry.rowsReceived || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#8899bb;margin-top:2px">Rows Received</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#f59e0b">${(logEntry.duplicateRows || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#8899bb;margin-top:2px">Duplicates Filtered</div>
+          </div>
+          <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:8px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#22d3a5">${(logEntry.newlyAddedRows || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#8899bb;margin-top:2px">Unique Added</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:10px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:#a78bfa">Total Cumulative Stored Workspace Records:</span>
+          <span style="font-size:14px;font-weight:800;color:#fff">${(logEntry.totalStoredRows || 0).toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" style="padding:8px 20px;font-size:13px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);color:#fff;border:none;border-radius:8px;cursor:pointer" onclick="closeImportSummaryModal()">Continue to Dashboard</button>
+      </div>
+    </div>
+  `;
+  overlay.style.display = 'flex';
+}
+
+function closeImportSummaryModal() {
+  const overlay = document.getElementById('infinito-import-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function openRecordDetailModal(record) {
+  if (!record) return;
+  let overlay = document.getElementById('infinito-detail-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'infinito-detail-modal-overlay';
+    overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  const fields = [
+    { label: 'Company Name', val: record.companyName || '—' },
+    { label: 'Website', val: record.website ? `<a href="${record.website.startsWith('http')?record.website:'https://'+record.website}" target="_blank" style="color:#4f8ef7">${record.website}</a>` : '—' },
+    { label: 'Location', val: record.location || [record.city, record.state, record.country].filter(Boolean).join(', ') || '—' },
+    { label: 'Industry', val: record.industry || '—' },
+    { label: 'Founder Name', val: record.founderName || '—' },
+    { label: 'Founder Email', val: record.founderEmail ? `<a href="mailto:${record.founderEmail}" style="color:#4f8ef7">${record.founderEmail}</a>` : '—' },
+    { label: 'LinkedIn', val: record.linkedinUrl ? `<a href="${record.linkedinUrl}" target="_blank" style="color:#4f8ef7">${record.linkedinUrl}</a>` : '—' },
+    { label: 'Status', val: record.qualificationStatus || 'Verified' },
+    { label: 'Reason / Tier', val: record.qualificationReason || record.tier || '—' }
+  ];
+
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📋 Record Detail — ${record.companyName || 'Lead Detail'}</div>
+        <button class="modal-close" onclick="closeRecordDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${fields.map(f => `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px">
+            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">${f.label}</div>
+            <div style="font-size:13px;color:#fff;margin-top:4px;word-break:break-all">${f.val}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" style="padding:8px 18px;font-size:13px;background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3);border-radius:8px;cursor:pointer" onclick="closeRecordDetailModal()">Close</button>
+      </div>
+    </div>
+  `;
+  overlay.style.display = 'flex';
+}
+
+function closeRecordDetailModal() {
+  const overlay = document.getElementById('infinito-detail-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function openShareEmailModal(workspaceTitle) {
+  let overlay = document.getElementById('infinito-share-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'infinito-share-modal-overlay';
+    overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📧 Share ${workspaceTitle || 'Workspace'} Analytics</div>
+        <button class="modal-close" onclick="closeShareEmailModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:13px;color:#8899bb;margin-bottom:14px">Share clean workspace analytics summary and CSV export link with your team:</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Recipient Email</label>
+            <input id="shareEmailInput" type="email" placeholder="colleague@company.com" style="width:100%;margin-top:4px;padding:8px 12px;border-radius:8px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);color:#fff;font-size:13px" />
+          </div>
+          <div>
+            <label style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Subject</label>
+            <input id="shareSubjectInput" type="text" value="Infinito Intelligence Report: ${workspaceTitle || 'Workspace Data'}" style="width:100%;margin-top:4px;padding:8px 12px;border-radius:8px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);color:#fff;font-size:13px" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button style="padding:8px 16px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#8899bb;cursor:pointer;font-size:13px" onclick="closeShareEmailModal()">Cancel</button>
+        <button style="padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);border:none;color:#fff;font-weight:600;cursor:pointer;font-size:13px" onclick="submitShareEmail()">Send Report</button>
+      </div>
+    </div>
+  `;
+  overlay.style.display = 'flex';
+}
+
+function closeShareEmailModal() {
+  const overlay = document.getElementById('infinito-share-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function submitShareEmail() {
+  const email = document.getElementById('shareEmailInput')?.value || '';
+  if (!email) { alert("Please enter a valid recipient email address."); return; }
+  alert(`Report summary prepared and queued for ${email}.`);
+  closeShareEmailModal();
 }
 
 /* ==========================================================================

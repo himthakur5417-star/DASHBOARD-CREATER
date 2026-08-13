@@ -399,8 +399,6 @@ async function checkAPIStatus() {
   const text  = document.getElementById('apiStatusText');
 
   try {
-    /* Lightweight probe — send an empty POST to see if the serverless
-       function exists and the env var is set */
     const r = await fetch('/api/leads', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -416,17 +414,19 @@ async function checkAPIStatus() {
       badge.className = 'api-status-badge warn';
       text.textContent = '⚠️ Invalid API Key — Update in Vercel Settings';
       document.getElementById('setupGuide').style.display = 'block';
+    } else if (r.status === 429) {
+      badge.className = 'api-status-badge warn';
+      text.textContent = '⏳ AI Rate Limited (15 req/min) — Data Uploads & Dashboards Operational';
     } else if (r.ok || r.status === 200) {
       badge.className = 'api-status-badge ok';
       text.textContent = '✅ Live API Connected — Ready to Search';
     } else {
       badge.className = 'api-status-badge warn';
-      text.textContent = '⚠️ API Issue — ' + (d.message || 'Unknown error');
+      text.textContent = '⚠️ API Status — ' + (d.message || 'Unknown error');
     }
   } catch (e) {
-    /* /api/leads doesn't exist yet (local dev without serverless) */
     badge.className = 'api-status-badge warn';
-    text.textContent = '⚠️ Not Deployed — Deploy to Vercel First';
+    text.textContent = '⚠️ Network Check — Deploy to Vercel First';
     document.getElementById('setupGuide').style.display = 'block';
   }
 }
@@ -611,17 +611,29 @@ function shortUrl(u){ try{ const o=new URL(u); return o.hostname+o.pathname.slic
 /* ── Error Display ───────────────────────── */
 function showError(err) {
   const card = document.getElementById('errorCard');
-  document.getElementById('errTitle').textContent = '⚠️ ' + (err.code || 'Search Error');
-  document.getElementById('errMsg').textContent   = err.message || 'An unexpected error occurred.';
+  const title = document.getElementById('errTitle');
+  const msg   = document.getElementById('errMsg');
   const stepsList = document.getElementById('errSteps');
   stepsList.innerHTML = '';
-  if (err.steps && err.steps.length) {
-    err.steps.forEach(s => {
-      const li = document.createElement('li');
-      li.textContent = s;
-      stepsList.appendChild(li);
-    });
+
+  if (err.code === 'RATE_LIMIT') {
+    title.textContent = '⏳ AI Rate Limit Reached (Google Gemini Free Tier)';
+    msg.textContent   = 'Google Gemini free tier limit reached (15 requests/min). All non-AI workspace features (File Uploads, CSV/Excel Cleaning, ICP Dashboards, and Exports) remain 100% operational! AI Lead Search will resume automatically in ~60 seconds.';
+    const li = document.createElement('li');
+    li.textContent = '✅ You can continue uploading CSV/XLSX files, viewing ICP1/ICP2/ICP3 dashboards, and exporting clean datasets without waiting.';
+    stepsList.appendChild(li);
+  } else {
+    title.textContent = '⚠️ ' + (err.code || 'Search Error');
+    msg.textContent   = err.message || 'An unexpected error occurred.';
+    if (err.steps && err.steps.length) {
+      err.steps.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        stepsList.appendChild(li);
+      });
+    }
   }
+
   card.style.display = 'block';
   if (err.code === 'CONFIGURATION_MISSING' || err.code === 'INVALID_API_KEY') {
     document.getElementById('setupGuide').style.display = 'block';

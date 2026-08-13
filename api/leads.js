@@ -1,23 +1,27 @@
 /**
  * Infinito Lead Generation — Vercel Serverless Function
  * Route: POST /api/leads
- * Provider: Google Gemini API (FREE — no credit card needed)
+ * Provider: Google Gemini API (FREE — no credit card required)
  *
  * Security:
- *   - API key read ONLY from process.env.GEMINI_API_KEY
- *   - Key is NEVER returned to client or logged
+ *   - API key read ONLY from process.env.GEMINI_API_KEY or process.env.GOOGLE_API_KEY
+ *   - Key is NEVER returned to client, written to disk, or logged
  */
 
 export default async function handler(req, res) {
+  const timestamp = new Date().toISOString();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  // 1. Inspect Environment Variables safely
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
+    console.error(`[${timestamp}] [LeadGen API] CONFIGURATION_MISSING: Neither GEMINI_API_KEY nor GOOGLE_API_KEY is configured.`);
     return res.status(503).json({
       error: 'CONFIGURATION_MISSING',
-      message: 'Gemini API key is not configured. Add GEMINI_API_KEY to Vercel Environment Variables.',
+      message: 'Gemini API key is not configured. Add GEMINI_API_KEY or GOOGLE_API_KEY to Vercel Environment Variables.',
       setupSteps: [
         '1. Go to aistudio.google.com/apikey',
         '2. Sign in with Google → Click "Create API key"',
@@ -29,11 +33,13 @@ export default async function handler(req, res) {
     });
   }
 
+  // 2. Parse request body safely
   let body;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON body.' });
+  } catch (err) {
+    console.error(`[${timestamp}] [LeadGen API] Invalid JSON request body:`, err.message);
+    return res.status(400).json({ error: 'Invalid JSON request body.' });
   }
 
   const {
@@ -55,6 +61,8 @@ export default async function handler(req, res) {
   const icpDesc = icpDescriptions[icp] || icpDescriptions['icp_3'];
   const locationStr = [targetCity, targetState, targetCountry].filter(Boolean).join(', ');
   const industryStr = industry ? `Industry: ${industry}.` : '';
+
+  console.log(`[${timestamp}] [LeadGen API] Processing query: ICP=${icp}, Location="${locationStr}", Industry="${industry}", Limit=${effectiveLimit}`);
 
   const prompt = `You are a B2B lead research assistant. Return ONLY real, publicly known companies.
 
@@ -83,21 +91,50 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
   }
 ]`;
 
-  // Candidate models to try in sequence for resilient compatibility
-  const candidateModels = [
-    'gemini-1.5-flash-latest',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-pro'
-  ];
+  // 3. Dynamic Model Discovery & Fallback Selection
+  let candidateModels = [];
+
+  try {
+    console.log(`[${timestamp}] [LeadGen API] Querying available models via Gemini ListModels endpoint...`);
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const availableModels = (listData.models || [])
+        .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => m.name.replace(/^models\//, ''));
+
+      console.log(`[${timestamp}] [LeadGen API] Discovered ${availableModels.length} models supporting generateContent:`, availableModels);
+
+      // Prioritize flash and pro models from discovered list
+      const preferredOrder = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+      const matched = preferredOrder.filter(m => availableModels.includes(m));
+      candidateModels = Array.from(new Set([...matched, ...availableModels]));
+    }
+  } catch (listErr) {
+    console.warn(`[${timestamp}] [LeadGen API] Dynamic model listing skipped:`, listErr.message);
+  }
+
+  // Static fallback candidates if dynamic discovery returned none
+  if (!candidateModels.length) {
+    candidateModels = [
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-pro'
+    ];
+  }
+
+  console.log(`[${timestamp}] [LeadGen API] Candidate model execution sequence:`, candidateModels);
 
   let lastError = null;
   let lastStatus = 500;
   let rawText = '';
   let successfulModel = '';
 
+  // 4. Model execution loop
   for (const model of candidateModels) {
+    console.log(`[${timestamp}] [LeadGen API] Attempting generateContent with model: "${model}" (API version v1beta)...`);
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -119,22 +156,26 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
         rawText = completion?.candidates?.[0]?.content?.parts?.[0]?.text || '';
         if (rawText) {
           successfulModel = model;
-          break; // Success!
+          console.log(`[${timestamp}] [LeadGen API] Success! Model "${model}" responded with ${rawText.length} characters.`);
+          break; // Success
         }
       } else {
         const errBody = await response.json().catch(() => ({}));
         lastStatus = response.status;
         lastError = errBody?.error?.message || `HTTP ${response.status} for model ${model}`;
+        console.warn(`[${timestamp}] [LeadGen API] Model "${model}" failed (HTTP ${response.status}): ${lastError}`);
 
-        // If invalid key or rate limit, fail immediately without retrying other models
+        // If invalid key or rate limit, fail immediately without trying remaining models
         if (response.status === 401 || (response.status === 400 && errBody?.error?.message?.includes('API_KEY'))) {
+          console.error(`[${timestamp}] [LeadGen API] Aborting: Invalid API Key.`);
           return res.status(401).json({
             error: 'INVALID_API_KEY',
-            message: 'The Gemini API key is invalid. Update GEMINI_API_KEY in Vercel Environment Variables.',
+            message: 'The Gemini API key is invalid. Update GEMINI_API_KEY or GOOGLE_API_KEY in Vercel Environment Variables.',
             detail: errBody?.error?.message
           });
         }
         if (response.status === 429) {
+          console.error(`[${timestamp}] [LeadGen API] Aborting: Rate limit reached.`);
           return res.status(429).json({
             error: 'RATE_LIMIT',
             message: 'Gemini free tier rate limit hit. Wait 1 minute and try again. Free limit: 15 requests/minute.',
@@ -143,18 +184,21 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
         }
       }
     } catch (e) {
+      console.error(`[${timestamp}] [LeadGen API] Fetch exception for model "${model}":`, e.message);
       lastError = e.message;
     }
   }
 
   if (!successfulModel || !rawText) {
+    console.error(`[${timestamp}] [LeadGen API] All candidate models failed. Last status: ${lastStatus}, Last error: ${lastError}`);
     return res.status(lastStatus || 500).json({
       error: 'GEMINI_ERROR',
-      message: lastError || 'All Gemini model attempts failed.',
+      message: lastError || 'All candidate Gemini models failed to generate content.',
       candidateModelsTried: candidateModels
     });
   }
 
+  // 5. Clean & parse JSON output safely
   let parsed = [];
   try {
     const cleaned = rawText
@@ -172,6 +216,7 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
       parsed = firstArray || [];
     }
   } catch (parseError) {
+    console.error(`[${timestamp}] [LeadGen API] JSON Parse Error:`, parseError.message);
     return res.status(500).json({
       error: 'PARSE_ERROR',
       message: 'Could not parse Gemini response as valid JSON lead data.',
@@ -179,7 +224,7 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
     });
   }
 
-  // Clean and validate — enforce strict 6-field output only
+  // 6. Normalize and validate 6 fields strictly
   const cleanLeads = parsed
     .filter(lead => lead && typeof lead.companyName === 'string' && lead.companyName.trim())
     .map(lead => ({
@@ -191,6 +236,8 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
       verificationStatus: lead.verificationStatus === 'Verified' ? 'Verified' : 'Needs Review'
     }))
     .slice(0, effectiveLimit);
+
+  console.log(`[${timestamp}] [LeadGen API] Returning ${cleanLeads.length} valid leads using model "${successfulModel}".`);
 
   return res.status(200).json({
     leads: cleanLeads,

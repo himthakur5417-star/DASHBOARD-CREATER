@@ -746,14 +746,14 @@ function handleFileSelect(e) {
   if (e.target.files && e.target.files.length) processSelectedFile(e.target.files[0]);
 }
 
-function processSelectedFile(file) {
+async function processSelectedFile(file) {
   if (file.size > 25 * 1024 * 1024) {
     showAlert("File exceeds maximum allowed size limit of 25MB.");
     return;
   }
   const ext = file.name.split('.').pop().toLowerCase();
-  if (!['csv', 'xls', 'xlsx'].includes(ext)) {
-    showAlert("Invalid file format. Please upload a .CSV, .XLS, or .XLSX file.");
+  if (!['csv', 'xls', 'xlsx', 'json', 'tsv'].includes(ext)) {
+    showAlert("Invalid file format. Please upload a .CSV, .XLS, .XLSX, or .JSON file.");
     return;
   }
 
@@ -768,45 +768,37 @@ function processSelectedFile(file) {
   appState.fileSize = (file.size / 1024).toFixed(1) + ' KB';
   appState.fileType = ext.toUpperCase();
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    pFill.style.width = '80%';
-    setTimeout(() => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-        appState.workbook = workbook;
-        appState.sheetNames = workbook.SheetNames;
-        
-        let bestSheet = workbook.SheetNames[0];
-        let maxRows = 0;
-        workbook.SheetNames.forEach(sName => {
-          const sheet = workbook.Sheets[sName];
-          const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-          if (json.length > maxRows) { maxRows = json.length; bestSheet = sName; }
-        });
-        
-        loadSheetData(bestSheet);
-        
-        document.getElementById('meta-name').innerText = appState.fileName;
-        document.getElementById('meta-size').innerText = appState.fileSize;
-        document.getElementById('meta-type').innerText = appState.fileType;
-        document.getElementById('meta-rows').innerText = appState.rawRows.length.toLocaleString();
-        document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
-        document.getElementById('file-meta-container').style.display = 'block';
+  try {
+    pFill.style.width = '70%';
+    const { rows, sheetName } = await parseUploadedFile(file);
+    pFill.style.width = '90%';
 
-        pFill.style.width = '100%';
-        setTimeout(() => { pWrap.style.display = 'none'; pFill.style.width = '0%'; }, 400);
+    appState.sheetNames = [sheetName];
+    appState.selectedSheet = sheetName;
+    appState.rawRows = rows;
+    appState.rawHeaders = Object.keys(rows[0] || {});
+    appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
 
-        switchStep(2);
-      } catch(err) {
-        console.error(err);
-        pWrap.style.display = 'none';
-        showAlert("Error reading spreadsheet file. Please verify file integrity.");
-      }
-    }, 200);
-  };
-  reader.readAsArrayBuffer(file);
+    detectColumnTypes();
+    profileColumns();
+
+    document.getElementById('meta-name').innerText = appState.fileName;
+    document.getElementById('meta-size').innerText = appState.fileSize;
+    document.getElementById('meta-type').innerText = appState.fileType;
+    document.getElementById('meta-rows').innerText = appState.rawRows.length.toLocaleString();
+    document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
+    document.getElementById('file-meta-container').style.display = 'block';
+
+    pFill.style.width = '100%';
+    setTimeout(() => { pWrap.style.display = 'none'; pFill.style.width = '0%'; }, 400);
+
+    switchStep(2);
+  } catch(err) {
+    console.error(err);
+    pWrap.style.display = 'none';
+    pFill.style.width = '0%';
+    showAlert(err.message || "Error reading file. Please verify file integrity.");
+  }
 }
 
 function loadSheetData(sheetName) {

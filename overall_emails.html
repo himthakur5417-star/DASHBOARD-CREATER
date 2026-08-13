@@ -257,34 +257,21 @@ function initWorkspace() {
   }
 }
 
-function handleWorkspaceUpload(e) {
+async function handleWorkspaceUpload(e) {
   if (!e.target.files || !e.target.files.length) return;
   const file = e.target.files[0];
-  
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames[0];
-      const rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
-
-      if (!rawJson.length) {
-        alert("Selected spreadsheet is empty.");
-        return;
-      }
-
-      const result = store.mergeData(rawJson, file.name, sheetName);
-      currentDataset = result.combinedData;
-
-      showImportSummaryModal(result.logEntry);
-      initWorkspace();
-    } catch(err) {
-      console.error(err);
-      alert("Error parsing file.");
-    }
-  };
-  reader.readAsArrayBuffer(file);
+  try {
+    const { rows, sheetName, fileName } = await parseUploadedFile(file);
+    const result = store.mergeData(rows, fileName, sheetName);
+    currentDataset = result.combinedData;
+    showImportSummaryModal(result.logEntry);
+    initWorkspace();
+  } catch(err) {
+    console.error(err);
+    alert(err.message || "Failed to process uploaded file.");
+  } finally {
+    e.target.value = '';
+  }
 }
 
 function renderExecutiveDashboard() {

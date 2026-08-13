@@ -255,6 +255,73 @@ function qualifyICP3(row, criteria = {}) {
 }
 
 /* ==========================================================================
+   UNIFIED FILE PARSER — Supports CSV, XLSX, XLS, JSON, TSV
+   ========================================================================== */
+async function parseUploadedFile(file, maxMb = 25) {
+  if (!file) throw new Error("No file selected.");
+
+  const maxBytes = maxMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    throw new Error(`File "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) exceeds maximum limit of ${maxMb}MB.`);
+  }
+
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const validExts = ['csv', 'xlsx', 'xls', 'json', 'tsv'];
+  if (!validExts.includes(ext)) {
+    throw new Error(`Unsupported file type ".${ext}". Please upload a .CSV, .XLSX, .XLS, or .JSON file.`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    if (ext === 'json') {
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          const parsed = JSON.parse(text);
+          let rows = [];
+          if (Array.isArray(parsed)) {
+            rows = parsed;
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            const firstArr = Object.values(parsed).find(v => Array.isArray(v));
+            rows = firstArr || [parsed];
+          }
+          if (!rows.length) throw new Error("JSON file contains no records.");
+          resolve({ rows, sheetName: 'JSON_Data', fileName: file.name });
+        } catch (err) {
+          reject(new Error(`Failed to parse JSON file "${file.name}": ${err.message}`));
+        }
+      };
+      reader.onerror = () => reject(new Error(`Failed to read file "${file.name}".`));
+      reader.readAsText(file);
+    } else {
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          if (typeof XLSX === 'undefined') {
+            throw new Error("XLSX parsing library is loading. Please retry in a moment.");
+          }
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          if (!workbook || !workbook.SheetNames || !workbook.SheetNames.length) {
+            throw new Error("Spreadsheet file contains no worksheets.");
+          }
+          const sheetName = workbook.SheetNames[0];
+          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+          if (!rows || !rows.length) {
+            throw new Error(`Worksheet "${sheetName}" in file "${file.name}" is empty.`);
+          }
+          resolve({ rows, sheetName, fileName: file.name });
+        } catch (err) {
+          reject(new Error(`Failed to parse spreadsheet file "${file.name}": ${err.message}`));
+        }
+      };
+      reader.onerror = () => reject(new Error(`Failed to read file "${file.name}".`));
+      reader.readAsArrayBuffer(file);
+    }
+  });
+}
+
+/* ==========================================================================
    LIVE API CALL — calls /api/leads (Vercel serverless)
    API key never touches the frontend
    ========================================================================== */

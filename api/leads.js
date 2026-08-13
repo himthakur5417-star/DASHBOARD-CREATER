@@ -132,61 +132,69 @@ Return ONLY a valid JSON array like this (no explanation, no markdown):
   let rawText = '';
   let successfulModel = '';
 
-  // 4. Model execution loop
+  // 4. Model execution loop (tries both v1beta and v1 API versions)
   for (const model of candidateModels) {
-    console.log(`[${timestamp}] [LeadGen API] Attempting generateContent with model: "${model}" (API version v1beta)...`);
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 2500
-            }
-          })
-        }
-      );
+    const apiVersions = ['v1beta', 'v1'];
+    let modelSuccess = false;
 
-      if (response.ok) {
-        const completion = await response.json();
-        rawText = completion?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        if (rawText) {
-          successfulModel = model;
-          console.log(`[${timestamp}] [LeadGen API] Success! Model "${model}" responded with ${rawText.length} characters.`);
-          break; // Success
-        }
-      } else {
-        const errBody = await response.json().catch(() => ({}));
-        lastStatus = response.status;
-        lastError = errBody?.error?.message || `HTTP ${response.status} for model ${model}`;
-        console.warn(`[${timestamp}] [LeadGen API] Model "${model}" failed (HTTP ${response.status}): ${lastError}`);
+    for (const ver of apiVersions) {
+      console.log(`[${timestamp}] [LeadGen API] Attempting generateContent with model: "${model}" (API version ${ver})...`);
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 2500
+              }
+            })
+          }
+        );
 
-        // If invalid key or rate limit, fail immediately without trying remaining models
-        if (response.status === 401 || (response.status === 400 && errBody?.error?.message?.includes('API_KEY'))) {
-          console.error(`[${timestamp}] [LeadGen API] Aborting: Invalid API Key.`);
-          return res.status(401).json({
-            error: 'INVALID_API_KEY',
-            message: 'The Gemini API key is invalid. Update GEMINI_API_KEY or GOOGLE_API_KEY in Vercel Environment Variables.',
-            detail: errBody?.error?.message
-          });
+        if (response.ok) {
+          const completion = await response.json();
+          rawText = completion?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (rawText) {
+            successfulModel = `${model} (${ver})`;
+            console.log(`[${timestamp}] [LeadGen API] Success! Model "${model}" (${ver}) responded with ${rawText.length} characters.`);
+            modelSuccess = true;
+            break; // Success!
+          }
+        } else {
+          const errBody = await response.json().catch(() => ({}));
+          lastStatus = response.status;
+          lastError = errBody?.error?.message || `HTTP ${response.status} for model ${model} (${ver})`;
+          console.warn(`[${timestamp}] [LeadGen API] Model "${model}" (${ver}) failed (HTTP ${response.status}): ${lastError}`);
+
+          // If invalid key or rate limit, fail immediately without trying remaining models
+          if (response.status === 401 || (response.status === 400 && errBody?.error?.message?.includes('API_KEY'))) {
+            console.error(`[${timestamp}] [LeadGen API] Aborting: Invalid API Key.`);
+            return res.status(401).json({
+              error: 'INVALID_API_KEY',
+              message: 'The Gemini API key is invalid. Update GEMINI_API_KEY or GOOGLE_API_KEY in Vercel Environment Variables.',
+              detail: errBody?.error?.message
+            });
+          }
+          if (response.status === 429) {
+            console.error(`[${timestamp}] [LeadGen API] Aborting: Rate limit reached.`);
+            return res.status(429).json({
+              error: 'RATE_LIMIT',
+              message: 'Gemini free tier rate limit hit. Wait 1 minute and try again. Free limit: 15 requests/minute.',
+              detail: errBody?.error?.message
+            });
+          }
         }
-        if (response.status === 429) {
-          console.error(`[${timestamp}] [LeadGen API] Aborting: Rate limit reached.`);
-          return res.status(429).json({
-            error: 'RATE_LIMIT',
-            message: 'Gemini free tier rate limit hit. Wait 1 minute and try again. Free limit: 15 requests/minute.',
-            detail: errBody?.error?.message
-          });
-        }
+      } catch (e) {
+        console.error(`[${timestamp}] [LeadGen API] Fetch exception for model "${model}" (${ver}):`, e.message);
+        lastError = e.message;
       }
-    } catch (e) {
-      console.error(`[${timestamp}] [LeadGen API] Fetch exception for model "${model}":`, e.message);
-      lastError = e.message;
     }
+
+    if (modelSuccess) break;
   }
 
   if (!successfulModel || !rawText) {

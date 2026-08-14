@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | ICP 2 — Indian Enterprise Dashboard</title>
-<meta name="description" content="Infinito ICP 2 Dashboard — Indian Enterprise AI Buyers qualification (₹100 Cr+ revenue, non-IT buyers).">
+<title>Infinito | ICP-2 Dashboard (Indian Enterprise Buyers)</title>
+<meta name="description" content="Infinito ICP-2 Dashboard — Non-IT Indian Enterprise qualification, AI adoption targeting, and executive analytics.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="app-shared.js"></script>
 <style>
 :root {
@@ -26,7 +25,7 @@
   --t3: #4a5875;
   --border: rgba(79, 142, 247, 0.15);
   --borderb: rgba(79, 142, 247, 0.4);
-  --r: 14px;
+  --r: 16px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -48,9 +47,9 @@ header {
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
-  width: 42px; height: 42px; background: linear-gradient(135deg, var(--cyan), var(--blue));
+  width: 42px; height: 42px; background: linear-gradient(135deg, var(--blue), var(--purple));
   border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  font-size: 22px; box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
 }
 .logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; }
 .logo-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
@@ -62,13 +61,16 @@ header {
 }
 .nav-link:hover { color: var(--t1); background: rgba(79, 142, 247, 0.1); }
 .nav-link.active {
-  background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #fff; font-weight: 600;
-  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+  background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; font-weight: 600;
+  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
 }
 
-.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+.b-blue { background: rgba(79, 142, 247, 0.15); color: var(--blue); border: 1px solid rgba(79, 142, 247, 0.3); }
+.b-purple { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+.b-amber { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+.b-red { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
 
 .card {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
@@ -79,66 +81,58 @@ header {
 .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 10px; }
 .card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
 
-.icp-banner {
-  background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(139,92,246,0.12));
-  border: 1px solid var(--border); border-radius: var(--r); padding: 18px 24px; margin-top: 20px;
-}
-.icp-banner-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
-.icp-banner-desc { font-size: 13px; color: var(--t2); line-height: 1.5; }
-
 .empty-state-card {
   text-align: center; padding: 60px 24px; background: rgba(15, 22, 41, 0.6);
-  border: 2px dashed rgba(6, 182, 212, 0.25); border-radius: var(--r); margin: 24px 0;
+  border: 2px dashed rgba(79, 142, 247, 0.25); border-radius: var(--r); margin: 24px 0;
 }
 .empty-icon { font-size: 48px; margin-bottom: 14px; opacity: 0.8; }
 .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
 .empty-desc { font-size: 14px; color: var(--t2); max-width: 550px; margin: 0 auto 24px; }
 
 .btn {
-  display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 10px;
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px;
   font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.25s;
   font-family: 'Inter', sans-serif; text-decoration: none;
 }
-.btn-primary { background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #fff; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35); }
+.btn-primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35); }
 .btn-primary:hover { opacity: 0.92; transform: translateY(-2px); }
 .btn-secondary { background: rgba(79, 142, 247, 0.12); color: var(--t1); border: 1px solid var(--border); }
 .btn-secondary:hover { background: rgba(79, 142, 247, 0.22); border-color: var(--blue); }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
 .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; position: relative; overflow: hidden; }
 .kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
 .kblue::before { background: linear-gradient(135deg, var(--blue), var(--cyan)); }
-.kpurple::before { background: linear-gradient(135deg, var(--purple), var(--pink)); }
+.kpurple::before { background: linear-gradient(135deg, var(--purple), var(--cyan)); }
 .kgreen::before { background: linear-gradient(135deg, var(--green), var(--cyan)); }
 .kamber::before { background: linear-gradient(135deg, var(--amber), var(--red)); }
 .kpi-icon { font-size: 22px; margin-bottom: 6px; display: block; }
 .kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
 .kpi-lbl { font-size: 11px; color: var(--t2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 24px; }
-@media(max-width:768px){ .charts-grid { grid-template-columns: 1fr; } }
-.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; height: 340px; display: flex; flex-direction: column; }
-.chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 220px; }
-
-.filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill-btn {
   padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
   background: var(--bg2); border: 1px solid var(--border); color: var(--t2); cursor: pointer; transition: all 0.2s;
 }
-.pill-btn:hover, .pill-btn.active { background: rgba(6, 182, 212, 0.2); color: var(--cyan); border-color: var(--cyan); }
+.pill-btn:hover, .pill-btn.active { background: rgba(79, 142, 247, 0.2); color: var(--blue); border-color: var(--blue); }
 
-.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 14px; }
+.search-input { padding: 9px 14px; border-radius: 10px; background: var(--bg2); border: 1px solid var(--border); color: var(--t1); font-size: 13px; min-width: 260px; }
+.search-input:focus { outline: none; border-color: var(--blue); }
+
+.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r); margin-top: 14px; background: var(--card); }
 table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-th { background: var(--bg2); color: var(--t2); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-td { padding: 12px 16px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; cursor: pointer; }
-tr:hover td { background: rgba(6, 182, 212, 0.05); }
+th { background: var(--bg2); color: var(--t2); font-weight: 600; padding: 14px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 12px 18px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; cursor: pointer; }
+tr:hover td { background: rgba(79, 142, 247, 0.05); }
 
-.status-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-.sp-green { background: rgba(16, 185, 129, 0.2); color: var(--green); }
-.sp-amber { background: rgba(245, 158, 11, 0.2); color: var(--amber); }
-.sp-red { background: rgba(239, 68, 68, 0.2); color: var(--red); }
-
-.search-input { padding: 8px 14px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 13px; flex: 1; }
+.pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 12px 4px; flex-wrap: wrap; }
+.page-info { font-size: 13px; color: var(--t2); }
+.page-btns { display: flex; gap: 6px; }
+.page-btn { padding: 6px 12px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); color: var(--t1); font-size: 12px; cursor: pointer; font-weight: 600; }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 </style>
 </head>
 <body>
@@ -147,24 +141,16 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
 <div id="header-mount"></div>
 
 <div class="wrap">
-  <!-- ICP DEFINITION BANNER -->
-  <div class="icp-banner">
-    <div class="icp-banner-title">🚀 ICP 2 — Indian Enterprise (AI & Business App Buyers) Profile Definition</div>
-    <div class="icp-banner-desc">
-      Targeting Indian Enterprises that are potential buyers of AI-enabled business applications and Agentic AI. <strong>Revenue Threshold: ₹100 Crore+</strong> or 250+ employees. Priority sectors: Fintech, Banking, Insurance, Manufacturing, Retail, Healthcare. Excludes companies whose primary business is IT Services/Consulting (flagged for review, not deleted).
-    </div>
-  </div>
-
   <!-- EMPTY STATE VIEW -->
   <div id="empty-state-view" style="display:none;">
     <div class="empty-state-card">
       <div class="empty-icon">🚀</div>
-      <div class="empty-title">No data added to ICP 2 yet</div>
-      <div class="empty-desc">Upload a CSV or Excel file to initialize your independent ICP 2 (Indian Enterprise) workspace. Subsequent uploads automatically merge and deduplicate.</div>
+      <div class="empty-title">No ICP-2 Dataset Uploaded Yet</div>
+      <div class="empty-desc">Upload your CSV, XLSX, XLS, or JSON dataset targeting Indian Enterprise Buyers (manufacturing, BFSI, retail, logistics, healthcare). Records will be qualified automatically.</div>
       
       <div style="display:inline-block;">
-        <input type="file" id="icp2-file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
-        <button class="btn btn-primary" onclick="document.getElementById('icp2-file-input').click()">📥 Upload ICP 2 Dataset</button>
+        <input type="file" id="icp2-file-input" accept=".csv, .xls, .xlsx, .json" style="display:none" onchange="handleWorkspaceUpload(event)">
+        <button class="btn btn-primary" onclick="document.getElementById('icp2-file-input').click()">📥 Upload ICP-2 Dataset</button>
       </div>
     </div>
   </div>
@@ -174,63 +160,78 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
     <div class="card" style="margin-bottom:16px;">
       <div class="card-header" style="margin-bottom:0;">
         <div>
-          <div class="card-title">🚀 ICP 2 — Indian Enterprise Workspace</div>
-          <div class="card-sub" id="workspace-meta">Independent persistent cumulative enterprise dataset</div>
+          <div class="card-title">🚀 ICP-2 Dashboard — Indian Enterprise Buyers</div>
+          <div class="card-sub" id="workspace-meta">Targeting non-IT enterprise buyers in India with high AI adoption potential.</div>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <input type="file" id="icp2-file-input-2" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleWorkspaceUpload(event)">
-          <button class="btn btn-primary" onclick="document.getElementById('icp2-file-input-2').click()">➕ Upload & Merge File</button>
-          <button class="btn btn-secondary" onclick="viewImportHistory()">📜 Import History</button>
-          <button class="btn btn-secondary" onclick="triggerHTMLExport()">📄 Export HTML</button>
-          <button class="btn btn-secondary" onclick="triggerEmailShare()">📧 Share via Email</button>
-          <button class="btn btn-secondary" style="color:var(--red);" onclick="resetWorkspaceData()">🗑️ Reset Workspace</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input type="file" id="icp2-file-input-2" accept=".csv, .xls, .xlsx, .json" style="display:none" onchange="handleWorkspaceUpload(event)">
+          <button class="btn btn-primary" onclick="document.getElementById('icp2-file-input-2').click()">➕ Import & Merge Dataset</button>
+          <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Export CSV</button>
+          <button class="btn btn-secondary" onclick="exportXLSX()">📊 Export XLSX</button>
+          <button class="btn btn-secondary" onclick="openShareEmailModal('ICP-2 Enterprise Buyers')">📧 Share</button>
+          <button class="btn btn-secondary" style="color:var(--red);" onclick="resetWorkspaceData()">🗑️ Clear Workspace</button>
         </div>
       </div>
     </div>
 
-    <!-- EXECUTIVE QUALIFICATION KPI CARDS -->
+    <!-- EXECUTIVE KPI CARDS -->
     <div class="kpi-grid" id="kpi-grid"></div>
 
-    <!-- FOUR CIRCULAR / DONUT EMAIL KPI CHARTS -->
-    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Email Performance Circular Indicators</div>
-    <div class="charts-grid" id="circular-charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"></div>
-
-    <!-- DEDICATED CONTACT INTELLIGENCE SECTION -->
+    <!-- CONTACT INTELLIGENCE TABLE -->
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title" style="font-size:22px;">🏢 Enterprise Contact Intelligence & ICP 2 Qualification</div>
-          <div class="card-sub">Click any row to view complete detail drawer or manually override qualification decisions.</div>
+          <div class="card-title">🏢 ICP-2 Enterprise Contact Intelligence</div>
+          <div class="card-sub">Document-driven schema. Click any row to view complete contact detail drawer.</div>
         </div>
-        <input type="text" id="table-search" class="search-input" style="max-width:320px;" placeholder="🔍 Search enterprises, sectors, revenue..." oninput="onSearchInput()">
+        <input type="text" id="table-search" class="search-input" placeholder="🔍 Search Enterprise Name, Contact, Industry..." oninput="onSearchInput()">
       </div>
 
       <!-- Quick Filter Pills -->
-      <div class="filter-pills">
-        <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
-        <button class="pill-btn" onclick="applyQuickFilter('qualified', this)">✅ Qualified Buyers</button>
-        <button class="pill-btn" onclick="applyQuickFilter('review', this)">⚠️ Review Needed</button>
-        <button class="pill-btn" onclick="applyQuickFilter('not_qualified', this)">❌ IT Services Flagged</button>
-        <button class="pill-btn" onclick="applyQuickFilter('high_rev', this)">💰 Revenue ≥ ₹100 Cr</button>
-        <button class="pill-btn" onclick="applyQuickFilter('fintech', this)">🏦 Fintech & BFSI</button>
-        <button class="pill-btn" onclick="applyQuickFilter('manufacturing', this)">🏭 Manufacturing</button>
+      <div class="filter-bar">
+        <div class="filter-pills">
+          <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
+          <button class="pill-btn" onclick="applyQuickFilter('verified', this)">Qualified Enterprises</button>
+          <button class="pill-btn" onclick="applyQuickFilter('has_email', this)">Has Email</button>
+          <button class="pill-btn" onclick="applyQuickFilter('has_phone', this)">Has Phone</button>
+        </div>
+        <div style="font-size:12px; color:var(--t2);">
+          Rows per page:
+          <select id="page-size-select" onchange="changePageSize(this.value)" style="background:var(--bg2); color:var(--t1); border:1px solid var(--border); border-radius:6px; padding:4px 8px; margin-left:6px;">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="10000">All</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Contact Table with 6 Column Groups -->
+      <!-- Document-Driven Table -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Enterprise Name</th>
-              <th>Industry & Sector</th>
-              <th>Revenue & Size</th>
-              <th>Decision Maker</th>
-              <th>Email & Phone</th>
-              <th>ICP Qualification</th>
+              <th style="width:40px">#</th>
+              <th>Contact Name</th>
+              <th>Email Address</th>
+              <th>Company Name</th>
+              <th>Designation / Owner</th>
+              <th>Phone Number</th>
+              <th>Website</th>
+              <th>Location</th>
+              <th>Email Status</th>
+              <th>Qualification</th>
+              <th>Date</th>
             </tr>
           </thead>
           <tbody id="contact-tbody"></tbody>
         </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-bar">
+        <div class="page-info" id="page-info-text">Showing 0 records</div>
+        <div class="page-btns" id="page-btns-container"></div>
       </div>
     </div>
   </div>
@@ -243,16 +244,17 @@ tr:hover td { background: rgba(6, 182, 212, 0.05); }
 const store = new WorkspaceStore('icp_2');
 let currentDataset = [];
 let activeQuickFilter = 'all';
-let chartInstances = [];
+let currentPage = 1;
+let pageSize = 50;
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('header-mount').innerHTML = renderAppHeader('icp2', 'Infinito | ICP 2', 'Indian Enterprise AI Buyers');
+  document.getElementById('header-mount').innerHTML = renderAppHeader('icp2');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
   initWorkspace();
 });
 
 function initWorkspace() {
-  currentDataset = store.getData().map(r => qualifyICP2(mapFields(r)));
+  currentDataset = store.getData();
   if (!currentDataset || !currentDataset.length) {
     document.getElementById('empty-state-view').style.display = 'block';
     document.getElementById('dashboard-view').style.display = 'none';
@@ -269,7 +271,7 @@ async function handleWorkspaceUpload(e) {
   try {
     const { rows, sheetName, fileName } = await parseUploadedFile(file);
     const result = store.mergeData(rows, fileName, sheetName);
-    currentDataset = result.combinedData.map(r => qualifyICP2(r));
+    currentDataset = result.combinedData;
     showImportSummaryModal(result.logEntry);
     initWorkspace();
   } catch(err) {
@@ -281,123 +283,133 @@ async function handleWorkspaceUpload(e) {
 }
 
 function renderExecutiveDashboard() {
-  const rows = currentDataset;
+  const rows = currentDataset.map(r => qualifyICP2(mapFields(r)));
   const totalRecords = rows.length;
+  const verifiedCount = rows.filter(r => r.qualificationStatus === 'Verified').length;
+  const validEmails = rows.filter(r => r.email && r.email !== '—').length;
+  const uniqueCompanies = new Set(rows.map(r => r.companyName).filter(c => c && c !== '—')).size;
+  const phonesFound = rows.filter(r => r.phone && r.phone !== '—').length;
 
-  const qualifiedCount = rows.filter(r => r.qualificationStatus === 'Qualified').length;
-  const reviewCount = rows.filter(r => r.qualificationStatus === 'Review Needed').length;
-  const itFlaggedCount = rows.filter(r => r.qualificationStatus === 'Not Qualified').length;
-
-  const rev100CrCount = rows.filter(r => parseFloat(r.annualRevenue) >= 100 || parseInt(r.employeeCount) >= 250).length;
-  const foundersFound = rows.filter(r => r.founderName && r.founderName !== '—').length;
-
-  document.getElementById('workspace-meta').innerText = `Total ICP 2 Enterprise Records: ${totalRecords.toLocaleString()} | Source: Independent ICP 2 Storage`;
+  document.getElementById('workspace-meta').innerText = `Total ICP-2 Records: ${totalRecords.toLocaleString()} | Verified Non-IT Enterprise Buyers: ${verifiedCount} | Unique Accounts: ${uniqueCompanies}`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">
-      <span class="kpi-icon">🏢</span>
+      <span class="kpi-icon">🚀</span>
       <div class="kpi-val">${totalRecords.toLocaleString()}</div>
-      <div class="kpi-lbl">Total Enterprise Records</div>
+      <div class="kpi-lbl">Total ICP-2 Accounts</div>
     </div>
     <div class="kpi kgreen">
       <span class="kpi-icon">✅</span>
-      <div class="kpi-val" style="color:var(--green);">${qualifiedCount.toLocaleString()}</div>
-      <div class="kpi-lbl">Qualified AI Buyers</div>
-    </div>
-    <div class="kpi kamber">
-      <span class="kpi-icon">⚠️</span>
-      <div class="kpi-val" style="color:var(--amber);">${reviewCount.toLocaleString()}</div>
-      <div class="kpi-lbl">Review Needed</div>
+      <div class="kpi-val">${verifiedCount.toLocaleString()}</div>
+      <div class="kpi-lbl">Verified Enterprise Buyers</div>
     </div>
     <div class="kpi kpurple">
-      <span class="kpi-icon">💰</span>
-      <div class="kpi-val">${rev100CrCount.toLocaleString()}</div>
-      <div class="kpi-lbl">≥ ₹100 Cr / 250+ Staff</div>
+      <span class="kpi-icon">🏢</span>
+      <div class="kpi-val">${uniqueCompanies.toLocaleString()}</div>
+      <div class="kpi-lbl">Unique Companies</div>
     </div>
     <div class="kpi kamber">
-      <span class="kpi-icon">👑</span>
-      <div class="kpi-val">${foundersFound.toLocaleString()}</div>
-      <div class="kpi-lbl">Decision Makers</div>
+      <span class="kpi-icon">📧</span>
+      <div class="kpi-val">${validEmails.toLocaleString()}</div>
+      <div class="kpi-lbl">Valid Emails</div>
+    </div>
+    <div class="kpi kblue">
+      <span class="kpi-icon">📞</span>
+      <div class="kpi-val">${phonesFound.toLocaleString()}</div>
+      <div class="kpi-lbl">Phone Numbers</div>
     </div>
   `;
 
-  // Render 4 Circular Donut Charts
-  chartInstances.forEach(c => c.destroy());
-  chartInstances = renderFourEmailMetricCharts(rows, 'circular-charts-grid');
-
-  renderContactIntelligenceTable();
+  renderTable();
 }
 
-function renderContactIntelligenceTable() {
-  const tbody = document.getElementById('contact-tbody');
-  const query = document.getElementById('table-search').value.toLowerCase().trim();
+function getFilteredRows() {
+  const query = (document.getElementById('table-search')?.value || '').toLowerCase().trim();
+  let rows = currentDataset.map(r => qualifyICP2(mapFields(r)));
 
-  let rows = currentDataset;
-
-  if (activeQuickFilter === 'qualified') rows = rows.filter(r => r.qualificationStatus === 'Qualified');
-  if (activeQuickFilter === 'review') rows = rows.filter(r => r.qualificationStatus === 'Review Needed');
-  if (activeQuickFilter === 'not_qualified') rows = rows.filter(r => r.qualificationStatus === 'Not Qualified');
-  if (activeQuickFilter === 'high_rev') rows = rows.filter(r => parseFloat(r.annualRevenue) >= 100 || parseInt(r.employeeCount) >= 250);
-  if (activeQuickFilter === 'fintech') rows = rows.filter(r => String(r.industry).toLowerCase().includes('fintech') || String(r.industry).toLowerCase().includes('bank') || String(r.industry).toLowerCase().includes('financial'));
-  if (activeQuickFilter === 'manufacturing') rows = rows.filter(r => String(r.industry).toLowerCase().includes('manufacturing'));
+  if (activeQuickFilter === 'verified') rows = rows.filter(r => r.qualificationStatus === 'Verified');
+  if (activeQuickFilter === 'has_email') rows = rows.filter(r => r.email && r.email !== '—');
+  if (activeQuickFilter === 'has_phone') rows = rows.filter(r => r.phone && r.phone !== '—');
 
   if (query) {
-    rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(query));
+    rows = rows.filter(r => [r.contactName, r.email, r.companyName, r.designation, r.location].join(' ').toLowerCase().includes(query));
   }
-
-  tbody.innerHTML = rows.slice(0, 40).map(r => `
-    <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")}, store)'>
-      <td>
-        <strong style="color:var(--t1); font-size:14px;">${r.companyName}</strong>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.location}</div>
-      </td>
-      <td>
-        <div style="font-weight:600; color:var(--t1);">${r.industry !== '—' ? r.industry : 'Enterprise'}</div>
-        <div style="font-size:11px; color:var(--cyan); margin-top:2px;">AI Fit: ${r.aiRelevance}</div>
-      </td>
-      <td>
-        <div style="font-weight:700; color:var(--green);">${r.annualRevenue !== '—' ? '₹' + r.annualRevenue + ' Cr' : '—'}</div>
-        <div style="font-size:11px; color:var(--t2);">${r.employeeCount !== '—' ? r.employeeCount + ' staff' : ''}</div>
-      </td>
-      <td>
-        <div style="font-weight:600; color:var(--t1);">${r.founderName !== '—' ? '👑 Founder: ' + r.founderName : (r.contactName !== '—' ? r.contactName : '—')}</div>
-        <div style="font-size:11px; color:var(--t2);">${r.jobTitle !== '—' ? r.jobTitle : ''}</div>
-      </td>
-      <td>
-        <div>${r.email !== '—' ? `<a href="mailto:${r.email}" style="color:var(--blue);">${r.email}</a>` : '—'}</div>
-        <div style="font-size:11px; color:var(--t2); margin-top:2px;">${r.contactNumber}</div>
-      </td>
-      <td>
-        <span class="status-pill ${r.qualificationStatus === 'Qualified' ? 'sp-green' : (r.qualificationStatus === 'Review Needed' ? 'sp-amber' : 'sp-red')}">${r.qualificationStatus}</span>
-        <div style="font-size:10px; color:var(--t2); margin-top:2px; max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${r.qualificationReason}">${r.qualificationReason}</div>
-      </td>
-    </tr>
-  `).join('');
+  return rows;
 }
 
+function renderTable() {
+  const tbody = document.getElementById('contact-tbody');
+  const filtered = getFilteredRows();
+  const total = filtered.length;
+
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, total);
+  const pageRows = filtered.slice(startIdx, endIdx);
+
+  document.getElementById('page-info-text').innerText = total ? `Showing ${startIdx + 1}–${endIdx} of ${total.toLocaleString()} records` : 'No records found';
+
+  tbody.innerHTML = pageRows.length ? pageRows.map((r, i) => `
+    <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")})'>
+      <td style="color:var(--t2); font-weight:600">${startIdx + i + 1}</td>
+      <td><strong style="color:var(--t1); font-size:13px">${r.contactName}</strong></td>
+      <td>${r.email !== '—' ? `<a href="mailto:${r.email}" onclick="event.stopPropagation()" style="color:var(--blue)">${r.email}</a>` : '—'}</td>
+      <td><strong>${r.companyName}</strong></td>
+      <td style="color:var(--t2)">${r.designation}</td>
+      <td style="color:var(--t2)">${r.phone}</td>
+      <td>${r.website !== '—' ? `<a href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank" onclick="event.stopPropagation()" style="color:var(--cyan)">${r.website}</a>` : '—'}</td>
+      <td style="color:var(--t2)">${r.location}</td>
+      <td><span class="badge b-green">${r.emailStatus}</span></td>
+      <td><span class="badge ${r.qualificationStatus === 'Verified' ? 'b-green' : 'b-red'}">${r.qualificationStatus}</span></td>
+      <td style="color:var(--t2); font-size:12px">${r.createDate}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="11" style="text-align:center; padding:40px; color:var(--t2)">No ICP-2 records match the selected filter criteria.</td></tr>`;
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const container = document.getElementById('page-btns-container');
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">Prev</button>`;
+  
+  const pagesToShow = [1];
+  if (currentPage > 2) pagesToShow.push(currentPage - 1);
+  if (currentPage !== 1 && currentPage !== totalPages) pagesToShow.push(currentPage);
+  if (currentPage < totalPages - 1) pagesToShow.push(currentPage + 1);
+  if (totalPages > 1 && !pagesToShow.includes(totalPages)) pagesToShow.push(totalPages);
+
+  const uniquePages = Array.from(new Set(pagesToShow)).sort((a,b)=>a-b);
+  uniquePages.forEach((p, idx) => {
+    if (idx > 0 && p - uniquePages[idx-1] > 1) html += `<span style="color:var(--t2); align-self:center">…</span>`;
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+  });
+
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next</button>`;
+  container.innerHTML = html;
+}
+
+function goToPage(p) { currentPage = p; renderTable(); }
+function changePageSize(sz) { pageSize = parseInt(sz); currentPage = 1; renderTable(); }
 function applyQuickFilter(filterKey, btnEl) {
   activeQuickFilter = filterKey;
   document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
   btnEl.classList.add('active');
-  renderContactIntelligenceTable();
+  currentPage = 1;
+  renderTable();
 }
-
-function onSearchInput() { renderContactIntelligenceTable(); }
-function triggerEmailShare() { openShareEmailModal('ICP 2 — Indian Enterprise'); }
-function triggerHTMLExport() { exportWorkspaceHTML('ICP 2 — Indian Enterprise', currentDataset); }
+function onSearchInput() { currentPage = 1; renderTable(); }
+function exportCSV() { exportDatasetCSV(currentDataset.map(r => qualifyICP2(mapFields(r))), 'ICP2_Indian_Enterprise_Buyers.csv'); }
+function exportXLSX() { exportDatasetXLSX(currentDataset.map(r => qualifyICP2(mapFields(r))), 'ICP2_Indian_Enterprise_Buyers.xlsx'); }
 function resetWorkspaceData() {
-  if (confirm("Are you sure you want to reset ICP 2 workspace data?")) {
+  if (confirm("Are you sure you want to reset ICP-2 workspace data?")) {
     store.clearWorkspace();
     initWorkspace();
   }
 }
-function viewImportHistory() {
-  const history = store.getHistory();
-  if (!history.length) { alert("No import history found."); return; }
-  const msg = history.map(h => `📅 ${h.timestamp}\nFile: ${h.fileName} | Added: ${h.newlyAddedRows} | Skipped Dupes: ${h.duplicateRows}`).join('\n\n');
-  alert(`📜 Import History for ICP 2:\n\n${msg}`);
-}
 </script>
-
 </body>
 </html>

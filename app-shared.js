@@ -173,7 +173,7 @@ class DataCleaningEngine {
           mapped.emailStatus = 'Invalid Format';
         } else {
           const dom = mapped.email.split('@')[1].toLowerCase().trim();
-          domainCounts[dom] = (domainCounts[dom] || 0) + 1;
+          domainCounts[dom] = domainCounts[dom] || 0) + 1;
         }
       } else {
         incompleteCount++;
@@ -411,16 +411,14 @@ async function parseUploadedFile(file, maxMb = 25) {
   });
 }
 
+/* SLEEK AI ROBOT ICON COMPONENT (No photo) */
 function renderHimanshuRobotAvatar(size = 46) {
   return `
   <div class="himanshu-robot-avatar-container" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
     <div style="position:absolute;inset:-3px;border-radius:50%;background:linear-gradient(135deg, #8e549e, #3d8b6e);box-shadow:0 0 14px rgba(142,84,158,0.4);animation:pulse-halo 3s infinite alternate;"></div>
-    <div style="position:absolute;top:-4px;left:2px;width:6px;height:6px;border-radius:50%;background:#3d8b6e;box-shadow:0 0 6px #3d8b6e"></div>
-    <div style="position:absolute;top:-4px;right:2px;width:6px;height:6px;border-radius:50%;background:#8e549e;box-shadow:0 0 6px #8e549e"></div>
-    <img src="himanshu_robot_face.jpg"
-         alt="Himanshu AI Robot Avatar"
-         style="position:relative;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:block"
-         onerror="this.onerror=null;this.src='himanshu_thakur_creator.jpg';" />
+    <div style="position:relative;width:100%;height:100%;border-radius:50%;background:#181519;border:2px solid #ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:${Math.round(size*0.48)}px">
+      ⚡
+    </div>
     <div style="position:absolute;bottom:-2px;right:-2px;background:#181519;color:#fff;font-size:9px;font-weight:900;padding:2px 5px;border-radius:8px;border:1px solid #8e549e;box-shadow:0 2px 6px rgba(0,0,0,0.3)">AI</div>
   </div>`;
 }
@@ -769,10 +767,6 @@ function renderCreatorFooter() {
   <footer class="creator-footer">
     <div class="wrap footer-content">
       <div class="creator-badge">
-        <img src="himanshu_thakur_creator.jpg"
-             alt="Himanshu Thakur, Creator of Infinito"
-             class="creator-photo"
-             onerror="this.onerror=null;this.outerHTML='<div class=\\'creator-avatar\\'>HT</div>';" />
         <div>
           <div class="creator-title">Created by <strong>Himanshu Thakur</strong></div>
           <div class="creator-sub">Creator of Infinito — turning spreadsheet, Excel & PDF data into editorial Power BI dashboards.</div>
@@ -795,8 +789,6 @@ function renderCreatorFooter() {
 .creator-footer{margin-top:60px;padding:36px 0;background:#ffffff;border-top:1px solid rgba(0,0,0,0.06);border-radius:24px 24px 0 0}
 .footer-content{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .creator-badge{display:flex;align-items:center;gap:14px;text-align:left}
-.creator-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #8e549e;box-shadow:0 4px 15px rgba(142,84,158,0.25);flex-shrink:0}
-.creator-avatar{width:54px;height:54px;border-radius:50%;background:#181519;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex-shrink:0}
 .creator-title{font-size:14px;color:#181519}
 .creator-sub{font-size:12px;color:#7a707c;max-width:500px;margin-top:2px}
 .creator-links{display:flex;gap:12px;align-items:center;flex-wrap:wrap}

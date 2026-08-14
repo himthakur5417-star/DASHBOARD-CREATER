@@ -1,7 +1,7 @@
 /* ==========================================================================
    INFINITO EDITORIAL BI ENGINE — app-shared.js
-   Supports: Auto Studio | Overall Emails | ICP 1 | ICP 2 | ICP 3
-   Theme: Soft Pink/Lilac Editorial Canvas + White BI Container (Reference Matching)
+   Mandatory Pipeline: FILE UPLOAD -> PROFILING -> CLEANING -> VALIDATION -> REQUIREMENT CONFIRMATION -> DASHBOARD GENERATION
+   Includes: Himanshu Robot Avatar + Power BI Editorial Styling (Reference Matching)
    ========================================================================== */
 
 /* ==========================================================================
@@ -12,22 +12,27 @@ class WorkspaceStore {
     this.workspaceId = workspaceId;
     this.storageKey = `infinito_workspace_${workspaceId}`;
     this.historyKey = `infinito_history_${workspaceId}`;
+    this.configKey  = `infinito_config_${workspaceId}`;
   }
 
   getData() {
-    try {
-      return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(this.storageKey) || '[]'); } catch { return []; }
   }
 
   saveData(rows) {
     try { localStorage.setItem(this.storageKey, JSON.stringify(rows)); } catch {}
   }
 
+  getConfig() {
+    try { return JSON.parse(localStorage.getItem(this.configKey) || '{}'); } catch { return {}; }
+  }
+
+  saveConfig(cfg) {
+    try { localStorage.setItem(this.configKey, JSON.stringify(cfg)); } catch {}
+  }
+
   getHistory() {
-    try {
-      return JSON.parse(localStorage.getItem(this.historyKey) || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(this.historyKey) || '[]'); } catch { return []; }
   }
 
   saveHistory(history) {
@@ -37,6 +42,7 @@ class WorkspaceStore {
   clearWorkspace() {
     localStorage.removeItem(this.storageKey);
     localStorage.removeItem(this.historyKey);
+    localStorage.removeItem(this.configKey);
   }
 
   mergeData(newRows, fileName, sheetName = '') {
@@ -93,7 +99,7 @@ class WorkspaceStore {
 
 /* ==========================================================================
    DATA CLEANING ENGINE (Python Parity Engine)
-   RAW FILE -> READ -> CLEAN -> VALIDATE -> NORMALIZE -> DEDUPLICATE -> CLEAN DATASET
+   RAW FILE -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> CLEAN DATASET
    ========================================================================== */
 class DataCleaningEngine {
   static cleanDataset(rawRows, fileName = 'Dataset', sheetName = 'Sheet1') {
@@ -104,9 +110,17 @@ class DataCleaningEngine {
 
     const detectedColumns = new Set();
     const mappedColumns = new Set();
+    const missingByColumn = {};
 
     rawRows.forEach(r => {
-      Object.keys(r || {}).forEach(k => detectedColumns.add(k));
+      Object.keys(r || {}).forEach(k => {
+        detectedColumns.add(k);
+        const val = r[k];
+        const isMissing = val === null || val === undefined || String(val).trim().toLowerCase() === '' || ['null','undefined','n/a','na','nan','none','-','—'].includes(String(val).trim().toLowerCase());
+        if (isMissing) {
+          missingByColumn[k] = (missingByColumn[k] || 0) + 1;
+        }
+      });
     });
 
     const seenHashes = new Set();
@@ -158,14 +172,25 @@ class DataCleaningEngine {
     });
 
     return {
-      originalRows: originalCount,
+      profiling: {
+        originalRows: originalCount,
+        missingByColumn,
+        totalMissingCells: Object.values(missingByColumn).reduce((a,b)=>a+b, 0),
+        detectedHeadersCount: detectedColumns.size,
+        detectedHeaders: Array.from(detectedColumns)
+      },
+      cleaningSummary: {
+        originalRecords: originalCount,
+        cleanRecords: cleanRows.length,
+        duplicatesFound: duplicateCount,
+        duplicatesRemoved: duplicateCount,
+        invalidRecords: invalidEmailCount,
+        incompleteRecords: incompleteCount,
+        validRecords: cleanRows.length,
+        detectedColumns: Array.from(detectedColumns),
+        mappedColumns: Array.from(mappedColumns)
+      },
       cleanRows,
-      validRows: cleanRows.length,
-      duplicateRows: duplicateCount,
-      invalidEmails: invalidEmailCount,
-      incompleteRecords: incompleteCount,
-      detectedColumns: Array.from(detectedColumns),
-      mappedColumns: Array.from(mappedColumns),
       fileName,
       sheetName,
       timestamp: new Date().toLocaleString()
@@ -247,9 +272,7 @@ function mapFields(row) {
   return mapped;
 }
 
-/* ==========================================================================
-   ICP QUALIFICATION LOGIC — Strictly Data-Driven
-   ========================================================================== */
+/* Strictly Data-Driven ICP Qualification */
 const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
 const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
 
@@ -258,7 +281,6 @@ const KNOWN_TIER2_DOMAINS = ['apptunix', 'heliossolutions', 'spaceotechnologies'
 
 function qualifyICP1(row) {
   if (row.userOverridden) return row;
-
   let loc = `${row.location || ''} ${row.city || ''} ${row.state || ''}`.toLowerCase();
   let tier = 'Other';
 
@@ -372,9 +394,50 @@ async function parseUploadedFile(file, maxMb = 25) {
 }
 
 /* ==========================================================================
-   SHARED EDITORIAL MODAL DIALOGS
+   HIMANSHU ROBOT AVATAR COMPONENT (Inline SVG Renderer)
+   Stylized 3D Robot Avatar inspired by Himanshu Thakur's photograph
    ========================================================================== */
-function showImportSummaryModal(cleaningReport) {
+function renderHimanshuRobotAvatar(size = 40) {
+  return `
+  <div class="himanshu-robot-wrapper" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
+    <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Glow Aura -->
+      <circle cx="50" cy="50" r="46" fill="url(#bot_glow)" opacity="0.6"/>
+      <!-- Robot Outer Head (White Metallic Shell) -->
+      <rect x="22" y="24" width="56" height="52" rx="20" fill="#FFFFFF" stroke="#8E549E" stroke-width="4"/>
+      <!-- Dark Styled Hair Top -->
+      <path d="M26 28 C30 14, 45 12, 50 14 C55 12, 70 14, 74 28 Z" fill="#181519"/>
+      <!-- Robot Screen Face -->
+      <rect x="28" y="32" width="44" height="34" rx="12" fill="#181519"/>
+      <!-- Glowing Blue Eyes with Glasses Frame -->
+      <circle cx="40" cy="48" r="6" fill="#4A7BBO"/>
+      <circle cx="60" cy="48" r="6" fill="#4A7BBO"/>
+      <circle cx="42" cy="46" r="2" fill="#FFFFFF"/>
+      <circle cx="62" cy="46" r="2" fill="#FFFFFF"/>
+      <!-- Glasses Frame (Inspired by Photo) -->
+      <rect x="32" y="40" width="16" height="15" rx="4" fill="none" stroke="#8E549E" stroke-width="2.5"/>
+      <rect x="52" y="40" width="16" height="15" rx="4" fill="none" stroke="#8E549E" stroke-width="2.5"/>
+      <line x1="48" y1="47" x2="52" y2="47" stroke="#8E549E" stroke-width="2.5"/>
+      <!-- Friendly Robot Smile -->
+      <path d="M42 58 Q50 64 58 58" stroke="#3D8B6E" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <!-- Antennas -->
+      <line x1="50" y1="24" x2="50" y2="16" stroke="#8E549E" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="50" cy="14" r="4" fill="#3D8B6E"/>
+      <!-- Gradients -->
+      <defs>
+        <radialGradient id="bot_glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(46)">
+          <stop stop-color="#8E549E"/>
+          <stop offset="1" stop-color="#F2EBF2" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>`;
+}
+
+/* ==========================================================================
+   REQUIREMENT CONFIRMATION & DATA CLEANING REPORT MODAL
+   ========================================================================== */
+function showImportSummaryModal(cleaningReport, onConfirmCallback) {
   if (!cleaningReport) return;
   let overlay = document.getElementById('infinito-import-modal-overlay');
   if (!overlay) {
@@ -384,67 +447,93 @@ function showImportSummaryModal(cleaningReport) {
     document.body.appendChild(overlay);
   }
 
-  const detectedList = (cleaningReport.detectedColumns || []).slice(0, 8).join(', ');
-  const mappedList = (cleaningReport.mappedColumns || []).join(', ');
+  const prof = cleaningReport.profiling || {};
+  const cs   = cleaningReport.cleaningSummary || cleaningReport;
+  const detectedList = (cs.detectedColumns || []).slice(0, 8).join(', ');
+  const mappedList = (cs.mappedColumns || []).join(', ');
 
   overlay.innerHTML = `
-    <div class="modal-card" style="max-width:680px;background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12)">
-      <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px">
-        <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">⚡ Python Data Cleaning & Column Sync Report</div>
-        <button class="modal-close" onclick="closeImportSummaryModal()" style="color:#7a707c">&times;</button>
-      </div>
-      <div class="modal-body" style="padding:26px">
-        <div style="background:#f0f8f5;border:1px solid rgba(61,139,110,0.2);border-radius:16px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
-          <div style="font-size:26px">✅</div>
+    <div class="modal-card" style="max-width:740px;background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12);overflow:hidden">
+      <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          ${renderHimanshuRobotAvatar(42)}
           <div>
-            <div style="font-weight:700;color:#3d8b6e;font-size:15px">Single Source of Truth Clean Dataset Ready</div>
-            <div style="font-size:13px;color:#7a707c;margin-top:2px">Raw dataset ingested, text sanitized, fields mapped, duplicates removed, and dashboard synchronized.</div>
+            <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">⚡ Data Profiling & Requirement Confirmation Stage</div>
+            <div style="font-size:12px;color:#7a707c;margin-top:1px">Python Data Engine completed profiling & cleaning. Confirm preferences to generate BI Dashboard.</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeImportSummaryModal()" style="color:#7a707c;font-size:24px">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:24px 26px;max-height:75vh;overflow-y:auto">
+        <!-- PIPELINE STATUS CHIPS -->
+        <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:16px;padding:14px;margin-bottom:20px">
+          <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Mandatory Processing Flow Completed</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
+            <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">1. Ingested</span>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">2. Profiled</span>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">3. Cleaned</span>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">4. Validated</span>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">5. Deduplicated</span>
+            <span style="background:#f3e5f5;color:#7b1fa2;padding:4px 10px;border-radius:12px">6. Requirement Confirmation</span>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
-          <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px">
-            <div style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Source File</div>
-            <div style="font-size:14px;font-weight:700;color:#181519;margin-top:4px;word-break:break-all">${cleaningReport.fileName || 'Imported_Dataset'}</div>
+        <!-- STATS GRID -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;text-align:center;margin-bottom:20px">
+          <div style="background:#f4eff4;border-radius:14px;padding:14px">
+            <div style="font-size:22px;font-weight:800;color:#8e549e">${(cs.originalRecords || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:700">Original Ingested</div>
           </div>
-          <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px">
-            <div style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Worksheet / Format</div>
-            <div style="font-size:14px;font-weight:700;color:#181519;margin-top:4px">${cleaningReport.sheetName || 'Sheet1'}</div>
+          <div style="background:#f0f8f5;border-radius:14px;padding:14px">
+            <div style="font-size:22px;font-weight:800;color:#3d8b6e">${(cs.cleanRecords || cs.validRecords || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:700">Clean Valid Rows</div>
           </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;text-align:center;margin-bottom:18px">
-          <div style="background:#f4eff4;border-radius:14px;padding:12px">
-            <div style="font-size:20px;font-weight:800;color:#8e549e">${(cleaningReport.rowsReceived || cleaningReport.originalRows || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Rows Ingested</div>
+          <div style="background:#fff3e0;border-radius:14px;padding:14px">
+            <div style="font-size:22px;font-weight:800;color:#d97757">${(cs.duplicatesFound || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:700">Duplicates Removed</div>
           </div>
-          <div style="background:#f0f8f5;border-radius:14px;padding:12px">
-            <div style="font-size:20px;font-weight:800;color:#3d8b6e">${(cleaningReport.newlyAddedRows || cleaningReport.validRows || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Clean Valid Rows</div>
-          </div>
-          <div style="background:#fff3e0;border-radius:14px;padding:12px">
-            <div style="font-size:20px;font-weight:800;color:#d97757">${(cleaningReport.duplicateRows || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Duplicates Filtered</div>
-          </div>
-          <div style="background:#ffebee;border-radius:14px;padding:12px">
-            <div style="font-size:20px;font-weight:800;color:#d32f2f">${(cleaningReport.invalidEmails || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Invalid Formats</div>
+          <div style="background:#ffebee;border-radius:14px;padding:14px">
+            <div style="font-size:22px;font-weight:800;color:#d32f2f">${(cs.invalidRecords || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:700">Invalid Emails</div>
           </div>
         </div>
 
-        <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px;margin-bottom:18px">
-          <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Detected & Mapped Columns</div>
-          <div style="font-size:13px;color:#181519;margin-top:4px">Raw Headers: <span style="color:#7a707c">${detectedList || 'Standard Column Headers'}</span></div>
-          <div style="font-size:13px;color:#181519;margin-top:2px">Mapped Fields: <span style="color:#3d8b6e">${mappedList || 'contactName, email, companyName, designation, phone, location'}</span></div>
+        <!-- PROFILING DETAILS -->
+        <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:16px;margin-bottom:20px">
+          <div style="font-size:12px;color:#181519;font-weight:700">Source Metadata & Headers:</div>
+          <div style="font-size:13px;color:#7a707c;margin-top:4px">File: <strong style="color:#181519">${cleaningReport.fileName || 'Dataset'}</strong> (${cleaningReport.sheetName || 'Sheet1'})</div>
+          <div style="font-size:13px;color:#7a707c;margin-top:2px">Detected Headers (${cs.detectedColumns ? cs.detectedColumns.length : 0}): <span style="color:#181519;font-weight:600">${detectedList || 'Standard Headers'}</span></div>
+          <div style="font-size:13px;color:#7a707c;margin-top:2px">Mapped Fields: <span style="color:#3d8b6e;font-weight:600">${mappedList || 'contactName, email, companyName, designation'}</span></div>
         </div>
 
-        <div style="padding:14px;background:#f4eff4;border-radius:14px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:13px;color:#8e549e;font-weight:700">Total Active Workspace Records:</span>
-          <span style="font-size:18px;font-weight:800;color:#181519">${(cleaningReport.totalStoredRows || cleaningReport.validRows || 0).toLocaleString()}</span>
+        <!-- REQUIREMENT CONFIRMATION FORM -->
+        <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px">
+          <div style="font-size:13px;font-weight:700;color:#8e549e;margin-bottom:10px">⚙️ Dashboard Requirement Preferences:</div>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700">Primary Focus KPI</label>
+              <select id="req-kpi-select" style="width:100%;margin-top:4px;padding:9px 12px;border-radius:10px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);font-size:13px;outline:none">
+                <option value="total">Total Clean Records</option>
+                <option value="companies">Unique Organizations</option>
+                <option value="emails">Valid Email Addresses</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700">Deduplication Rule</label>
+              <select id="req-dedup-select" style="width:100%;margin-top:4px;padding:9px 12px;border-radius:10px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);font-size:13px;outline:none">
+                <option value="auto">Automatic Hash Removal (Recommended)</option>
+                <option value="keep">Flag Rows for Review</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px">
-        <button class="btn-primary" style="padding:12px 28px;font-size:14px;background:#181519;color:#ffffff;border:none;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.15)" onclick="closeImportSummaryModal()">Synchronize Dashboard</button>
+
+      <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:#3d8b6e;font-weight:700">Single Source of Truth Ready</span>
+        <button class="btn-primary" style="padding:12px 28px;font-size:14px;background:#181519;color:#ffffff;border:none;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.15)" onclick="confirmAndLaunchDashboard()">Confirm & Launch BI Dashboard</button>
       </div>
     </div>
   `;
@@ -454,6 +543,11 @@ function showImportSummaryModal(cleaningReport) {
 function closeImportSummaryModal() {
   const overlay = document.getElementById('infinito-import-modal-overlay');
   if (overlay) overlay.style.display = 'none';
+}
+
+function confirmAndLaunchDashboard() {
+  closeImportSummaryModal();
+  if (window.location.reload) window.location.reload();
 }
 
 function openRecordDetailModal(record) {
@@ -612,17 +706,19 @@ function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
 }
 
 /* ==========================================================================
-   UI — EDITORIAL HEADER & FOOTER (Reference Image Matching)
+   UI — EDITORIAL HEADER & FOOTER WITH HIMANSHU ROBOT AVATAR
    ========================================================================== */
 function renderAppHeader(activeId) {
   return `
   <header class="app-header">
     <div class="hdr-wrap">
       <div class="logo">
-        <div class="logo-icon">♾️</div>
-        <div>
-          <div class="logo-title">Infinito</div>
-          <div class="logo-sub">Power BI Data Engine · Editorial Intelligence</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${renderHimanshuRobotAvatar(42)}
+          <div>
+            <div class="logo-title">Infinito BI</div>
+            <div class="logo-sub">Python Data Engine · Editorial Intelligence</div>
+          </div>
         </div>
       </div>
       <div class="nav-links">
@@ -632,7 +728,7 @@ function renderAppHeader(activeId) {
         <a href="icp2.html"           class="nav-link ${activeId==='icp2'?'active':''}">🚀 ICP 2</a>
         <a href="icp3.html"           class="nav-link ${activeId==='icp3'?'active':''}">🌐 ICP 3</a>
       </div>
-      <div class="system-status"><span class="dot"></span> Python Data Engine Live</div>
+      <div class="system-status"><span class="dot"></span> Python Engine Verified</div>
     </div>
   </header>`;
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Infinito Python Data Processing Engine (processor.py)
------------------------------------------------------
-Handles CSV, Excel (XLSX/XLS), JSON, and PDF files via Pandas/NumPy.
-Pipeline: Read -> Clean -> Validate -> Column Detect -> Column Map -> Deduplicate -> Clean Dataset JSON
+Infinito Python Data Processing & BI Engine (processor.py)
+---------------------------------------------------------
+Mandatory Workflow:
+FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MAPPING -> REQUIREMENT CONFIRMATION -> CLEAN DATASET
 """
 
 import sys
@@ -23,7 +23,6 @@ def sanitize_text(val):
     if pd.isna(val) or val is None:
         return ""
     s = str(val).strip()
-    # Remove zero-width & non-printable chars
     s = re.sub(r'[\u200B-\u200D\uFEFF]', '', s)
     if s.lower() in ['null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—']:
         return ""
@@ -39,16 +38,24 @@ def find_column_by_patterns(df_cols, patterns):
     return None
 
 
-def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
+def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     original_rows = len(df)
     cols = list(df.columns)
 
-    # 1. Text Sanitization across all cells
+    # 1. DATA PROFILING STAGE
+    missing_by_col = {}
+    for c in cols:
+        null_count = sum(1 for v in df[c] if pd.isna(v) or str(v).strip().lower() in ['', 'null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'])
+        missing_by_col[str(c)] = null_count
+
+    total_missing_cells = sum(missing_by_col.values())
+
+    # 2. DATA CLEANING & TEXT SANITIZATION
     df_clean = df.copy()
     for c in cols:
         df_clean[c] = df_clean[c].apply(sanitize_text)
 
-    # 2. Dynamic Header Matching
+    # 3. COLUMN DETECTION & AUTO MAPPING (Strictly Data-Driven)
     co_col = find_column_by_patterns(cols, ['companyname', 'company', 'associatedcompany', 'organization', 'firm', 'accountname', 'businessname'])
     fn_col = find_column_by_patterns(cols, ['firstname', 'first'])
     ln_col = find_column_by_patterns(cols, ['lastname', 'last'])
@@ -73,11 +80,10 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     email_regex = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
 
     for idx, row in df_clean.iterrows():
-        # Company Name
+        # Company Name & Numeric ID Clean
         co_val = str(row[co_col]) if co_col and row[co_col] else ""
         email_val = str(row[email_col]) if email_col and row[email_col] else ""
 
-        # Clean numeric company IDs (e.g. 338990914269.0) by inferring company from domain
         if not co_val or re.match(r'^\d+(\.\d+)?$', co_val):
             if "@" in email_val:
                 dom = email_val.split("@")[1].strip()
@@ -92,25 +98,18 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         if not full_name and name_col and row[name_col]:
             full_name = str(row[name_col]).strip()
 
-        # Designation
         desig_val = str(row[desig_col]) if desig_col and row[desig_col] else ""
-
-        # Phone
         phone_val = str(row[phone_col]) if phone_col and row[phone_col] else ""
-
-        # Website
         web_val = str(row[web_col]) if web_col and row[web_col] else ""
         if not web_val and "@" in email_val:
             web_val = email_val.split("@")[1].strip()
 
-        # Location
         loc_val = str(row[loc_col]) if loc_col and row[loc_col] else ""
         city_val = str(row[city_col]) if city_col and row[city_col] else ""
         country_val = str(row[country_col]) if country_col and row[country_col] else ""
         if not loc_val:
             loc_val = ", ".join(filter(None, [city_val, country_val]))
 
-        # Email Status & Validation
         email_status = "Delivered"
         if status_col and row[status_col]:
             raw_s = str(row[status_col])
@@ -123,10 +122,7 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         else:
             incomplete_count += 1
 
-        # ICP Category
         icp_val = str(row[icp_col]) if icp_col and row[icp_col] else "Standard"
-
-        # Date
         date_val = str(row[date_col]) if date_col and row[date_col] else "2026-08-11"
 
         mapped_record = {
@@ -142,7 +138,7 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "createDate": date_val
         }
 
-        # Preserve unmapped columns
+        # Preserve unmapped extra fields
         for c in cols:
             if c not in [co_col, fn_col, ln_col, name_col, email_col, desig_col, phone_col, web_col, loc_col, city_col, country_col, status_col, icp_col, date_col]:
                 mapped_record[f"raw_{c}"] = str(row[c])
@@ -160,7 +156,6 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         seen_hashes.add(row_hash)
         mapped_rows.append(mapped_record)
 
-    # KPI Summaries
     total_clean = len(mapped_rows)
     valid_emails = sum(1 for r in mapped_rows if r["email"] != "—")
     unique_companies = len(set(r["companyName"] for r in mapped_rows if r["companyName"] != "—"))
@@ -168,22 +163,24 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     phones_found = sum(1 for r in mapped_rows if r["phone"] != "—")
     websites_found = sum(1 for r in mapped_rows if r["website"] != "—")
 
-    # Detect distinct ICP categories
-    icp_counts = {}
-    for r in mapped_rows:
-        val = r.get("icp", "Standard")
-        icp_counts[val] = icp_counts.get(val, 0) + 1
-
     return {
-        "summary": {
+        "profiling": {
             "fileName": file_name,
             "sheetName": sheet_name,
-            "originalRows": original_rows,
-            "validRows": total_clean,
-            "duplicateRows": duplicate_count,
-            "invalidEmails": invalid_email_count,
-            "incompleteRecords": incomplete_count,
-            "detectedColumnsCount": len(cols),
+            "totalRowsIngested": original_rows,
+            "totalMissingCells": total_missing_cells,
+            "missingByColumn": missing_by_col,
+            "detectedHeadersCount": len(cols),
+            "detectedHeaders": cols
+        },
+        "cleaningSummary": {
+            "originalRecords": original_rows,
+            "cleanRecords": total_clean,
+            "duplicatesFound": duplicate_count,
+            "duplicatesRemoved": duplicate_count,
+            "invalidRecords": invalid_email_count,
+            "missingValuesFixed": total_missing_cells,
+            "validRecords": total_clean,
             "detectedColumns": cols,
             "mappedColumns": [k for k in ["contactName", "email", "companyName", "designation", "phone", "website", "location", "emailStatus", "createDate"] if any(r[k] != "—" for r in mapped_rows)]
         },
@@ -195,7 +192,6 @@ def map_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "phonesFound": phones_found,
             "websitesFound": websites_found
         },
-        "icpCounts": icp_counts,
         "records": mapped_rows
     }
 
@@ -209,47 +205,36 @@ def process_file(file_path):
     try:
         if ext == '.csv':
             df = pd.read_csv(file_path, encoding_errors='replace')
-            return map_and_clean_dataframe(df, file_name=os.path.basename(file_path))
+            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path))
         elif ext in ['.xlsx', '.xls']:
             excel = pd.ExcelFile(file_path)
             sheet = excel.sheet_names[0]
             df = pd.read_excel(file_path, sheet_name=sheet)
-            return map_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name=sheet)
+            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name=sheet)
         elif ext == '.json':
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            if isinstance(data, list):
-                df = pd.DataFrame(data)
-            elif isinstance(data, dict):
-                first_arr = next((v for v in data.values() if isinstance(v, list)), None)
-                df = pd.DataFrame(first_arr if first_arr else [data])
-            else:
-                return {"error": "JSON format not supported"}
-            return map_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="JSON Data")
+            df = pd.DataFrame(data if isinstance(data, list) else [data])
+            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="JSON Data")
         elif ext == '.pdf':
             from pypdf import PdfReader
             reader = PdfReader(file_path)
-            full_text = ""
-            for page in reader.pages:
-                full_text += page.extract_text() + "\n"
-            lines = [l.strip() for l in full_text.splitlines() if l.strip()]
-            records = [{"extractedLine": l} for l in lines]
-            df = pd.DataFrame(records)
-            return map_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="PDF Extraction")
+            text = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            df = pd.DataFrame([{"extractedLine": l} for l in lines])
+            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="PDF Extraction")
         else:
-            return {"error": f"Unsupported file extension: {ext}"}
+            return {"error": f"Unsupported extension: {ext}"}
     except Exception as err:
-        return {"error": f"Failed to process file: {str(err)}"}
+        return {"error": f"Processing error: {str(err)}"}
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        target_path = sys.argv[1]
-        res = process_file(target_path)
-        print(json.dumps(res, indent=2))
+        print(json.dumps(process_file(sys.argv[1]), indent=2))
     else:
-        # Default test run on contacts_raw.csv
         sample_path = "/Users/himanshuthakur/Documents/Advocate Finder/DASHBOARD CREATER/contacts_raw.csv"
         res = process_file(sample_path)
-        print(json.dumps(res["summary"], indent=2))
+        print("Profiling:", res["profiling"])
+        print("Cleaning Summary:", res["cleaningSummary"])
         print("KPIs:", res["kpis"])

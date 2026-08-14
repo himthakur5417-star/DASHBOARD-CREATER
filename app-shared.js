@@ -1,7 +1,7 @@
 /* ==========================================================================
    INFINITO EDITORIAL BI ENGINE — app-shared.js
    Mandatory Pipeline: FILE UPLOAD -> PROFILING -> CLEANING -> VALIDATION -> REQUIREMENT CONFIRMATION -> DASHBOARD GENERATION
-   Includes: Himanshu Robot Avatar + Power BI Editorial Styling (Reference Matching)
+   Includes: Himanshu Robot Avatar (Using User Photo) + Power BI Editorial Styling
    ========================================================================== */
 
 /* ==========================================================================
@@ -199,7 +199,7 @@ class DataCleaningEngine {
 }
 
 /* ==========================================================================
-   FIELD MAPPING & COLUMN DETECTION LOGIC
+   FIELD MAPPING LOGIC
    ========================================================================== */
 function mapFields(row) {
   const mapped = { ...row };
@@ -272,7 +272,7 @@ function mapFields(row) {
   return mapped;
 }
 
-/* Strictly Data-Driven ICP Qualification */
+/* Data-Driven ICP Qualification */
 const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
 const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
 
@@ -394,43 +394,23 @@ async function parseUploadedFile(file, maxMb = 25) {
 }
 
 /* ==========================================================================
-   HIMANSHU ROBOT AVATAR COMPONENT (Inline SVG Renderer)
-   Stylized 3D Robot Avatar inspired by Himanshu Thakur's photograph
+   HIMANSHU ROBOT AVATAR COMPONENT (Using User's Face Photograph)
    ========================================================================== */
-function renderHimanshuRobotAvatar(size = 40) {
+function renderHimanshuRobotAvatar(size = 46) {
   return `
-  <div class="himanshu-robot-wrapper" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
-    <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Glow Aura -->
-      <circle cx="50" cy="50" r="46" fill="url(#bot_glow)" opacity="0.6"/>
-      <!-- Robot Outer Head (White Metallic Shell) -->
-      <rect x="22" y="24" width="56" height="52" rx="20" fill="#FFFFFF" stroke="#8E549E" stroke-width="4"/>
-      <!-- Dark Styled Hair Top -->
-      <path d="M26 28 C30 14, 45 12, 50 14 C55 12, 70 14, 74 28 Z" fill="#181519"/>
-      <!-- Robot Screen Face -->
-      <rect x="28" y="32" width="44" height="34" rx="12" fill="#181519"/>
-      <!-- Glowing Blue Eyes with Glasses Frame -->
-      <circle cx="40" cy="48" r="6" fill="#4A7BBO"/>
-      <circle cx="60" cy="48" r="6" fill="#4A7BBO"/>
-      <circle cx="42" cy="46" r="2" fill="#FFFFFF"/>
-      <circle cx="62" cy="46" r="2" fill="#FFFFFF"/>
-      <!-- Glasses Frame (Inspired by Photo) -->
-      <rect x="32" y="40" width="16" height="15" rx="4" fill="none" stroke="#8E549E" stroke-width="2.5"/>
-      <rect x="52" y="40" width="16" height="15" rx="4" fill="none" stroke="#8E549E" stroke-width="2.5"/>
-      <line x1="48" y1="47" x2="52" y2="47" stroke="#8E549E" stroke-width="2.5"/>
-      <!-- Friendly Robot Smile -->
-      <path d="M42 58 Q50 64 58 58" stroke="#3D8B6E" stroke-width="3" stroke-linecap="round" fill="none"/>
-      <!-- Antennas -->
-      <line x1="50" y1="24" x2="50" y2="16" stroke="#8E549E" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="50" cy="14" r="4" fill="#3D8B6E"/>
-      <!-- Gradients -->
-      <defs>
-        <radialGradient id="bot_glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(46)">
-          <stop stop-color="#8E549E"/>
-          <stop offset="1" stop-color="#F2EBF2" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-    </svg>
+  <div class="himanshu-robot-avatar-container" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
+    <!-- Futuristic Glowing Halo Frame -->
+    <div style="position:absolute;inset:-3px;border-radius:50%;background:linear-gradient(135deg, #8e549e, #3d8b6e);box-shadow:0 0 15px rgba(142,84,158,0.4);animation:pulse-halo 3s infinite alternate;"></div>
+    <!-- Robot Ear Antennas -->
+    <div style="position:absolute;top:-4px;left:2px;width:6px;height:6px;border-radius:50%;background:#3d8b6e;box-shadow:0 0 6px #3d8b6e"></div>
+    <div style="position:absolute;top:-4px;right:2px;width:6px;height:6px;border-radius:50%;background:#8e549e;box-shadow:0 0 6px #8e549e"></div>
+    <!-- Face Image Container (Himanshu Thakur Photo) -->
+    <img src="himanshu_robot_face.jpg"
+         alt="Himanshu AI Robot Avatar"
+         style="position:relative;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:block"
+         onerror="this.onerror=null;this.src='himanshu_thakur_creator.jpg';" />
+    <!-- Metallic Robot Badge Chip -->
+    <div style="position:absolute;bottom:-2px;right:-2px;background:#181519;color:#fff;font-size:9px;font-weight:900;padding:2px 5px;border-radius:8px;border:1px solid #8e549e;box-shadow:0 2px 6px rgba(0,0,0,0.3)">AI</div>
   </div>`;
 }
 
@@ -455,11 +435,11 @@ function showImportSummaryModal(cleaningReport, onConfirmCallback) {
   overlay.innerHTML = `
     <div class="modal-card" style="max-width:740px;background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12);overflow:hidden">
       <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px;display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:12px">
-          ${renderHimanshuRobotAvatar(42)}
+        <div style="display:flex;align-items:center;gap:14px">
+          ${renderHimanshuRobotAvatar(48)}
           <div>
             <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">⚡ Data Profiling & Requirement Confirmation Stage</div>
-            <div style="font-size:12px;color:#7a707c;margin-top:1px">Python Data Engine completed profiling & cleaning. Confirm preferences to generate BI Dashboard.</div>
+            <div style="font-size:12px;color:#7a707c;margin-top:1px">Himanshu Robot AI completed dataset profiling & cleaning. Confirm options to build dashboard.</div>
           </div>
         </div>
         <button class="modal-close" onclick="closeImportSummaryModal()" style="color:#7a707c;font-size:24px">&times;</button>
@@ -468,7 +448,7 @@ function showImportSummaryModal(cleaningReport, onConfirmCallback) {
       <div class="modal-body" style="padding:24px 26px;max-height:75vh;overflow-y:auto">
         <!-- PIPELINE STATUS CHIPS -->
         <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:16px;padding:14px;margin-bottom:20px">
-          <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Mandatory Processing Flow Completed</div>
+          <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Mandatory Processing Pipeline Completed</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
             <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">1. Ingested</span>
             <span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px">2. Profiled</span>
@@ -713,11 +693,11 @@ function renderAppHeader(activeId) {
   <header class="app-header">
     <div class="hdr-wrap">
       <div class="logo">
-        <div style="display:flex;align-items:center;gap:10px">
-          ${renderHimanshuRobotAvatar(42)}
+        <div style="display:flex;align-items:center;gap:12px">
+          ${renderHimanshuRobotAvatar(48)}
           <div>
             <div class="logo-title">Infinito BI</div>
-            <div class="logo-sub">Python Data Engine · Editorial Intelligence</div>
+            <div class="logo-sub">Python Data Engine · Himanshu AI Robot Assistant</div>
           </div>
         </div>
       </div>
@@ -772,6 +752,10 @@ function renderCreatorFooter() {
 .creator-links{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .creator-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#faf6fa;border:1px solid rgba(0,0,0,0.08);border-radius:10px;font-size:13px;font-weight:600;color:#181519;text-decoration:none;transition:all .2s}
 .creator-link:hover{background:#181519;color:#ffffff}
+@keyframes pulse-halo {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.08); opacity: 1; }
+}
 `;
   document.head.appendChild(s);
 })();

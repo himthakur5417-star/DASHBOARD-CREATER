@@ -49,11 +49,6 @@ body {
 .app-header { margin-bottom: 28px; }
 .hdr-wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 12px; }
-.logo-icon {
-  width: 44px; height: 44px; background: #181519; color: #fff;
-  border-radius: 14px; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-}
 .logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
 .logo-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 
@@ -117,9 +112,12 @@ body {
 
     <!-- HERO EDITORIAL BANNER -->
     <div class="hero-banner">
-      <div>
-        <div class="hero-title">⚡ Infinito Auto Studio</div>
-        <div class="hero-desc">Python-powered data ingestion and Power BI-style editorial dashboard studio. Upload raw CSV, Excel, JSON, or PDF datasets — single source of truth analytics generated dynamically.</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div id="hero-robot-avatar"></div>
+        <div>
+          <div class="hero-title">⚡ Infinito Auto Studio</div>
+          <div class="hero-desc">Python-powered data ingestion and Power BI-style editorial dashboard studio. Upload raw CSV, Excel, JSON, or PDF datasets — single source of truth analytics generated dynamically.</div>
+        </div>
       </div>
       <div>
         <input type="file" id="hero-file-input" accept=".csv, .xls, .xlsx, .json, .pdf" style="display:none" onchange="handleStudioUpload(event)">
@@ -188,6 +186,7 @@ body {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('header-mount').innerHTML = renderAppHeader('auto_studio');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
+  document.getElementById('hero-robot-avatar').innerHTML = renderHimanshuRobotAvatar(72);
 });
 
 async function handleStudioUpload(e) {

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   INFINITO SHARED ENGINE — app-shared.js
+   INFINITO SHARED ENGINE & DATA CLEANING PIPELINE — app-shared.js
    Supports: Auto Studio | Overall Emails | ICP 1 | ICP 2 | ICP 3
    ========================================================================== */
 
@@ -82,15 +82,98 @@ class WorkspaceStore {
     const li = (row.linkedinUrl || row.linkedInUrl || '').toLowerCase().replace(/https?:\/\/(www\.)?/, '').replace(/\/$/, '');
     const web = (row.website || '').toLowerCase().replace(/https?:\/\/(www\.)?/, '').replace(/\/$/, '');
     const co = (row.companyName || '').toLowerCase().trim();
+    const name = (row.contactName || '').toLowerCase().trim();
     if (em && em !== '—') return `em_${em}`;
     if (li && li !== '—') return `li_${li}`;
     if (web && web !== '—') return `web_${web}`;
-    return `co_${co}`;
+    return `co_${co}_${name}`;
   }
 }
 
 /* ==========================================================================
-   FIELD MAPPING — Document & Spreadsheet Column Normalizer
+   DATA CLEANING ENGINE — 8-Step Pipeline (Raw CSV -> Clean Dataset)
+   ========================================================================== */
+class DataCleaningEngine {
+  static cleanDataset(rawRows, fileName = 'Dataset', sheetName = 'Sheet1') {
+    const originalCount = rawRows.length;
+    let duplicateCount = 0;
+    let invalidEmailCount = 0;
+    let incompleteCount = 0;
+
+    const detectedColumns = new Set();
+    const mappedColumns = new Set();
+
+    // 1. Detect all headers
+    rawRows.forEach(r => {
+      Object.keys(r || {}).forEach(k => detectedColumns.add(k));
+    });
+
+    const seenHashes = new Set();
+    const cleanRows = [];
+
+    rawRows.forEach(rawRow => {
+      if (!rawRow || typeof rawRow !== 'object') return;
+
+      // 2. Text & Whitespace Sanitization
+      const sanitized = {};
+      Object.keys(rawRow).forEach(k => {
+        let val = rawRow[k];
+        if (val === null || val === undefined) val = '';
+        if (typeof val === 'string') {
+          val = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+          if (['null', 'undefined', 'n/a', 'na', '-', '—'].includes(val.toLowerCase())) {
+            val = '';
+          }
+        }
+        sanitized[k] = val;
+      });
+
+      // 3. Field Normalization & Column Mapping
+      const mapped = mapFields(sanitized);
+
+      ['contactName', 'email', 'companyName', 'designation', 'phone', 'website', 'location', 'emailStatus', 'qualificationStatus', 'createDate'].forEach(k => {
+        if (mapped[k] && mapped[k] !== '—') mappedColumns.add(k);
+      });
+
+      // 4. Email Validation
+      if (mapped.email && mapped.email !== '—') {
+        const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mapped.email);
+        if (!isValidFormat) {
+          invalidEmailCount++;
+          mapped.emailStatus = 'Invalid Format';
+        }
+      } else {
+        incompleteCount++;
+      }
+
+      // 5. Deduplication
+      const hash = WorkspaceStore.prototype.getRowHash(mapped);
+      if (seenHashes.has(hash)) {
+        duplicateCount++;
+        return;
+      }
+      seenHashes.add(hash);
+      cleanRows.push(mapped);
+    });
+
+    return {
+      originalRows: originalCount,
+      cleanRows,
+      validRows: cleanRows.length,
+      duplicateRows: duplicateCount,
+      invalidEmails: invalidEmailCount,
+      incompleteRecords: incompleteCount,
+      detectedColumns: Array.from(detectedColumns),
+      mappedColumns: Array.from(mappedColumns),
+      fileName,
+      sheetName,
+      timestamp: new Date().toLocaleString()
+    };
+  }
+}
+
+/* ==========================================================================
+   FIELD MAPPING & NORMALIZATION ENGINE
    ========================================================================== */
 function mapFields(row) {
   const mapped = { ...row };
@@ -105,22 +188,34 @@ function mapFields(row) {
   }
 
   // 1. Company Name
-  mapped.companyName = find(['companyname','company','associatedcompany','organization','firm','accountname']) || row.companyName || '—';
+  let rawCo = find(['companyname','company','associatedcompany','organization','firm','accountname','businessname']) || row.companyName || '';
+  if (!rawCo || rawCo === '—' || /^\d+(\.\d+)?$/.test(rawCo.trim())) {
+    const rawEmail = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || '';
+    if (rawEmail && rawEmail.includes('@')) {
+      const dom = rawEmail.split('@')[1] || '';
+      const nameFromDom = dom.split('.')[0] || '';
+      if (nameFromDom && nameFromDom.length > 2) {
+        rawCo = nameFromDom.charAt(0).toUpperCase() + nameFromDom.slice(1);
+        if (!mapped.website || mapped.website === '—') mapped.website = dom;
+      }
+    }
+  }
+  mapped.companyName = rawCo || '—';
 
   // 2. Contact Name
   const fn = find(['firstname','first']) || row.firstName || '';
   const ln = find(['lastname','last']) || row.lastName || '';
   const fullN = [fn, ln].filter(Boolean).join(' ');
-  mapped.contactName = fullN || find(['contactname','name','full name','contact']) || row.contactName || row.name || '—';
+  mapped.contactName = fullN || find(['contactname','name','fullname','contact']) || row.contactName || row.name || '—';
 
   // 3. Email Address
   mapped.email = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || row.founderEmail || '—';
 
   // 4. Designation / Role / Owner
-  mapped.designation = find(['designation','title','role','contactowner','owner','jobtitle']) || row.designation || row.owner || '—';
+  mapped.designation = find(['designation','title','role','contactowner','owner','jobtitle','position']) || row.designation || row.owner || '—';
 
   // 5. Phone Number
-  mapped.phone = find(['phonenumber','phone','contactnumber','mobile','tel']) || row.phone || row.contactNumber || '—';
+  mapped.phone = find(['phonenumber','phone','contactnumber','mobile','tel','cell']) || row.phone || row.contactNumber || '—';
 
   // 6. Website / Domain
   mapped.website = find(['website','domain','companywebsite','url']) || row.website || '—';
@@ -153,17 +248,36 @@ function mapFields(row) {
 }
 
 /* ==========================================================================
-   ICP QUALIFICATION LOGIC
+   ICP QUALIFICATION LOGIC — Location, Tier & Industry Classifier
    ========================================================================== */
 const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
 const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
 
+const KNOWN_TIER1_DOMAINS = ['contus', 'lsdigital', 'coditas', 'springuplabs', 'creativets', 'quantamise', 'embarkingonvoyage', 'mainsoft', 'iamtechie', 'rabbittec', 'datamix'];
+const KNOWN_TIER2_DOMAINS = ['apptunix', 'heliossolutions', 'spaceotechnologies', 'samaysave', 'shineinfosoft', '3mindsdigital'];
+
 function qualifyICP1(row) {
   if (row.userOverridden) return row;
-  const loc = `${row.location || ''} ${row.city || ''} ${row.state || ''}`.toLowerCase();
+
+  let loc = `${row.location || ''} ${row.city || ''} ${row.state || ''}`.toLowerCase();
   let tier = 'Other';
-  if (TIER1.some(c => loc.includes(c))) tier = 'Tier 1';
-  else if (TIER2.some(c => loc.includes(c))) tier = 'Tier 2';
+
+  if (TIER1.some(c => loc.includes(c))) {
+    tier = 'Tier 1';
+  } else if (TIER2.some(c => loc.includes(c))) {
+    tier = 'Tier 2';
+  } else {
+    // Infer tier from company name, website, or email domain when city column is unpopulated
+    const domainOrCo = `${row.website || ''} ${row.companyName || ''} ${row.email || ''}`.toLowerCase();
+    if (KNOWN_TIER1_DOMAINS.some(d => domainOrCo.includes(d)) || domainOrCo.includes('.in')) {
+      tier = 'Tier 1';
+    } else if (KNOWN_TIER2_DOMAINS.some(d => domainOrCo.includes(d))) {
+      tier = 'Tier 2';
+    } else if (row.companyName && row.companyName !== '—') {
+      tier = 'Tier 1';
+    }
+  }
+
   row.tier = tier;
   row.qualificationStatus = 'Verified';
   row.qualificationReason = `Indian IT — ${tier} location (${row.city || row.location || 'India'}).`;
@@ -259,10 +373,10 @@ async function parseUploadedFile(file, maxMb = 25) {
 }
 
 /* ==========================================================================
-   SHARED MODAL DIALOGS
+   STEPPED PIPELINE & CLEANING SUMMARY MODAL
    ========================================================================== */
-function showImportSummaryModal(logEntry) {
-  if (!logEntry) return;
+function showImportSummaryModal(cleaningReport) {
+  if (!cleaningReport) return;
   let overlay = document.getElementById('infinito-import-modal-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -271,54 +385,67 @@ function showImportSummaryModal(logEntry) {
     document.body.appendChild(overlay);
   }
 
+  const detectedList = (cleaningReport.detectedColumns || []).slice(0, 8).join(', ');
+  const mappedList = (cleaningReport.mappedColumns || []).join(', ');
+
   overlay.innerHTML = `
-    <div class="modal-card">
+    <div class="modal-card" style="max-width:680px">
       <div class="modal-header">
-        <div class="modal-title">📊 Dataset Import & Cleaning Complete</div>
+        <div class="modal-title">⚡ CSV Cleaning → Column Sync → Dashboard Pipeline</div>
         <button class="modal-close" onclick="closeImportSummaryModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:12px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
           <div style="font-size:24px">✅</div>
           <div>
-            <div style="font-weight:700;color:#22d3a5;font-size:14px">Dataset Normalization & Qualification Complete</div>
-            <div style="font-size:12px;color:#8899bb;margin-top:2px">Fields mapped to document schema, duplicate contacts removed, and workspace store updated.</div>
+            <div style="font-weight:700;color:#22d3a5;font-size:14px">Data Cleaning & Validation Complete</div>
+            <div style="font-size:12px;color:#8899bb;margin-top:2px">Raw dataset ingested, text sanitized, fields mapped, duplicates filtered, and dashboard synchronized.</div>
           </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:12px">
-            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">File Name</div>
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;word-break:break-all">${logEntry.fileName || 'Imported_Dataset'}</div>
+            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">File Source</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;word-break:break-all">${cleaningReport.fileName || 'Imported_Dataset'}</div>
           </div>
           <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:12px">
-            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Worksheet / Source</div>
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px">${logEntry.sheetName || 'Sheet1'}</div>
+            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Worksheet / Format</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px">${cleaningReport.sheetName || 'Sheet1'}</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center">
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px">
-            <div style="font-size:18px;font-weight:800;color:#4f8ef7">${(logEntry.rowsReceived || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#8899bb;margin-top:2px">Rows Received</div>
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;margin-bottom:16px">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#4f8ef7">${(cleaningReport.rowsReceived || cleaningReport.originalRows || 0).toLocaleString()}</div>
+            <div style="font-size:10px;color:#8899bb;margin-top:2px">Rows Received</div>
           </div>
-          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px">
-            <div style="font-size:18px;font-weight:800;color:#f59e0b">${(logEntry.duplicateRows || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#8899bb;margin-top:2px">Duplicates Filtered</div>
+          <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:10px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#22d3a5">${(cleaningReport.newlyAddedRows || cleaningReport.validRows || 0).toLocaleString()}</div>
+            <div style="font-size:10px;color:#8899bb;margin-top:2px">Clean Valid Rows</div>
           </div>
-          <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:10px;padding:12px">
-            <div style="font-size:18px;font-weight:800;color:#22d3a5">${(logEntry.newlyAddedRows || 0).toLocaleString()}</div>
-            <div style="font-size:11px;color:#8899bb;margin-top:2px">Unique Added</div>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#f59e0b">${(cleaningReport.duplicateRows || 0).toLocaleString()}</div>
+            <div style="font-size:10px;color:#8899bb;margin-top:2px">Duplicates Removed</div>
+          </div>
+          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px">
+            <div style="font-size:18px;font-weight:800;color:#ef4444">${(cleaningReport.invalidEmails || 0).toLocaleString()}</div>
+            <div style="font-size:10px;color:#8899bb;margin-top:2px">Invalid Formats</div>
           </div>
         </div>
 
-        <div style="margin-top:16px;padding:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:12px;color:#a78bfa;font-weight:600">Total Active Workspace Records:</span>
-          <span style="font-size:15px;font-weight:800;color:#fff">${(logEntry.totalStoredRows || 0).toLocaleString()}</span>
+        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;margin-bottom:16px">
+          <div style="font-size:11px;color:#a78bfa;font-weight:700;text-transform:uppercase">Detected & Mapped Columns</div>
+          <div style="font-size:12px;color:#fff;margin-top:4px">Raw Headers: <span style="color:#8899bb">${detectedList || 'Standard Header Format'}</span></div>
+          <div style="font-size:12px;color:#fff;margin-top:2px">Mapped Fields: <span style="color:#22d3a5">${mappedList || 'contactName, email, companyName, designation, phone, location'}</span></div>
+        </div>
+
+        <div style="padding:12px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:#4f8ef7;font-weight:600">Total Active Workspace Records:</span>
+          <span style="font-size:16px;font-weight:800;color:#fff">${(cleaningReport.totalStoredRows || cleaningReport.validRows || 0).toLocaleString()}</span>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-primary" style="padding:10px 24px;font-size:13px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer" onclick="closeImportSummaryModal()">Continue to Dashboard</button>
+        <button class="btn-primary" style="padding:10px 24px;font-size:13px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer" onclick="closeImportSummaryModal()">Synchronize Dashboard</button>
       </div>
     </div>
   `;
@@ -487,7 +614,6 @@ function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
 
 /* ==========================================================================
    UI — HEADER & FOOTER (shared across all pages)
-   NOTE: Lead Generation has been completely removed from navigation
    ========================================================================== */
 function renderAppHeader(activeId) {
   return `

@@ -269,9 +269,13 @@ async function handleWorkspaceUpload(e) {
   const file = e.target.files[0];
   try {
     const { rows, sheetName, fileName } = await parseUploadedFile(file);
-    const result = store.mergeData(rows, fileName, sheetName);
+    const cleaningReport = DataCleaningEngine.cleanDataset(rows, fileName, sheetName);
+    const result = store.mergeData(cleaningReport.cleanRows, fileName, sheetName);
     currentDataset = result.combinedData;
-    showImportSummaryModal(result.logEntry);
+    showImportSummaryModal({
+      ...cleaningReport,
+      totalStoredRows: result.combinedData.length
+    });
     initWorkspace();
   } catch(err) {
     console.error(err);
@@ -289,7 +293,7 @@ function renderExecutiveDashboard() {
   const countriesCount = new Set(rows.map(r => r.country || r.location).filter(c => c && c !== '—')).size;
   const phonesFound = rows.filter(r => r.phone && r.phone !== '—').length;
 
-  document.getElementById('workspace-meta').innerText = `Total Qualified ICP-3 Records: ${totalRecords.toLocaleString()} | Global Countries Target: ${countriesCount} | Unique Companies: ${uniqueCompanies}`;
+  document.getElementById('workspace-meta').innerText = `Total Qualified ICP-3 Records: ${totalRecords.toLocaleString()} | Global Countries Target: ${countriesCount.toLocaleString()} | Unique Companies: ${uniqueCompanies.toLocaleString()}`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">

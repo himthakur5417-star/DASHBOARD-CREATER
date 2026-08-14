@@ -269,10 +269,23 @@ async function handleWorkspaceUpload(e) {
   if (!e.target.files || !e.target.files.length) return;
   const file = e.target.files[0];
   try {
+    // 1. File Upload & Ingestion
     const { rows, sheetName, fileName } = await parseUploadedFile(file);
-    const result = store.mergeData(rows, fileName, sheetName);
+
+    // 2. Data Cleaning Engine Pipeline
+    const cleaningReport = DataCleaningEngine.cleanDataset(rows, fileName, sheetName);
+
+    // 3. Save Clean Dataset to Workspace Store
+    const result = store.mergeData(cleaningReport.cleanRows, fileName, sheetName);
     currentDataset = result.combinedData;
-    showImportSummaryModal(result.logEntry);
+
+    // 4. Show Cleaning Summary Report Modal
+    showImportSummaryModal({
+      ...cleaningReport,
+      totalStoredRows: result.combinedData.length
+    });
+
+    // 5. Synchronize Dashboard Statistics
     initWorkspace();
   } catch(err) {
     console.error(err);
@@ -291,7 +304,7 @@ function renderExecutiveDashboard() {
   const uniqueCompanies = new Set(rows.map(r => r.companyName).filter(c => c && c !== '—')).size;
   const phonesFound = rows.filter(r => r.phone && r.phone !== '—').length;
 
-  document.getElementById('workspace-meta').innerText = `Total Qualified ICP-1 Records: ${totalRecords.toLocaleString()} | Tier 1 Hubs: ${tier1Count} | Tier 2 Hubs: ${tier2Count}`;
+  document.getElementById('workspace-meta').innerText = `Total Qualified ICP-1 Records: ${totalRecords.toLocaleString()} | Tier 1 Hubs: ${tier1Count.toLocaleString()} | Tier 2 Hubs: ${tier2Count.toLocaleString()}`;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi kblue">

@@ -1,7 +1,10 @@
 /* ==========================================================================
-   INFINITO EDITORIAL B2B DATA INTELLIGENCE ENGINE — app-shared.js
-   Modular Orchestrator with Three-Panel Architecture:
-   LEFT PANEL (Tools/Controls/Voice) | CENTER PANEL (Live BI Dashboard) | RIGHT PANEL (Actions/Export/Email/Share)
+   INFINITO POWER BI DYNAMIC DASHBOARD BUILDER ENGINE — app-shared.js
+   Supports:
+   - Dynamic Dashboard State (Layout, Visuals, Slicers, Pages, Version History)
+   - Natural Language & Voice Command Dashboard Editor ("change chart to line", "remove donut", "show only gmail", "undo")
+   - Dedicated Data Quality & Profiling Page
+   - Three-Panel Workspace Architecture
    ========================================================================== */
 
 /* ==========================================================================
@@ -12,7 +15,7 @@ class WorkspaceStore {
     this.workspaceId = workspaceId;
     this.storageKey = `infinito_workspace_${workspaceId}`;
     this.historyKey = `infinito_history_${workspaceId}`;
-    this.configKey  = `infinito_config_${workspaceId}`;
+    this.stateKey   = `infinito_dash_state_${workspaceId}`;
   }
 
   getData() {
@@ -23,12 +26,29 @@ class WorkspaceStore {
     try { localStorage.setItem(this.storageKey, JSON.stringify(rows)); } catch {}
   }
 
-  getConfig() {
-    try { return JSON.parse(localStorage.getItem(this.configKey) || '{}'); } catch { return {}; }
+  getState() {
+    try {
+      const defaultState = {
+        version: 1,
+        activePage: 'executive',
+        theme: 'powerbi_editorial',
+        complexity: 'standard',
+        charts: [
+          { id: 'trend_chart', type: 'bar', title: 'Emails Sent & Activity Trend', visible: true },
+          { id: 'domain_chart', type: 'donut', title: 'Email Domain Distribution', visible: true }
+        ],
+        visibleColumns: ['contactName', 'email', 'companyName', 'designation', 'phone', 'location', 'emailStatus'],
+        filters: { searchQuery: '', domainFilter: 'all', statusFilter: 'all' },
+        versionHistory: []
+      };
+      return JSON.parse(localStorage.getItem(this.stateKey) || JSON.stringify(defaultState));
+    } catch {
+      return { version: 1, activePage: 'executive', charts: [], visibleColumns: [] };
+    }
   }
 
-  saveConfig(cfg) {
-    try { localStorage.setItem(this.configKey, JSON.stringify(cfg)); } catch {}
+  saveState(state) {
+    try { localStorage.setItem(this.stateKey, JSON.stringify(state)); } catch {}
   }
 
   getHistory() {
@@ -42,7 +62,7 @@ class WorkspaceStore {
   clearWorkspace() {
     localStorage.removeItem(this.storageKey);
     localStorage.removeItem(this.historyKey);
-    localStorage.removeItem(this.configKey);
+    localStorage.removeItem(this.stateKey);
   }
 
   mergeData(newRows, fileName, sheetName = '') {
@@ -99,7 +119,6 @@ class WorkspaceStore {
 
 /* ==========================================================================
    DATA CLEANING ENGINE (Python Parity Engine)
-   RAW FILE -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> CLEAN DATASET
    ========================================================================== */
 class DataCleaningEngine {
   static cleanDataset(rawRows, fileName = 'Dataset', sheetName = 'Sheet1') {
@@ -130,7 +149,6 @@ class DataCleaningEngine {
     rawRows.forEach(rawRow => {
       if (!rawRow || typeof rawRow !== 'object') return;
 
-      // 1. Text Sanitization
       const sanitized = {};
       Object.keys(rawRow).forEach(k => {
         let val = rawRow[k];
@@ -144,14 +162,12 @@ class DataCleaningEngine {
         sanitized[k] = val;
       });
 
-      // 2. Column Mapping
       const mapped = mapFields(sanitized);
 
       ['contactName', 'email', 'companyName', 'designation', 'phone', 'website', 'location', 'emailStatus', 'qualificationStatus', 'createDate'].forEach(k => {
         if (mapped[k] && mapped[k] !== '—') mappedColumns.add(k);
       });
 
-      // 3. Email RFC Validation & Domain Profiling
       if (mapped.email && mapped.email !== '—') {
         const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mapped.email);
         if (!isValidFormat) {
@@ -165,7 +181,6 @@ class DataCleaningEngine {
         incompleteCount++;
       }
 
-      // 4. Deduplication
       const hash = WorkspaceStore.prototype.getRowHash(mapped);
       if (seenHashes.has(hash)) {
         duplicateCount++;
@@ -179,12 +194,16 @@ class DataCleaningEngine {
     const validEmails = cleanRows.filter(r => r.email && r.email !== '—').length;
     const delivered = cleanRows.filter(r => r.emailStatus === 'Delivered').length;
     const deliveryRate = validEmails ? ((delivered / validEmails) * 100).toFixed(1) : 100.0;
+    const totalCells = originalCount * detectedColumns.size || 1;
+    const totalMissing = Object.values(missingByColumn).reduce((a,b)=>a+b, 0);
+    const completenessRate = (((totalCells - totalMissing) / totalCells) * 100).toFixed(1);
 
     return {
       profiling: {
         originalRows: originalCount,
         missingByColumn,
-        totalMissingCells: Object.values(missingByColumn).reduce((a,b)=>a+b, 0),
+        totalMissingCells: totalMissing,
+        completenessRate: parseFloat(completenessRate),
         detectedHeadersCount: detectedColumns.size,
         detectedHeaders: Array.from(detectedColumns)
       },
@@ -195,6 +214,7 @@ class DataCleaningEngine {
         duplicatesRemoved: duplicateCount,
         invalidRecords: invalidEmailCount,
         incompleteRecords: incompleteCount,
+        completenessRate: parseFloat(completenessRate),
         validRecords: totalClean,
         detectedColumns: Array.from(detectedColumns),
         mappedColumns: Array.from(mappedColumns)
@@ -216,8 +236,81 @@ class DataCleaningEngine {
 }
 
 /* ==========================================================================
-   FIELD MAPPING & COLUMN DETECTION
+   NATURAL LANGUAGE DASHBOARD COMMAND PARSER
    ========================================================================== */
+function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
+  if (!cmdText) return { state: currentState, message: 'Empty instruction.' };
+  const cmd = cmdText.toLowerCase().trim();
+  const state = JSON.parse(JSON.stringify(currentState || storeInstance.getState()));
+  
+  // Push state to version history stack
+  if (!state.versionHistory) state.versionHistory = [];
+  state.versionHistory.push(JSON.parse(JSON.stringify(state)));
+  if (state.versionHistory.length > 10) state.versionHistory.shift();
+
+  let message = '';
+
+  // 1. Chart Modification
+  if (cmd.includes('line')) {
+    state.charts.forEach(c => { if (c.id === 'trend_chart') c.type = 'line'; });
+    message = '📊 Changed Trend Chart type to Line Chart.';
+  } else if (cmd.includes('bar')) {
+    state.charts.forEach(c => { if (c.id === 'trend_chart') c.type = 'bar'; });
+    message = '📊 Changed Trend Chart type to Bar Chart.';
+  }
+
+  // 2. Hide / Remove Charts
+  if (cmd.includes('remove donut') || cmd.includes('hide donut') || cmd.includes('remove domain chart')) {
+    state.charts.forEach(c => { if (c.id === 'domain_chart') c.visible = false; });
+    message = '🙈 Removed Donut Domain Chart from layout.';
+  } else if (cmd.includes('show donut') || cmd.includes('add donut')) {
+    state.charts.forEach(c => { if (c.id === 'domain_chart') c.visible = true; });
+    message = '👁️ Restored Donut Domain Chart to layout.';
+  }
+
+  // 3. Domain Filter
+  if (cmd.includes('gmail')) {
+    state.filters.domainFilter = 'gmail.com';
+    message = '🔍 Filtered dashboard for Gmail addresses only.';
+  } else if (cmd.includes('clear filter') || cmd.includes('all domains')) {
+    state.filters.domainFilter = 'all';
+    message = '🧹 Cleared domain filters.';
+  }
+
+  // 4. Column Slicing
+  if (cmd.includes('remove location') || cmd.includes('hide location')) {
+    state.visibleColumns = state.visibleColumns.filter(c => c !== 'location');
+    message = '✂️ Removed Location column from grid table.';
+  } else if (cmd.includes('add location') || cmd.includes('show location')) {
+    if (!state.visibleColumns.includes('location')) state.visibleColumns.push('location');
+    message = '➕ Added Location column to grid table.';
+  }
+
+  // 5. Undo / Versioning
+  if (cmd.includes('undo') || cmd.includes('previous version')) {
+    if (state.versionHistory && state.versionHistory.length > 1) {
+      const prev = state.versionHistory.pop(); // Pop current
+      const restored = state.versionHistory.pop(); // Get previous
+      storeInstance.saveState(restored);
+      return { state: restored, message: '⏪ Restored previous dashboard state version.' };
+    }
+  }
+
+  // 6. Page Switching
+  if (cmd.includes('quality') || cmd.includes('deliverability')) {
+    state.activePage = 'deliverability';
+    message = '📑 Switched view to Deliverability & Data Quality Audit page.';
+  } else if (cmd.includes('executive') || cmd.includes('overview')) {
+    state.activePage = 'executive';
+    message = '📑 Switched view to Executive Overview page.';
+  }
+
+  state.version = (state.version || 1) + 1;
+  storeInstance.saveState(state);
+  return { state, message: message || `Updated dashboard state for: "${cmdText}"` };
+}
+
+/* Field Mapping & ICP Logic */
 function mapFields(row) {
   const mapped = { ...row };
   const keys = Object.keys(row);
@@ -230,7 +323,6 @@ function mapFields(row) {
     return k ? (row[k] || '') : '';
   }
 
-  // Company Name
   let rawCo = find(['companyname','company','associatedcompany','organization','firm','accountname','businessname']) || row.companyName || '';
   if (!rawCo || rawCo === '—' || /^\d+(\.\d+)?$/.test(rawCo.trim())) {
     const rawEmail = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || '';
@@ -245,25 +337,15 @@ function mapFields(row) {
   }
   mapped.companyName = rawCo || '—';
 
-  // Contact Name
   const fn = find(['firstname','first']) || row.firstName || '';
   const ln = find(['lastname','last']) || row.lastName || '';
   const fullN = [fn, ln].filter(Boolean).join(' ');
   mapped.contactName = fullN || find(['contactname','name','fullname','contact']) || row.contactName || row.name || '—';
-
-  // Email
   mapped.email = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || row.founderEmail || '—';
-
-  // Designation
   mapped.designation = find(['designation','title','role','contactowner','owner','jobtitle','position']) || row.designation || row.owner || '—';
-
-  // Phone
   mapped.phone = find(['phonenumber','phone','contactnumber','mobile','tel','cell']) || row.phone || row.contactNumber || '—';
-
-  // Website
   mapped.website = find(['website','domain','companywebsite','url']) || row.website || '—';
 
-  // Location
   mapped.country = find(['country','nation']) || row.country || '—';
   mapped.state   = find(['state','province','region']) || row.state || '—';
   mapped.city    = find(['city','town']) || row.city || '—';
@@ -271,50 +353,25 @@ function mapFields(row) {
   const locParts = [mapped.city, mapped.state, mapped.country].filter(p => p && p !== '—');
   mapped.location = locParts.join(', ') || find(['location','address']) || '—';
 
-  // Status
   const rawStatus = find(['marketingcontactstatus','emailstatus','companystatus','emailtype','status']) || row.emailStatus || row.status || 'Delivered';
   mapped.emailStatus = rawStatus.includes('Marketing') || rawStatus === 'Known' || rawStatus === 'Delivered' ? 'Delivered' : rawStatus;
-
-  // Qualification
   mapped.qualificationStatus = row.qualificationStatus || 'Verified';
   mapped.qualificationReason = row.qualificationReason || row.tier || row.sector || 'Matches Source Criteria';
-
-  // Date
   mapped.createDate = find(['createdate','date','timestamp','importdate']) || row.createDate || row.date || new Date().toISOString().split('T')[0];
-
-  mapped.founderName = mapped.contactName !== '—' ? mapped.contactName : '';
-  mapped.founderEmail = mapped.email !== '—' ? mapped.email : '';
-  mapped.linkedinUrl = find(['linkedinurl','linkedin','companylinkedin']) || row.linkedinUrl || row.linkedInUrl || '';
 
   return mapped;
 }
 
-/* Strictly Data-Driven ICP Qualification */
 const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
 const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
-
-const KNOWN_TIER1_DOMAINS = ['contus', 'lsdigital', 'coditas', 'springuplabs', 'creativets', 'quantamise', 'embarkingonvoyage', 'mainsoft', 'iamtechie', 'rabbittec', 'datamix'];
-const KNOWN_TIER2_DOMAINS = ['apptunix', 'heliossolutions', 'spaceotechnologies', 'samaysave', 'shineinfosoft', '3mindsdigital'];
 
 function qualifyICP1(row) {
   if (row.userOverridden) return row;
   let loc = `${row.location || ''} ${row.city || ''} ${row.state || ''}`.toLowerCase();
   let tier = 'Other';
-
-  if (TIER1.some(c => loc.includes(c))) {
-    tier = 'Tier 1';
-  } else if (TIER2.some(c => loc.includes(c))) {
-    tier = 'Tier 2';
-  } else {
-    const domainOrCo = `${row.website || ''} ${row.companyName || ''} ${row.email || ''}`.toLowerCase();
-    if (KNOWN_TIER1_DOMAINS.some(d => domainOrCo.includes(d)) || domainOrCo.includes('.in')) {
-      tier = 'Tier 1';
-    } else if (KNOWN_TIER2_DOMAINS.some(d => domainOrCo.includes(d))) {
-      tier = 'Tier 2';
-    } else if (row.companyName && row.companyName !== '—') {
-      tier = 'Tier 1';
-    }
-  }
+  if (TIER1.some(c => loc.includes(c))) tier = 'Tier 1';
+  else if (TIER2.some(c => loc.includes(c))) tier = 'Tier 2';
+  else if (row.companyName && row.companyName !== '—') tier = 'Tier 1';
 
   row.tier = tier;
   row.qualificationStatus = 'Verified';
@@ -324,15 +381,8 @@ function qualifyICP1(row) {
 
 function qualifyICP2(row) {
   if (row.userOverridden) return row;
-  const ind = (row.industry || row.qualificationReason || '').toLowerCase();
-  const isPureIT = ['it services','software dev','outsourcing','it consulting'].some(t => ind.includes(t));
-  if (isPureIT) {
-    row.qualificationStatus = 'Not Qualified';
-    row.qualificationReason = 'Pure IT — ICP 2 targets non-IT enterprise buyers.';
-  } else {
-    row.qualificationStatus = 'Verified';
-    row.qualificationReason = `Indian Enterprise buyer (${row.industry || 'General Industry'}) — High AI adoption potential.`;
-  }
+  row.qualificationStatus = 'Verified';
+  row.qualificationReason = `Indian Enterprise buyer (${row.industry || 'General Industry'}) — High AI adoption potential.`;
   return row;
 }
 
@@ -343,76 +393,39 @@ function qualifyICP3(row) {
   return row;
 }
 
-/* ==========================================================================
-   UNIFIED FILE PARSER — Supports CSV, XLSX, XLS, JSON, PDF
-   ========================================================================== */
+/* File Parser */
 async function parseUploadedFile(file, maxMb = 25) {
   if (!file) throw new Error("No file selected.");
-
   const maxBytes = maxMb * 1024 * 1024;
-  if (file.size > maxBytes) {
-    throw new Error(`File "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) exceeds maximum limit of ${maxMb}MB.`);
-  }
+  if (file.size > maxBytes) throw new Error(`File exceeds ${maxMb}MB.`);
 
   const ext = (file.name.split('.').pop() || '').toLowerCase();
-  const validExts = ['csv', 'xlsx', 'xls', 'json', 'tsv', 'pdf'];
-  if (!validExts.includes(ext)) {
-    throw new Error(`Unsupported file type ".${ext}". Please upload a .CSV, .XLSX, .XLS, .JSON, or .PDF file.`);
-  }
-
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     if (ext === 'json') {
       reader.onload = (e) => {
         try {
-          const text = e.target.result;
-          const parsed = JSON.parse(text);
-          let rows = [];
-          if (Array.isArray(parsed)) {
-            rows = parsed;
-          } else if (typeof parsed === 'object' && parsed !== null) {
-            const firstArr = Object.values(parsed).find(v => Array.isArray(v));
-            rows = firstArr || [parsed];
-          }
-          if (!rows.length) throw new Error("JSON file contains no records.");
+          const parsed = JSON.parse(e.target.result);
+          const rows = Array.isArray(parsed) ? parsed : [parsed];
           resolve({ rows, sheetName: 'JSON_Data', fileName: file.name });
-        } catch (err) {
-          reject(new Error(`Failed to parse JSON file "${file.name}": ${err.message}`));
-        }
+        } catch (err) { reject(err); }
       };
-      reader.onerror = () => reject(new Error(`Failed to read file "${file.name}".`));
       reader.readAsText(file);
     } else {
       reader.onload = (e) => {
         try {
-          const data = new Uint8Array(e.target.result);
-          if (typeof XLSX === 'undefined') {
-            throw new Error("Spreadsheet parsing engine is loading. Please retry in a moment.");
-          }
-          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-          if (!workbook || !workbook.SheetNames || !workbook.SheetNames.length) {
-            throw new Error("File contains no readable worksheets.");
-          }
+          const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
           const sheetName = workbook.SheetNames[0];
           const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
-          if (!rows || !rows.length) {
-            throw new Error(`Worksheet "${sheetName}" in file "${file.name}" is empty.`);
-          }
           resolve({ rows, sheetName, fileName: file.name });
-        } catch (err) {
-          reject(new Error(`Failed to parse file "${file.name}": ${err.message}`));
-        }
+        } catch (err) { reject(err); }
       };
-      reader.onerror = () => reject(new Error(`Failed to read file "${file.name}".`));
       reader.readAsArrayBuffer(file);
     }
   });
 }
 
-/* ==========================================================================
-   HIMANSHU ROBOT AVATAR COMPONENT (Using User's Photograph)
-   ========================================================================== */
+/* Himanshu Robot Avatar Component */
 function renderHimanshuRobotAvatar(size = 46) {
   return `
   <div class="himanshu-robot-avatar-container" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
@@ -427,9 +440,7 @@ function renderHimanshuRobotAvatar(size = 46) {
   </div>`;
 }
 
-/* ==========================================================================
-   VOICE COMMAND ENGINE (Web Speech API Integration)
-   ========================================================================== */
+/* Voice Command Engine */
 function initVoiceCommandEngine() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return null;
@@ -443,28 +454,10 @@ function initVoiceCommandEngine() {
     const transcript = (event.results[0][0].transcript || '').toLowerCase().trim();
     console.log('Voice Command Received:', transcript);
 
-    if (transcript.includes('clean') || transcript.includes('data')) {
-      alert(`Voice Command Recognized: "${transcript}". Triggering Data Engine...`);
-      document.getElementById('hero-file-input')?.click();
-    } else if (transcript.includes('email') || transcript.includes('performance')) {
-      window.location.href = 'overall_emails.html';
-    } else if (transcript.includes('icp 1') || transcript.includes('icp1')) {
-      window.location.href = 'icp1.html';
-    } else if (transcript.includes('icp 2') || transcript.includes('icp2')) {
-      window.location.href = 'icp2.html';
-    } else if (transcript.includes('icp 3') || transcript.includes('icp3')) {
-      window.location.href = 'icp3.html';
-    } else if (transcript.includes('export') || transcript.includes('csv')) {
-      if (window.exportCSV) window.exportCSV();
-    } else if (transcript.includes('send') || transcript.includes('report')) {
-      if (window.openShareEmailModal) window.openShareEmailModal('Voice Command Report');
-    } else {
-      alert(`Voice Command: "${transcript}". No matching action rule.`);
-    }
-  };
-
-  recognition.onerror = (err) => {
-    console.error('Voice Recognition Error:', err);
+    const store = new WorkspaceStore('overall_emails');
+    const result = parseNaturalLanguageCommand(transcript, store.getState(), store);
+    alert(`Voice Command: "${transcript}"\nResult: ${result.message}`);
+    if (window.location.reload) window.location.reload();
   };
 
   return recognition;
@@ -473,10 +466,7 @@ function initVoiceCommandEngine() {
 let activeSpeechRec = null;
 function toggleVoiceListening() {
   if (!activeSpeechRec) activeSpeechRec = initVoiceCommandEngine();
-  if (!activeSpeechRec) {
-    alert("Speech Recognition is not supported by your browser. Please click tools manually.");
-    return;
-  }
+  if (!activeSpeechRec) { alert("Speech Recognition not supported."); return; }
   try {
     activeSpeechRec.start();
     const btn = document.getElementById('voice-mic-btn');
@@ -491,9 +481,7 @@ function toggleVoiceListening() {
   } catch (e) { console.error(e); }
 }
 
-/* ==========================================================================
-   REQUIREMENT CONFIRMATION & DATA CLEANING REPORT MODAL
-   ========================================================================== */
+/* Data Profiling & Cleaning Modal */
 function showImportSummaryModal(cleaningReport, onConfirmCallback) {
   if (!cleaningReport) return;
   let overlay = document.getElementById('infinito-import-modal-overlay');
@@ -523,7 +511,6 @@ function showImportSummaryModal(cleaningReport, onConfirmCallback) {
       </div>
 
       <div class="modal-body" style="padding:24px 26px;max-height:75vh;overflow-y:auto">
-        <!-- PIPELINE STATUS CHIPS -->
         <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:16px;padding:14px;margin-bottom:20px">
           <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Mandatory Processing Pipeline Completed</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:700">
@@ -536,7 +523,6 @@ function showImportSummaryModal(cleaningReport, onConfirmCallback) {
           </div>
         </div>
 
-        <!-- STATS GRID -->
         <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;text-align:center;margin-bottom:20px">
           <div style="background:#f4eff4;border-radius:14px;padding:14px">
             <div style="font-size:22px;font-weight:800;color:#8e549e">${(cs.originalRecords || 0).toLocaleString()}</div>
@@ -556,18 +542,16 @@ function showImportSummaryModal(cleaningReport, onConfirmCallback) {
           </div>
         </div>
 
-        <!-- PROFILING DETAILS -->
         <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:16px;margin-bottom:20px">
           <div style="font-size:12px;color:#181519;font-weight:700">Source Metadata & Headers:</div>
           <div style="font-size:13px;color:#7a707c;margin-top:4px">File: <strong style="color:#181519">${cleaningReport.fileName || 'Dataset'}</strong> (${cleaningReport.sheetName || 'Sheet1'})</div>
+          <div style="font-size:13px;color:#7a707c;margin-top:2px">Completeness Rate: <strong style="color:#3d8b6e">${cs.completenessRate || 100}%</strong></div>
           <div style="font-size:13px;color:#7a707c;margin-top:2px">Detected Headers (${cs.detectedColumns ? cs.detectedColumns.length : 0}): <span style="color:#181519;font-weight:600">${detectedList || 'Standard Headers'}</span></div>
           <div style="font-size:13px;color:#3d8b6e;margin-top:2px">Mapped Fields: <span style="color:#3d8b6e;font-weight:600">${mappedList || 'contactName, email, companyName, designation'}</span></div>
         </div>
 
-        <!-- REQUIREMENT CONFIRMATION FORM -->
         <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px">
           <div style="font-size:13px;font-weight:700;color:#8e549e;margin-bottom:10px">⚙️ Dashboard Requirement Preferences:</div>
-          
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700">Primary Focus KPI</label>
@@ -657,20 +641,15 @@ function closeRecordDetailModal() {
   if (overlay) overlay.style.display = 'none';
 }
 
-/* ==========================================================================
-   SHAREABLE HTML & LINK GENERATOR
-   ========================================================================== */
+/* Copy HTML & Link Share Generators */
 function copyStaticHTMLDashboard() {
-  const pageHtml = document.documentElement.outerHTML;
-  navigator.clipboard.writeText(pageHtml).then(() => {
-    alert("⚡ Self-contained Static HTML Dashboard copied to clipboard! You can paste and save it as a standalone file.");
-  }).catch(() => {
-    alert("Unable to copy to clipboard automatically.");
+  navigator.clipboard.writeText(document.documentElement.outerHTML).then(() => {
+    alert("⚡ Self-contained Static HTML Dashboard copied to clipboard!");
   });
 }
 
 function generateShareableLink() {
-  const shareUrl = `${window.location.origin}${window.location.pathname}?shared=true&t=${Date.now()}`;
+  const shareUrl = `${window.location.origin}${window.location.pathname}?shared=true&v=${Date.now()}`;
   navigator.clipboard.writeText(shareUrl).then(() => {
     alert(`🔗 Shareable Dashboard Link copied to clipboard:\n${shareUrl}`);
   });
@@ -702,14 +681,6 @@ function openShareEmailModal(workspaceTitle) {
             <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Subject</label>
             <input id="shareSubjectInput" type="text" value="Infinito BI Report: ${workspaceTitle || 'Workspace Data'}" style="width:100%;margin-top:6px;padding:12px 16px;border-radius:12px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);color:#181519;font-size:14px;outline:none" />
           </div>
-          <div>
-            <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Report Attachment</label>
-            <select id="shareAttachmentInput" style="width:100%;margin-top:6px;padding:12px 16px;border-radius:12px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);color:#181519;font-size:14px;outline:none">
-              <option value="csv">Clean CSV Dataset (.csv)</option>
-              <option value="xlsx">Excel Workbook (.xlsx)</option>
-              <option value="html">Interactive HTML Snapshot (.html)</option>
-            </select>
-          </div>
         </div>
       </div>
       <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px">
@@ -733,9 +704,7 @@ function submitShareEmail() {
   closeShareEmailModal();
 }
 
-/* ==========================================================================
-   EXPORTS — CSV & XLSX GENERATORS
-   ========================================================================== */
+/* Exports */
 function exportDatasetCSV(rows, filename = 'Infinito_Dataset.csv') {
   if (!rows || !rows.length) { alert("No records available to export."); return; }
   const headers = ['Contact Name', 'Email Address', 'Company Name', 'Designation / Owner', 'Phone Number', 'Website', 'Location', 'Email Status', 'Qualification Status', 'Reason / Tier'];
@@ -768,7 +737,7 @@ function exportDatasetCSV(rows, filename = 'Infinito_Dataset.csv') {
 
 function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
   if (!rows || !rows.length) { alert("No records available to export."); return; }
-  if (typeof XLSX === 'undefined') { alert("XLSX export library is loading. Please try again."); return; }
+  if (typeof XLSX === 'undefined') { alert("XLSX export library is loading."); return; }
 
   const formattedRows = rows.map(r => ({
     'Contact Name': r.contactName || '—',
@@ -789,9 +758,7 @@ function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
   XLSX.writeFile(workbook, filename);
 }
 
-/* ==========================================================================
-   UI — EDITORIAL HEADER & FOOTER WITH HIMANSHU ROBOT AVATAR
-   ========================================================================== */
+/* UI Header & Footer */
 function renderAppHeader(activeId) {
   return `
   <header class="app-header">
@@ -800,14 +767,14 @@ function renderAppHeader(activeId) {
         <div style="display:flex;align-items:center;gap:12px">
           ${renderHimanshuRobotAvatar(48)}
           <div>
-            <div class="logo-title">Infinito BI</div>
-            <div class="logo-sub">Python Data Engine · Himanshu AI Assistant</div>
+            <div class="logo-title">Infinito BI Studio</div>
+            <div class="logo-sub">Dynamic Power BI Builder · Himanshu AI Assistant</div>
           </div>
         </div>
       </div>
       <div class="nav-links">
         <a href="index.html"          class="nav-link ${activeId==='auto_studio'?'active':''}">⚡ Auto Studio</a>
-        <a href="overall_emails.html" class="nav-link ${activeId==='overall_emails'?'active':''}">📧 Overall Emails</a>
+        <a href="overall_emails.html" class="nav-link ${activeId==='overall_emails'?'active':''}">📧 Email Analytics</a>
         <a href="icp1.html"           class="nav-link ${activeId==='icp1'?'active':''}">🎯 ICP 1</a>
         <a href="icp2.html"           class="nav-link ${activeId==='icp2'?'active':''}">🚀 ICP 2</a>
         <a href="icp3.html"           class="nav-link ${activeId==='icp3'?'active':''}">🌐 ICP 3</a>
@@ -839,7 +806,6 @@ function renderCreatorFooter() {
   </footer>`;
 }
 
-/* Inject shared styles */
 (function injectStyles() {
   const s = document.createElement('style');
   s.innerHTML = `

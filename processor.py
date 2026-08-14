@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Infinito Python Data Processing & Email Analytics Engine (processor.py)
-------------------------------------------------------------------------
+Infinito Python Data Processing, Profiling & Natural Language Dashboard Engine (processor.py)
+----------------------------------------------------------------------------------------
 Mandatory Pipeline:
-FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MATCHING -> CLEAN DATASET -> EMAIL BI METRICS
+FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MATCHING -> CLEAN DATASET -> COMMAND PARSER -> DASHBOARD STATE
 """
 
 import sys
@@ -42,13 +42,21 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     original_rows = len(df)
     cols = list(df.columns)
 
-    # 1. DATA PROFILING STAGE
+    # 1. DATA PROFILING & QUALITY AUDIT
     missing_by_col = {}
+    unique_by_col = {}
+    dtype_by_col = {}
+
     for c in cols:
-        null_count = sum(1 for v in df[c] if pd.isna(v) or str(v).strip().lower() in ['', 'null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'])
+        s_col = df[c]
+        null_count = sum(1 for v in s_col if pd.isna(v) or str(v).strip().lower() in ['', 'null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'])
         missing_by_col[str(c)] = null_count
+        unique_by_col[str(c)] = s_col.nunique(dropna=True)
+        dtype_by_col[str(c)] = str(s_col.dtype)
 
     total_missing_cells = sum(missing_by_col.values())
+    total_cells = original_rows * len(cols) if original_rows and len(cols) else 1
+    completeness_rate = round(((total_cells - total_missing_cells) / total_cells * 100), 1)
 
     # 2. DATA CLEANING & TEXT SANITIZATION
     df_clean = df.copy()
@@ -92,7 +100,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
                 if len(name_from_dom) > 2:
                     co_val = name_from_dom.capitalize()
 
-        # Contact Name
         fname = str(row[fn_col]) if fn_col and row[fn_col] else ""
         lname = str(row[ln_col]) if ln_col and row[ln_col] else ""
         full_name = " ".join(filter(None, [fname, lname])).strip()
@@ -167,7 +174,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     phones_found = sum(1 for r in mapped_rows if r["phone"] != "—")
     websites_found = sum(1 for r in mapped_rows if r["website"] != "—")
 
-    # Email BI Metrics
     delivered_count = sum(1 for r in mapped_rows if r["emailStatus"] == "Delivered")
     delivery_rate = round((delivered_count / valid_emails * 100), 1) if valid_emails > 0 else 100.0
 
@@ -177,7 +183,10 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "sheetName": sheet_name,
             "totalRowsIngested": original_rows,
             "totalMissingCells": total_missing_cells,
+            "completenessRate": completeness_rate,
             "missingByColumn": missing_by_col,
+            "uniqueByColumn": unique_by_col,
+            "dtypeByColumn": dtype_by_col,
             "detectedHeadersCount": len(cols),
             "detectedHeaders": cols
         },
@@ -188,6 +197,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "duplicatesRemoved": duplicate_count,
             "invalidRecords": invalid_email_count,
             "missingValuesFixed": total_missing_cells,
+            "completenessRate": completeness_rate,
             "validRecords": total_clean,
             "detectedColumns": cols,
             "mappedColumns": [k for k in ["contactName", "email", "companyName", "designation", "phone", "website", "location", "emailStatus", "createDate"] if any(r[k] != "—" for r in mapped_rows)]
@@ -199,7 +209,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "bounces": invalid_email_count,
             "bounceRate": round((invalid_email_count / (valid_emails or 1) * 100), 1),
             "uniqueDomainsCount": len(domain_counts),
-            "topDomains": sorted([{"domain": k, "count": v} for k, v in domain_counts.items()], key=lambda x: x["count"], reverse=True)[:5]
+            "topDomains": sorted([{"domain": k, "count": v} for k, v in domain_counts.items()], key=lambda x: x["count"], reverse=True)[:6]
         },
         "kpis": {
             "totalRecords": total_clean,
@@ -211,6 +221,85 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         },
         "records": mapped_rows
     }
+
+
+def parse_natural_language_command(command_text, current_state):
+    """
+    Parses natural language instructions to update the Dashboard State dynamically.
+    """
+    cmd = command_text.lower().strip()
+    updated = json.loads(json.dumps(current_state)) if current_state else {
+        "version": 1,
+        "activePage": "executive",
+        "charts": [
+            {"id": "trend_chart", "type": "bar", "visible": True},
+            {"id": "domain_chart", "type": "donut", "visible": True}
+        ],
+        "visibleColumns": ["contactName", "email", "companyName", "designation", "phone", "location", "emailStatus"],
+        "filters": {}
+    }
+
+    action_taken = "No state change matched."
+
+    # 1. Chart Type Modification
+    if "line" in cmd:
+        for c in updated.get("charts", []):
+            if c["id"] == "trend_chart":
+                c["type"] = "line"
+        action_taken = "Changed Trend Chart type to Line Chart."
+    elif "bar" in cmd:
+        for c in updated.get("charts", []):
+            if c["id"] == "trend_chart":
+                c["type"] = "bar"
+        action_taken = "Changed Trend Chart type to Bar Chart."
+
+    # 2. Hide / Remove Charts
+    if "remove donut" in cmd or "hide donut" in cmd or "remove domain chart" in cmd:
+        for c in updated.get("charts", []):
+            if c["id"] == "domain_chart":
+                c["visible"] = False
+        action_taken = "Removed Donut Domain Chart from dashboard layout."
+    elif "show donut" in cmd or "add donut" in cmd:
+        for c in updated.get("charts", []):
+            if c["id"] == "domain_chart":
+                c["visible"] = True
+        action_taken = "Restored Donut Domain Chart to dashboard layout."
+
+    # 3. Filtering Domain
+    if "gmail" in cmd:
+        updated.setdefault("filters", {})["domainFilter"] = "gmail.com"
+        action_taken = "Filtered dashboard analytics to display Gmail contacts only."
+    elif "clear filter" in cmd or "all domains" in cmd:
+        updated.setdefault("filters", {})["domainFilter"] = "all"
+        action_taken = "Cleared domain filters."
+
+    # 4. Column Slicing
+    if "remove location" in cmd or "hide location" in cmd:
+        cols = updated.get("visibleColumns", [])
+        if "location" in cols:
+            cols.remove("location")
+        updated["visibleColumns"] = cols
+        action_taken = "Removed Location column from data table grid."
+    elif "add location" in cmd or "show location" in cmd:
+        cols = updated.get("visibleColumns", [])
+        if "location" not in cols:
+            cols.append("location")
+        updated["visibleColumns"] = cols
+        action_taken = "Added Location column to data table grid."
+
+    # 5. Page Switching
+    if "deliverability" in cmd or "quality" in cmd:
+        updated["activePage"] = "deliverability"
+        action_taken = "Switched view to Deliverability & Data Quality Audit page."
+    elif "executive" in cmd or "overview" in cmd:
+        updated["activePage"] = "executive"
+        action_taken = "Switched view to Executive Overview page."
+    elif "email" in cmd or "performance" in cmd:
+        updated["activePage"] = "email_performance"
+        action_taken = "Switched view to Email & Outreach Performance page."
+
+    updated["version"] = updated.get("version", 1) + 1
+    return {"updatedState": updated, "actionTaken": action_taken}
 
 
 def process_file(file_path):
@@ -252,4 +341,5 @@ if __name__ == "__main__":
     else:
         sample_path = "/Users/himanshuthakur/Documents/Advocate Finder/DASHBOARD CREATER/contacts_raw.csv"
         res = process_file(sample_path)
-        print("Email Analytics:", res["emailAnalytics"])
+        print("Profiling Completeness:", res["profiling"]["completenessRate"], "%")
+        print("Command Test:", parse_natural_language_command("change trend chart to line chart and filter gmail", None))

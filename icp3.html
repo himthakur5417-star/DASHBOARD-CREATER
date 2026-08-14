@@ -3,234 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | ICP-3 Dashboard (Global Small & Medium B2B Businesses)</title>
+<title>Infinito | ICP-3 BI Dashboard (Global Small & Medium B2B Businesses)</title>
 <meta name="description" content="Infinito ICP-3 Dashboard — Global SME qualification, country targeting, and executive analytics.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="app-shared.js"></script>
 <style>
 :root {
-  --bg: #0a0e1a;
-  --bg2: #0f1629;
-  --card: #131c35;
-  --card2: #1a2440;
-  --blue: #4f8ef7;
-  --purple: #8b5cf6;
-  --cyan: #06b6d4;
-  --green: #10b981;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --t1: #f0f4ff;
-  --t2: #8899bb;
-  --t3: #4a5875;
-  --border: rgba(79, 142, 247, 0.15);
-  --borderb: rgba(79, 142, 247, 0.4);
-  --r: 16px;
+  --bg-canvas: #f2ebf2;
+  --shell-bg: #ffffff;
+  --card-bg: #faf6fa;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --text-main: #181519;
+  --text-muted: #7a707c;
+  --accent-purple: #8e549e;
+  --accent-blue: #4a7bb0;
+  --accent-green: #3d8b6e;
+  --accent-peach: #d97757;
+  --r-shell: 32px;
+  --r-card: 20px;
+  --r-pill: 20px;
+  --r-btn: 12px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--bg); color: var(--t1); min-height: 100vh; overflow-x: hidden; line-height: 1.5;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 24px 0 60px;
+  line-height: 1.5;
 }
-body::before {
-  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,142,247,.06), transparent 60%),
-              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,.05), transparent 60%);
-  pointer-events: none; z-index: 0;
-}
-.wrap { max-width: 1600px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+.wrap { max-width: 1560px; margin: 0 auto; padding: 0 24px; }
 
-header {
-  background: rgba(13, 20, 45, 0.95); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border); padding: 16px 0; position: sticky; top: 0; z-index: 100;
+/* EDITORIAL SHELL */
+.shell {
+  background: var(--shell-bg);
+  border-radius: var(--r-shell);
+  padding: 36px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
-.hdr { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+/* HEADER NAVIGATION */
+.app-header { margin-bottom: 28px; }
+.hdr-wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
-  width: 42px; height: 42px; background: linear-gradient(135deg, var(--blue), var(--purple));
-  border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+  width: 44px; height: 44px; background: #181519; color: #fff;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
-.logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; }
-.logo-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
+.logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 
-.nav-links { display: flex; gap: 8px; align-items: center; }
+.nav-links { display: flex; gap: 8px; align-items: center; background: #faf6fa; padding: 6px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); }
 .nav-link {
-  display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px;
-  text-decoration: none; font-size: 13px; font-weight: 500; color: var(--t2); transition: all 0.2s;
+  padding: 8px 18px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); transition: all 0.2s;
 }
-.nav-link:hover { color: var(--t1); background: rgba(79, 142, 247, 0.1); }
-.nav-link.active {
-  background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; font-weight: 600;
-  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
+.nav-link:hover { color: var(--text-main); background: rgba(0,0,0,0.04); }
+.nav-link.active { background: #181519; color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+.system-status {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 700; background: #f0f8f5; color: var(--accent-green); border: 1px solid rgba(61,139,110,0.2);
 }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
 
-.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-.b-blue { background: rgba(79, 142, 247, 0.15); color: var(--blue); border: 1px solid rgba(79, 142, 247, 0.3); }
-.b-purple { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
-.b-amber { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-
+/* EDITORIAL CARDS */
 .card {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
-  padding: 24px; margin-top: 20px; margin-bottom: 20px; position: relative; transition: all 0.3s;
+  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--r-card);
+  padding: 28px; margin-bottom: 24px; position: relative; transition: all 0.25s;
 }
-.card:hover { border-color: var(--borderb); }
-.card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
-.card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 10px; }
-.card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.card-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+.card-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
 .empty-state-card {
-  text-align: center; padding: 60px 24px; background: rgba(15, 22, 41, 0.6);
-  border: 2px dashed rgba(79, 142, 247, 0.25); border-radius: var(--r); margin: 24px 0;
+  text-align: center; padding: 70px 30px; background: #faf6fa;
+  border: 2px dashed rgba(0,0,0,0.1); border-radius: var(--r-card); margin: 24px 0;
 }
-.empty-icon { font-size: 48px; margin-bottom: 14px; opacity: 0.8; }
-.empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-.empty-desc { font-size: 14px; color: var(--t2); max-width: 550px; margin: 0 auto 24px; }
+.empty-icon { font-size: 52px; margin-bottom: 14px; }
+.empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.empty-desc { font-size: 14px; color: var(--text-muted); max-width: 540px; margin: 0 auto 24px; }
 
+/* BUTTONS */
 .btn {
-  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px;
-  font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.25s;
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: var(--r-btn);
+  font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s;
   font-family: 'Inter', sans-serif; text-decoration: none;
 }
-.btn-primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35); }
-.btn-primary:hover { opacity: 0.92; transform: translateY(-2px); }
-.btn-secondary { background: rgba(79, 142, 247, 0.12); color: var(--t1); border: 1px solid var(--border); }
-.btn-secondary:hover { background: rgba(79, 142, 247, 0.22); border-color: var(--blue); }
+.btn-primary { background: var(--text-main); color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-secondary { background: #ffffff; color: var(--text-main); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.btn-secondary:hover { background: #f4eff4; border-color: rgba(0,0,0,0.2); }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
-.kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; position: relative; overflow: hidden; }
-.kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
-.kblue::before { background: linear-gradient(135deg, var(--blue), var(--cyan)); }
-.kpurple::before { background: linear-gradient(135deg, var(--purple), var(--cyan)); }
-.kgreen::before { background: linear-gradient(135deg, var(--green), var(--cyan)); }
-.kamber::before { background: linear-gradient(135deg, var(--amber), var(--red)); }
-.kpi-icon { font-size: 22px; margin-bottom: 6px; display: block; }
-.kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
-.kpi-lbl { font-size: 11px; color: var(--t2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+/* ASYMMETRIC KPI GRID */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi { border-radius: var(--r-card); padding: 22px; position: relative; border: 1px solid rgba(0,0,0,0.05); }
+.kpurp { background: #f5eef8; }
+.kpeach { background: #fdf4f0; }
+.kgreen { background: #f0f8f5; }
+.kblue { background: #f0f4fb; }
+.kpi-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+.kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 4px; color: var(--text-main); }
+.kpi-lbl { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
+/* CONTROLS BAR */
 .filter-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; }
 .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill-btn {
-  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  background: var(--bg2); border: 1px solid var(--border); color: var(--t2); cursor: pointer; transition: all 0.2s;
+  padding: 7px 16px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700;
+  background: #ffffff; border: 1px solid rgba(0,0,0,0.08); color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
-.pill-btn:hover, .pill-btn.active { background: rgba(79, 142, 247, 0.2); color: var(--blue); border-color: var(--blue); }
+.pill-btn:hover, .pill-btn.active { background: var(--text-main); color: #ffffff; border-color: var(--text-main); }
 
-.search-input { padding: 9px 14px; border-radius: 10px; background: var(--bg2); border: 1px solid var(--border); color: var(--t1); font-size: 13px; min-width: 260px; }
-.search-input:focus { outline: none; border-color: var(--blue); }
+.search-input { padding: 10px 16px; border-radius: 12px; background: #ffffff; border: 1px solid rgba(0,0,0,0.1); color: var(--text-main); font-size: 13px; min-width: 280px; outline: none; }
+.search-input:focus { border-color: var(--text-main); }
 
-.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r); margin-top: 14px; background: var(--card); }
+/* EDITORIAL TABLE */
+.table-wrap { width: 100%; overflow-x: auto; border: 1px solid rgba(0,0,0,0.08); border-radius: var(--r-card); margin-top: 14px; background: #ffffff; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-th { background: var(--bg2); color: var(--t2); font-weight: 600; padding: 14px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-td { padding: 12px 18px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; cursor: pointer; }
-tr:hover td { background: rgba(79, 142, 247, 0.05); }
+th { background: #faf6fa; color: var(--text-muted); font-weight: 700; padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+td { padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.04); white-space: nowrap; cursor: pointer; }
+tr:hover td { background: #f5edf5; }
 
-.pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 12px 4px; flex-wrap: wrap; }
-.page-info { font-size: 13px; color: var(--t2); }
+.badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; }
+.b-green { background: #e8f5e9; color: #2e7d32; }
+.b-purple { background: #f3e5f5; color: #7b1fa2; }
+.b-amber { background: #fff3e0; color: #e65100; }
+
+.pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding: 12px 4px; flex-wrap: wrap; }
+.page-info { font-size: 13px; color: var(--text-muted); font-weight: 600; }
 .page-btns { display: flex; gap: 6px; }
-.page-btn { padding: 6px 12px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); color: var(--t1); font-size: 12px; cursor: pointer; font-weight: 600; }
+.page-btn { padding: 7px 14px; border-radius: 8px; background: #ffffff; border: 1px solid rgba(0,0,0,0.1); color: var(--text-main); font-size: 12px; cursor: pointer; font-weight: 700; }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.page-btn.active { background: var(--text-main); color: #ffffff; border-color: var(--text-main); }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div id="header-mount"></div>
-
 <div class="wrap">
-  <!-- EMPTY STATE VIEW -->
-  <div id="empty-state-view" style="display:none;">
-    <div class="empty-state-card">
-      <div class="empty-icon">🌐</div>
-      <div class="empty-title">No ICP-3 Dataset Uploaded Yet</div>
-      <div class="empty-desc">Upload your CSV, XLSX, XLS, or JSON dataset targeting Global Small & Medium B2B Businesses. All records will be qualified and mapped automatically.</div>
-      
-      <div style="display:inline-block;">
-        <input type="file" id="icp3-file-input" accept=".csv, .xls, .xlsx, .json" style="display:none" onchange="handleWorkspaceUpload(event)">
-        <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input').click()">📥 Upload ICP-3 Dataset</button>
-      </div>
-    </div>
-  </div>
+  <div class="shell">
+    <!-- HEADER MOUNT -->
+    <div id="header-mount"></div>
 
-  <!-- DASHBOARD WORKSPACE VIEW -->
-  <div id="dashboard-view" style="display:none;">
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-header" style="margin-bottom:0;">
-        <div>
-          <div class="card-title">🌐 ICP-3 Dashboard — Global Small & Medium B2B Businesses</div>
-          <div class="card-sub" id="workspace-meta">Global SME B2B organizations targeting worldwide markets.</div>
-        </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <input type="file" id="icp3-file-input-2" accept=".csv, .xls, .xlsx, .json" style="display:none" onchange="handleWorkspaceUpload(event)">
-          <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input-2').click()">➕ Import & Merge Dataset</button>
-          <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Export CSV</button>
-          <button class="btn btn-secondary" onclick="exportXLSX()">📊 Export XLSX</button>
-          <button class="btn btn-secondary" onclick="openShareEmailModal('ICP-3 Global SME')">📧 Share</button>
-          <button class="btn btn-secondary" style="color:var(--red);" onclick="resetWorkspaceData()">🗑️ Clear Workspace</button>
+    <!-- EMPTY STATE VIEW -->
+    <div id="empty-state-view" style="display:none;">
+      <div class="empty-state-card">
+        <div class="empty-icon">🌐</div>
+        <div class="empty-title">No ICP-3 Dataset Uploaded Yet</div>
+        <div class="empty-desc">Upload your CSV, XLSX, XLS, JSON, or PDF dataset targeting Global Small & Medium B2B Businesses. All records will be qualified and mapped automatically.</div>
+        
+        <div style="display:inline-block;">
+          <input type="file" id="icp3-file-input" accept=".csv, .xls, .xlsx, .json, .pdf" style="display:none" onchange="handleWorkspaceUpload(event)">
+          <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input').click()">📥 Upload ICP-3 Dataset File</button>
         </div>
       </div>
     </div>
 
-    <!-- EXECUTIVE KPI CARDS -->
-    <div class="kpi-grid" id="kpi-grid"></div>
-
-    <!-- CONTACT INTELLIGENCE TABLE -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🏢 ICP-3 Global Contact Intelligence</div>
-          <div class="card-sub">Document-driven schema. Click any row to view complete contact detail drawer.</div>
-        </div>
-        <input type="text" id="table-search" class="search-input" placeholder="🔍 Search Contact, Email, Company, Country..." oninput="onSearchInput()">
-      </div>
-
-      <!-- Quick Filter Pills -->
-      <div class="filter-bar">
-        <div class="filter-pills">
-          <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
-          <button class="pill-btn" onclick="applyQuickFilter('verified', this)">Verified Global</button>
-          <button class="pill-btn" onclick="applyQuickFilter('has_email', this)">Has Email</button>
-          <button class="pill-btn" onclick="applyQuickFilter('has_phone', this)">Has Phone</button>
-        </div>
-        <div style="font-size:12px; color:var(--t2);">
-          Rows per page:
-          <select id="page-size-select" onchange="changePageSize(this.value)" style="background:var(--bg2); color:var(--t1); border:1px solid var(--border); border-radius:6px; padding:4px 8px; margin-left:6px;">
-            <option value="25">25</option>
-            <option value="50" selected>50</option>
-            <option value="100">100</option>
-            <option value="10000">All</option>
-          </select>
+    <!-- DASHBOARD WORKSPACE VIEW -->
+    <div id="dashboard-view" style="display:none;">
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header" style="margin-bottom:0;">
+          <div>
+            <div class="card-title">🌐 ICP-3 BI Dashboard — Global Small & Medium B2B Businesses</div>
+            <div class="card-sub" id="workspace-meta">Global SME B2B organizations targeting worldwide markets.</div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="file" id="icp3-file-input-2" accept=".csv, .xls, .xlsx, .json, .pdf" style="display:none" onchange="handleWorkspaceUpload(event)">
+            <button class="btn btn-primary" onclick="document.getElementById('icp3-file-input-2').click()">➕ Import Dataset File</button>
+            <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Export Clean CSV</button>
+            <button class="btn btn-secondary" onclick="exportXLSX()">📊 Export XLSX</button>
+            <button class="btn btn-secondary" onclick="openShareEmailModal('ICP-3 Global SME')">📧 Share</button>
+            <button class="btn btn-secondary" style="color:#d32f2f;" onclick="resetWorkspaceData()">🗑️ Clear Workspace</button>
+          </div>
         </div>
       </div>
 
-      <!-- Document-Driven Table -->
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px">#</th>
-              <th>Contact Name</th>
-              <th>Email Address</th>
-              <th>Company Name</th>
-              <th>Designation / Owner</th>
-              <th>Phone Number</th>
-              <th>Website</th>
-              <th>Location</th>
-              <th>Email Status</th>
-              <th>Qualification</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody id="contact-tbody"></tbody>
-        </table>
-      </div>
+      <!-- EDITORIAL ASYMMETRIC KPI CARDS -->
+      <div class="kpi-grid" id="kpi-grid"></div>
 
-      <!-- Pagination Controls -->
-      <div class="pagination-bar">
-        <div class="page-info" id="page-info-text">Showing 0 records</div>
-        <div class="page-btns" id="page-btns-container"></div>
+      <!-- CONTACT INTELLIGENCE TABLE -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏢 ICP-3 Global Contact Intelligence</div>
+            <div class="card-sub">Document-driven schema. Click any row to view complete contact detail drawer.</div>
+          </div>
+          <input type="text" id="table-search" class="search-input" placeholder="🔍 Search Contact, Email, Company, Country..." oninput="onSearchInput()">
+        </div>
+
+        <!-- Quick Filter Pills -->
+        <div class="filter-bar">
+          <div class="filter-pills">
+            <button class="pill-btn active" onclick="applyQuickFilter('all', this)">All Records</button>
+            <button class="pill-btn" onclick="applyQuickFilter('verified', this)">Verified Global</button>
+            <button class="pill-btn" onclick="applyQuickFilter('has_email', this)">Has Email</button>
+            <button class="pill-btn" onclick="applyQuickFilter('has_phone', this)">Has Phone</button>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); font-weight:600">
+            Rows per page:
+            <select id="page-size-select" onchange="changePageSize(this.value)" style="background:#ffffff; color:var(--text-main); border:1px solid rgba(0,0,0,0.1); border-radius:6px; padding:4px 8px; margin-left:6px; outline:none">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+              <option value="10000">All</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Document-Driven Table -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Contact Name</th>
+                <th>Email Address</th>
+                <th>Company Name</th>
+                <th>Designation / Owner</th>
+                <th>Phone Number</th>
+                <th>Website</th>
+                <th>Location</th>
+                <th>Email Status</th>
+                <th>Qualification</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="contact-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar">
+          <div class="page-info" id="page-info-text">Showing 0 records</div>
+          <div class="page-btns" id="page-btns-container"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -296,27 +306,27 @@ function renderExecutiveDashboard() {
   document.getElementById('workspace-meta').innerText = `Total Qualified ICP-3 Records: ${totalRecords.toLocaleString()} | Global Countries Target: ${countriesCount.toLocaleString()} | Unique Companies: ${uniqueCompanies.toLocaleString()}`;
 
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi kblue">
+    <div class="kpi kpurp">
       <span class="kpi-icon">🌐</span>
       <div class="kpi-val">${totalRecords.toLocaleString()}</div>
       <div class="kpi-lbl">Total Global Leads</div>
     </div>
-    <div class="kpi kpurple">
+    <div class="kpi kblue">
       <span class="kpi-icon">🌍</span>
       <div class="kpi-val">${countriesCount.toLocaleString()}</div>
       <div class="kpi-lbl">Global Countries</div>
     </div>
-    <div class="kpi kgreen">
+    <div class="kpi kpeach">
       <span class="kpi-icon">🏢</span>
       <div class="kpi-val">${uniqueCompanies.toLocaleString()}</div>
       <div class="kpi-lbl">Unique Companies</div>
     </div>
-    <div class="kpi kamber">
+    <div class="kpi kgreen">
       <span class="kpi-icon">📧</span>
       <div class="kpi-val">${validEmails.toLocaleString()}</div>
       <div class="kpi-lbl">Valid Emails</div>
     </div>
-    <div class="kpi kblue">
+    <div class="kpi kpurp">
       <span class="kpi-icon">📞</span>
       <div class="kpi-val">${phonesFound.toLocaleString()}</div>
       <div class="kpi-lbl">Phone Numbers</div>
@@ -356,19 +366,19 @@ function renderTable() {
 
   tbody.innerHTML = pageRows.length ? pageRows.map((r, i) => `
     <tr onclick='openRecordDetailModal(${JSON.stringify(r).replace(/'/g, "&apos;")})'>
-      <td style="color:var(--t2); font-weight:600">${startIdx + i + 1}</td>
-      <td><strong style="color:var(--t1); font-size:13px">${r.contactName}</strong></td>
-      <td>${r.email !== '—' ? `<a href="mailto:${r.email}" onclick="event.stopPropagation()" style="color:var(--blue)">${r.email}</a>` : '—'}</td>
+      <td style="color:var(--text-muted); font-weight:600">${startIdx + i + 1}</td>
+      <td><strong style="color:var(--text-main); font-size:13px">${r.contactName}</strong></td>
+      <td>${r.email !== '—' ? `<a href="mailto:${r.email}" onclick="event.stopPropagation()" style="color:var(--accent-blue);font-weight:600">${r.email}</a>` : '—'}</td>
       <td><strong>${r.companyName}</strong></td>
-      <td style="color:var(--t2)">${r.designation}</td>
-      <td style="color:var(--t2)">${r.phone}</td>
-      <td>${r.website !== '—' ? `<a href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank" onclick="event.stopPropagation()" style="color:var(--cyan)">${r.website}</a>` : '—'}</td>
-      <td style="color:var(--t2)">${r.location}</td>
+      <td style="color:var(--text-muted)">${r.designation}</td>
+      <td style="color:var(--text-muted)">${r.phone}</td>
+      <td>${r.website !== '—' ? `<a href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-blue);font-weight:600">${r.website}</a>` : '—'}</td>
+      <td style="color:var(--text-muted)">${r.location}</td>
       <td><span class="badge b-green">${r.emailStatus}</span></td>
       <td><span class="badge b-purple">${r.qualificationStatus}</span></td>
-      <td style="color:var(--t2); font-size:12px">${r.createDate}</td>
+      <td style="color:var(--text-muted); font-size:12px">${r.createDate}</td>
     </tr>
-  `).join('') : `<tr><td colspan="11" style="text-align:center; padding:40px; color:var(--t2)">No ICP-3 records match the selected filter criteria.</td></tr>`;
+  `).join('') : `<tr><td colspan="11" style="text-align:center; padding:40px; color:var(--text-muted)">No ICP-3 records match the selected filter criteria.</td></tr>`;
 
   renderPagination(totalPages);
 }
@@ -387,7 +397,7 @@ function renderPagination(totalPages) {
 
   const uniquePages = Array.from(new Set(pagesToShow)).sort((a,b)=>a-b);
   uniquePages.forEach((p, idx) => {
-    if (idx > 0 && p - uniquePages[idx-1] > 1) html += `<span style="color:var(--t2); align-self:center">…</span>`;
+    if (idx > 0 && p - uniquePages[idx-1] > 1) html += `<span style="color:var(--text-muted); align-self:center">…</span>`;
     html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
   });
 

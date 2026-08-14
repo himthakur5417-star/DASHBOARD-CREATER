@@ -3,1519 +3,212 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | Smart Auto-Dashboard & Data Studio</title>
-<meta name="description" content="Automated data upload, cleaning, validation, profiling, and dynamic Power BI-style dashboard generator for CSV, XLS, and XLSX files.">
+<title>Infinito | Python Data Processing & BI Studio</title>
+<meta name="description" content="Infinito — Intelligent CSV, Excel, JSON & PDF data processing pipeline with editorial Power BI dashboards.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- SheetJS for Excel/CSV Parsing -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<!-- Chart.js for Dynamic Visualizations -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="app-shared.js"></script>
 <style>
 :root {
-  --bg: #0a0e1a;
-  --bg2: #0f1629;
-  --card: #131c35;
-  --card2: #1a2440;
-  --blue: #4f8ef7;
-  --purple: #8b5cf6;
-  --cyan: #06b6d4;
-  --green: #10b981;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --pink: #ec4899;
-  --t1: #f0f4ff;
-  --t2: #8899bb;
-  --t3: #4a5875;
-  --border: rgba(79, 142, 247, 0.15);
-  --borderb: rgba(79, 142, 247, 0.4);
-  --r: 14px;
+  --bg-canvas: #f2ebf2;
+  --shell-bg: #ffffff;
+  --card-bg: #faf6fa;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --text-main: #181519;
+  --text-muted: #7a707c;
+  --accent-purple: #8e549e;
+  --accent-blue: #4a7bb0;
+  --accent-green: #3d8b6e;
+  --accent-peach: #d97757;
+  --r-shell: 32px;
+  --r-card: 20px;
+  --r-pill: 20px;
+  --r-btn: 12px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--t1);
+  background: var(--bg-canvas);
+  color: var(--text-main);
   min-height: 100vh;
-  overflow-x: hidden;
+  padding: 24px 0 60px;
   line-height: 1.5;
 }
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,142,247,.06), transparent 60%),
-              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,.05), transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-.wrap { max-width: 1600px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+.wrap { max-width: 1560px; margin: 0 auto; padding: 0 24px; }
 
-/* HEADER */
-header {
-  background: rgba(13, 20, 45, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+/* EDITORIAL SHELL */
+.shell {
+  background: var(--shell-bg);
+  border-radius: var(--r-shell);
+  padding: 36px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
-.hdr { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+/* HEADER NAVIGATION */
+.app-header { margin-bottom: 28px; }
+.hdr-wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
-  width: 42px; height: 42px;
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-  box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+  width: 44px; height: 44px; background: #181519; color: #fff;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
-.logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
-.logo-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
+.logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 
-.nav-links { display: flex; gap: 8px; align-items: center; }
+.nav-links { display: flex; gap: 8px; align-items: center; background: #faf6fa; padding: 6px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); }
 .nav-link {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 8px;
-  text-decoration: none; font-size: 13px; font-weight: 500;
-  color: var(--t2); transition: all 0.2s;
+  padding: 8px 18px; border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); transition: all 0.2s;
 }
-.nav-link:hover { color: var(--t1); background: rgba(79, 142, 247, 0.1); }
-.nav-link.active {
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
-}
+.nav-link:hover { color: var(--text-main); background: rgba(0,0,0,0.04); }
+.nav-link.active { background: #181519; color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
-.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-.b-blue { background: rgba(79, 142, 247, 0.15); color: var(--blue); border: 1px solid rgba(79, 142, 247, 0.3); }
-.b-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-.b-amber { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-.b-red { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(1.3);} }
+.system-status {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 700; background: #f0f8f5; color: var(--accent-green); border: 1px solid rgba(61,139,110,0.2);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
 
-/* STEPPER */
-.stepper-wrap { margin: 24px 0 10px; }
-.stepper {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 12px 24px; position: relative; overflow-x: auto;
+/* HERO EDITORIAL BANNER */
+.hero-banner {
+  background: radial-gradient(ellipse at top right, #f8eff8, #faf6fa);
+  border: 1px solid var(--card-border); border-radius: var(--r-card); padding: 40px;
+  margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; gap: 30px; flex-wrap: wrap;
 }
-.step-item { display: flex; align-items: center; gap: 10px; cursor: pointer; opacity: 0.5; transition: all 0.3s; white-space: nowrap; }
-.step-item.active { opacity: 1; }
-.step-item.completed { opacity: 0.9; }
-.step-num {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--card2); border: 1px solid var(--t3);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700;
-  color: var(--t2); transition: all 0.3s;
-}
-.step-item.active .step-num {
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  color: #fff; border-color: transparent;
-  box-shadow: 0 0 15px rgba(79, 142, 247, 0.5);
-}
-.step-item.completed .step-num {
-  background: var(--green); color: #fff; border-color: transparent;
-}
-.step-title { font-size: 13px; font-weight: 600; color: var(--t1); }
-.step-sub { font-size: 11px; color: var(--t2); }
-.step-line { flex: 1; height: 2px; background: var(--t3); margin: 0 16px; min-width: 20px; opacity: 0.3; }
+.hero-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
+.hero-desc { font-size: 15px; color: var(--text-muted); max-width: 640px; margin-top: 10px; }
 
-/* MAIN CONTENT PANELS */
-.panel { display: none; padding: 20px 0 60px; animation: fi 0.3s ease; }
-.panel.active { display: block; }
-@keyframes fi { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-/* CARDS & CONTAINERS */
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 24px; margin-bottom: 24px;
-  position: relative; transition: all 0.3s;
+/* EDITORIAL UPLOAD CARD */
+.upload-drop-zone {
+  border: 2px dashed rgba(0,0,0,0.15); border-radius: var(--r-card); background: #ffffff;
+  padding: 50px 30px; text-align: center; cursor: pointer; transition: all 0.25s; margin-bottom: 28px;
 }
-.card:hover { border-color: var(--borderb); }
-.card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
-.card-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 10px; }
-.card-sub { font-size: 13px; color: var(--t2); margin-top: 2px; }
+.upload-drop-zone:hover { border-color: var(--accent-purple); background: #faf6fa; }
+.upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--text-muted); }
 
-/* UPLOAD DROP ZONE */
-.dropzone {
-  border: 2px dashed rgba(79, 142, 247, 0.3); border-radius: var(--r);
-  background: rgba(15, 22, 41, 0.6); padding: 48px 24px;
-  text-align: center; cursor: pointer; transition: all 0.3s;
-  position: relative; overflow: hidden;
-}
-.dropzone:hover, .dropzone.dragover {
-  border-color: var(--blue); background: rgba(79, 142, 247, 0.08);
-  box-shadow: 0 0 30px rgba(79, 142, 247, 0.2);
-}
-.dropzone-icon {
-  width: 70px; height: 70px; margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(6,182,212,0.2));
-  border: 1px solid var(--border); border-radius: 20px;
-  display: flex; align-items: center; justify-content: center; font-size: 32px;
-}
-.dropzone-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.dropzone-desc { font-size: 13px; color: var(--t2); max-width: 450px; margin: 0 auto 20px; }
+/* PIPELINE STEPS CARDS */
+.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.step-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--r-card); padding: 22px; }
+.step-num { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 800; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 0.5px; }
+.step-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin: 6px 0 4px; }
+.step-desc { font-size: 12px; color: var(--text-muted); }
 
-.progress-bar-wrap { width: 100%; max-width: 400px; height: 8px; background: var(--card2); border-radius: 4px; overflow: hidden; margin: 16px auto 0; display: none; }
-.progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--cyan)); transition: width 0.3s ease; }
-
+/* BUTTONS */
 .btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 600;
-  cursor: pointer; border: none; transition: all 0.25s; font-family: 'Inter', sans-serif;
-  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: var(--r-btn);
+  font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s;
+  font-family: 'Inter', sans-serif; text-decoration: none;
 }
-.btn-primary {
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  color: #fff; box-shadow: 0 4px 15px rgba(79, 142, 247, 0.35);
-}
-.btn-primary:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 142, 247, 0.5); }
-.btn-secondary {
-  background: rgba(79, 142, 247, 0.12); color: var(--t1);
-  border: 1px solid var(--border);
-}
-.btn-secondary:hover { background: rgba(79, 142, 247, 0.22); border-color: var(--blue); }
-.btn-success {
-  background: linear-gradient(135deg, var(--green), #059669);
-  color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-.btn-success:hover { opacity: 0.92; transform: translateY(-2px); }
-
-/* FILE METADATA BOX */
-.file-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 20px; }
-.meta-item { background: var(--bg2); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; }
-.meta-lbl { font-size: 11px; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.meta-val { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--t1); }
-
-/* DATA TABLES */
-.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 16px; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-th {
-  background: var(--bg2); color: var(--t2); font-weight: 600;
-  padding: 12px 16px; border-bottom: 1px solid var(--border);
-  white-space: nowrap; user-select: none;
-}
-th.sortable { cursor: pointer; }
-th.sortable:hover { color: var(--blue); }
-td { padding: 12px 16px; border-bottom: 1px solid rgba(79, 142, 247, 0.08); white-space: nowrap; }
-tr:hover td { background: rgba(79, 142, 247, 0.04); }
-
-/* TYPE PILLS */
-.type-pill {
-  display: inline-block; padding: 2px 8px; border-radius: 12px;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.tp-num { background: rgba(79,142,247,0.2); color: var(--blue); }
-.tp-cat { background: rgba(139,92,246,0.2); color: var(--purple); }
-.tp-date { background: rgba(6,182,212,0.2); color: var(--cyan); }
-.tp-bool { background: rgba(16,185,129,0.2); color: var(--green); }
-.tp-text { background: rgba(245,158,11,0.2); color: var(--amber); }
-
-/* DIAGNOSTICS & CLEANING RULES */
-.health-meter-wrap { display: flex; align-items: center; gap: 24px; padding: 20px; background: var(--bg2); border-radius: 12px; margin-bottom: 20px; }
-.health-score-circle {
-  width: 90px; height: 90px; border-radius: 50%;
-  background: conic-gradient(var(--green) 0%, var(--card2) 0%);
-  display: flex; align-items: center; justify-content: center;
-  position: relative; flex-shrink: 0;
-}
-.health-score-inner {
-  width: 74px; height: 74px; border-radius: 50%; background: var(--card);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-.health-val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 800; }
-.health-lbl { font-size: 9px; color: var(--t2); text-transform: uppercase; }
-
-.findings-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-.finding-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 10px; font-size: 13px; }
-.f-critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
-.f-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fde047; }
-.f-info { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); color: #93c5fd; }
-.f-icon { font-size: 16px; margin-top: 1px; }
-.f-title { font-weight: 700; margin-bottom: 2px; }
-.f-desc { font-size: 12px; opacity: 0.9; }
-
-.cleaning-options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.opt-card { background: var(--bg2); border: 1px solid var(--border); padding: 16px; border-radius: 10px; }
-.opt-label { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.opt-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); cursor: pointer; }
-.opt-sub { font-size: 12px; color: var(--t2); margin-top: 6px; padding-left: 28px; }
-.opt-select {
-  margin-top: 8px; margin-left: 28px; padding: 6px 12px; border-radius: 6px;
-  background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 12px;
-}
-
-/* KPI GRID & DASHBOARD */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.kpi {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
-  padding: 20px; position: relative; overflow: hidden; transition: all 0.3s;
-}
-.kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
-.kblue::before { background: linear-gradient(135deg, var(--blue), var(--cyan)); }
-.kpurple::before { background: linear-gradient(135deg, var(--purple), var(--pink)); }
-.kgreen::before { background: linear-gradient(135deg, var(--green), var(--cyan)); }
-.kamber::before { background: linear-gradient(135deg, var(--amber), var(--red)); }
-.kpi:hover { border-color: var(--borderb); transform: translateY(-3px); box-shadow: 0 0 25px rgba(79,142,247,0.2); }
-.kpi-icon { font-size: 24px; margin-bottom: 8px; display: block; }
-.kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; }
-.kpi-lbl { font-size: 11px; color: var(--t2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 24px; }
-@media(max-width:768px) { .charts-grid { grid-template-columns: 1fr; } }
-.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; height: 360px; display: flex; flex-direction: column; }
-.chart-container { flex: 1; position: relative; width: 100%; height: 100%; min-height: 240px; }
-
-/* FILTERS BAR */
-.filter-bar {
-  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-  background: var(--bg2); border: 1px solid var(--border); padding: 14px 18px;
-  border-radius: var(--r); margin-bottom: 20px;
-}
-.search-input {
-  flex: 1; min-width: 220px; padding: 8px 14px; border-radius: 8px;
-  background: var(--card); border: 1px solid var(--border); color: var(--t1); font-size: 13px;
-}
-.search-input:focus { outline: none; border-color: var(--blue); }
-.filter-select {
-  padding: 8px 14px; border-radius: 8px; background: var(--card);
-  border: 1px solid var(--border); color: var(--t1); font-size: 13px; min-width: 150px;
-}
-
-/* PROFILING ACCORDION */
-.profiling-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
-.profile-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-.profile-col-name { font-weight: 700; font-size: 14px; color: var(--blue); display: flex; justify-content: space-between; align-items: center; }
-.profile-stat { font-size: 12px; color: var(--t2); margin-top: 4px; display: flex; justify-content: space-between; }
-
-/* AUDIT LOG & INSIGHTS */
-.insights-box {
-  background: linear-gradient(135deg, rgba(79,142,247,0.08), rgba(139,92,246,0.08));
-  border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 24px;
-}
-.insight-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 10px; }
-.insight-item:last-child { margin-bottom: 0; }
-.insight-bullet { color: var(--blue); font-size: 16px; }
-
-/* ERROR ALERT BOX */
-.alert-box {
-  background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fca5a5; padding: 14px 18px; border-radius: 10px; font-size: 13px;
-  margin-top: 16px; display: none; align-items: center; gap: 10px;
-}
-
-/* PAGINATION */
-.pag-wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
-.pag-info { font-size: 12px; color: var(--t2); }
-.pag-btns { display: flex; gap: 6px; }
-.pag-btn {
-  padding: 6px 12px; border-radius: 6px; background: var(--bg2);
-  border: 1px solid var(--border); color: var(--t1); font-size: 12px; cursor: pointer;
-}
-.pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.pag-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+.btn-primary { background: var(--text-main); color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-secondary { background: #ffffff; color: var(--text-main); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-  <div class="wrap hdr">
-    <div class="logo">
-      <div class="logo-icon">♾️</div>
-      <div>
-        <div class="logo-title">Infinito | Smart Auto-Dashboard & Data Studio</div>
-        <div class="logo-sub">Clean your data. Verify every detail. Turn insights into Power BI-style dashboards.</div>
-      </div>
-    </div>
-    
-    <div class="nav-links">
-      <a href="index.html" class="nav-link active">⚡ Auto Studio</a>
-      <a href="overall_emails.html" class="nav-link">📧 Overall Emails Sent</a>
-      <a href="icp1.html" class="nav-link">🎯 ICP 1</a>
-      <a href="icp2.html" class="nav-link">🚀 ICP 2</a>
-      <a href="icp3.html" class="nav-link">🌐 ICP 3</a>
-    </div>
-
-    <div class="badge b-green">
-      <div class="dot"></div> System Online
-    </div>
-  </div>
-</header>
-
 <div class="wrap">
-  <!-- STEPPER -->
-  <div class="stepper-wrap">
-    <div class="stepper">
-      <div class="step-item active" id="step-btn-1" onclick="switchStep(1)">
-        <div class="step-num">1</div>
-        <div>
-          <div class="step-title">Upload Data</div>
-          <div class="step-sub">CSV, XLS, XLSX</div>
-        </div>
+  <div class="shell">
+    <!-- HEADER MOUNT -->
+    <div id="header-mount"></div>
+
+    <!-- HERO EDITORIAL BANNER -->
+    <div class="hero-banner">
+      <div>
+        <div class="hero-title">⚡ Infinito Auto Studio</div>
+        <div class="hero-desc">Python-powered data ingestion and Power BI-style editorial dashboard studio. Upload raw CSV, Excel, JSON, or PDF datasets — single source of truth analytics generated dynamically.</div>
       </div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-btn-2" onclick="switchStep(2)">
-        <div class="step-num">2</div>
-        <div>
-          <div class="step-title">Preview & Select</div>
-          <div class="step-sub">Sheets & Schema</div>
-        </div>
-      </div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-btn-3" onclick="switchStep(3)">
-        <div class="step-num">3</div>
-        <div>
-          <div class="step-title">Clean & Validate</div>
-          <div class="step-sub">Health Diagnostics</div>
-        </div>
-      </div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-btn-4" onclick="switchStep(4)">
-        <div class="step-num">4</div>
-        <div>
-          <div class="step-title">Auto Dashboard</div>
-          <div class="step-sub">Interactive Analytics</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 1: UPLOAD PANEL -->
-  <div class="panel active" id="panel-1">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">📁 Upload Spreadsheet Dataset</div>
-          <div class="card-sub">Select or drag & drop your Excel or CSV spreadsheet file to automatically parse, clean, and visualize.</div>
-        </div>
-        <button class="btn btn-secondary" onclick="loadSampleData()">⚡ Try Sample Dataset</button>
-      </div>
-
-      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
-        <input type="file" id="file-input" accept=".csv, .xls, .xlsx" style="display:none" onchange="handleFileSelect(event)">
-        <div class="dropzone-icon">📥</div>
-        <div class="dropzone-title">Drag & Drop Your Spreadsheet Here</div>
-        <div class="dropzone-desc">Supports <strong>.CSV</strong>, <strong>.XLS</strong>, and <strong>.XLSX</strong> formats up to 25MB. All processing happens 100% privately in your browser.</div>
-        <button class="btn btn-primary">Browse Computer</button>
-        <div class="progress-bar-wrap" id="progress-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
-      </div>
-
-      <div class="alert-box" id="upload-alert">
-        <span>⚠️</span> <span id="upload-alert-text">Error loading file.</span>
-      </div>
-
-      <!-- File Metadata Container -->
-      <div id="file-meta-container" style="display:none;">
-        <div class="divider" style="height:1px; background:var(--border); margin:20px 0;"></div>
-        <div class="file-meta-grid">
-          <div class="meta-item">
-            <div class="meta-lbl">File Name</div>
-            <div class="meta-val" id="meta-name" style="font-size:14px; word-break:break-all;">-</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-lbl">File Size</div>
-            <div class="meta-val" id="meta-size">-</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-lbl">Format</div>
-            <div class="meta-val" id="meta-type">-</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-lbl">Row Count</div>
-            <div class="meta-val" id="meta-rows">-</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-lbl">Column Count</div>
-            <div class="meta-val" id="meta-cols">-</div>
-          </div>
-          <div class="meta-item">
-            <div class="meta-lbl">Status</div>
-            <div class="meta-val" id="meta-status" style="color:var(--green);">Ready</div>
-          </div>
-        </div>
-
-        <div style="margin-top:20px; text-align:right;">
-          <button class="btn btn-primary" onclick="switchStep(2)">Proceed to Data Preview →</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 2: PREVIEW PANEL -->
-  <div class="panel" id="panel-2">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🔍 Data Preview & Sheet Selection</div>
-          <div class="card-sub">Review auto-detected columns, data types, and initial row samples before applying data cleaning rules.</div>
-        </div>
-        <div id="sheet-selector-wrap" style="display:none; align-items:center; gap:8px;">
-          <span style="font-size:13px; color:var(--t2); font-weight:600;">Excel Sheet:</span>
-          <select id="sheet-select" class="filter-select" onchange="onSheetChange(this.value)"></select>
-        </div>
-      </div>
-
-      <div class="kpi-grid" style="margin-bottom:16px;">
-        <div class="kpi kblue">
-          <span class="kpi-icon">📊</span>
-          <div class="kpi-val" id="prev-total-rows">0</div>
-          <div class="kpi-lbl">Total Records / Rows</div>
-        </div>
-        <div class="kpi kpurple">
-          <span class="kpi-icon">📐</span>
-          <div class="kpi-val" id="prev-total-cols">0</div>
-          <div class="kpi-lbl">Total Columns</div>
-        </div>
-        <div class="kpi kcyan">
-          <span class="kpi-icon">🧩</span>
-          <div class="kpi-val" id="prev-detected-types">0</div>
-          <div class="kpi-lbl">Data Types Identified</div>
-        </div>
-      </div>
-
-      <div class="card-title" style="font-size:15px; margin-bottom:8px;">Detected Schema & Types:</div>
-      <div id="schema-badges" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
-
-      <div class="card-title" style="font-size:15px; margin-bottom:8px;">First 10 Data Sample Rows:</div>
-      <div class="table-wrap">
-        <table id="preview-table">
-          <thead><tr id="preview-thead"></tr></thead>
-          <tbody id="preview-tbody"></tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn btn-secondary" onclick="switchStep(1)">← Back to Upload</button>
-        <button class="btn btn-primary" onclick="runDiagnosticsAndProceed()">Proceed to Data Cleaning & Diagnostics →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 3: CLEANING & DIAGNOSTICS PANEL -->
-  <div class="panel" id="panel-3">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🧼 Data Health & Automated Cleaning Studio</div>
-          <div class="card-sub">System-detected quality findings, profiling summaries, and configurable cleaning rules.</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
-          <button class="btn btn-secondary" onclick="exportCleanedDataset('xlsx')">📥 Download XLSX</button>
-        </div>
-      </div>
-
-      <!-- Health Meter -->
-      <div class="health-meter-wrap">
-        <div class="health-score-circle" id="health-circle">
-          <div class="health-score-inner">
-            <div class="health-val" id="health-val">0%</div>
-            <div class="health-lbl">Health</div>
-          </div>
-        </div>
-        <div>
-          <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700;" id="health-status-title">Analyzing Dataset Quality...</div>
-          <div style="font-size:13px; color:var(--t2); margin-top:4px;" id="health-status-desc">Calculating missing values, duplicate records, and type consistency.</div>
-        </div>
-      </div>
-
-      <!-- Findings List -->
-      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Quality Diagnostics & Findings:</div>
-      <div class="findings-list" id="findings-list"></div>
-
-      <!-- Column Profiling Summary -->
-      <div class="card-title" style="font-size:15px; margin-bottom:10px;">Column-Level Data Profiling:</div>
-      <div class="profiling-grid" id="profiling-grid"></div>
-
-      <!-- Cleaning Controls -->
-      <div class="card-title" style="font-size:15px; margin-top:20px; margin-bottom:10px;">Configurable Cleaning Actions:</div>
-      <div class="cleaning-options-grid">
-        <div class="opt-card">
-          <label class="opt-label">
-            <input type="checkbox" id="opt-dedupe" checked onchange="updateCleaningRules()">
-            Remove Duplicate Rows
-          </label>
-          <div class="opt-sub" id="opt-dedupe-sub">Identified 0 duplicate rows.</div>
-        </div>
-
-        <div class="opt-card">
-          <label class="opt-label">
-            <input type="checkbox" id="opt-normalize" checked onchange="updateCleaningRules()">
-            Normalize Column Names
-          </label>
-          <div class="opt-sub">Trims whitespace and cleans illegal characters.</div>
-        </div>
-
-        <div class="opt-card">
-          <label class="opt-label">
-            <input type="checkbox" id="opt-missing" checked onchange="updateCleaningRules()">
-            Handle Missing Values
-          </label>
-          <div class="opt-sub">Select strategy for missing cell values:</div>
-          <select id="opt-missing-strategy" class="opt-select" onchange="updateCleaningRules()">
-            <option value="default">Fill text with 'N/A', keep numeric blank</option>
-            <option value="zero">Fill numeric with 0</option>
-            <option value="keep">Keep all missing cells blank</option>
-          </select>
-        </div>
-
-        <div class="opt-card">
-          <label class="opt-label">
-            <input type="checkbox" id="opt-trim" checked onchange="updateCleaningRules()">
-            Trim String Whitespace
-          </label>
-          <div class="opt-sub">Removes leading & trailing spaces from text cells.</div>
-        </div>
-      </div>
-
-      <!-- Audit Summary -->
-      <div class="insights-box" style="margin-bottom:20px;">
-        <div style="font-weight:700; margin-bottom:8px; font-family:'Space Grotesk',sans-serif; color:var(--t1);">📝 Transparent "What Changed" Audit Log:</div>
-        <div id="audit-log-content">No modifications applied yet.</div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn btn-secondary" onclick="switchStep(2)">← Back to Preview</button>
-        <button class="btn btn-success" onclick="generateAutoDashboard()">⚡ Generate Dynamic Dashboard →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 4: DYNAMIC DASHBOARD PANEL -->
-  <div class="panel" id="panel-4">
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-header" style="margin-bottom:0;">
-        <div>
-          <div class="card-title">📊 Auto-Generated Interactive Dashboard</div>
-          <div class="card-sub" id="dash-dataset-meta">Generated from processed dataset</div>
-        </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-secondary" id="toggle-data-mode-btn" onclick="toggleDataMode()">Viewing: Cleaned Data</button>
-          <button class="btn btn-secondary" onclick="rebuildDashboard()">🔄 Refresh / Rebuild</button>
-          <button class="btn btn-secondary" onclick="exportCleanedDataset('csv')">📥 Download Cleaned CSV</button>
-          <button class="btn btn-secondary" onclick="exportWorkspaceHTML('Auto Studio', appState.cleanedRows)">📄 Export HTML</button>
-          <button class="btn btn-secondary" onclick="openShareEmailModal('Auto Studio')">📧 Share via Email</button>
-          <button class="btn btn-primary" onclick="switchStep(1)">➕ Upload New File</button>
-        </div>
+      <div>
+        <input type="file" id="hero-file-input" accept=".csv, .xls, .xlsx, .json, .pdf" style="display:none" onchange="handleStudioUpload(event)">
+        <button class="btn btn-primary" onclick="document.getElementById('hero-file-input').click()">📥 Ingest Raw Dataset</button>
       </div>
     </div>
 
-    <!-- Dynamic KPI Cards -->
-    <div class="kpi-grid" id="dash-kpi-grid"></div>
-
-    <!-- Automated Insights Box -->
-    <div class="insights-box">
-      <div style="font-weight:700; margin-bottom:10px; font-family:'Space Grotesk',sans-serif; font-size:16px; color:var(--t1);">💡 Key Automated Dataset Insights:</div>
-      <div id="dash-insights-list"></div>
+    <!-- DRAG AND DROP ZONE -->
+    <div class="upload-drop-zone" onclick="document.getElementById('hero-file-input').click()">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Drop your raw dataset file here</div>
+      <div class="upload-sub">Supports .CSV, .XLSX, .XLS, .JSON, and .PDF files (Up to 25MB). Auto-detects columns and cleans via Python engine.</div>
     </div>
 
-    <!-- Four Circular Donut Email KPI Charts -->
-    <div class="card-title" style="font-size:16px; margin:20px 0 10px;">⭕ Email Performance Circular Indicators</div>
-    <div class="charts-grid" id="dash-email-donuts-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"></div>
-
-    <!-- Smart Auto Charts Grid -->
-    <div class="charts-grid" id="dash-charts-grid"></div>
-
-    <!-- Filter & Explorer Table Card -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🔍 Data Explorer & Interactive Filter Table</div>
-        <button class="btn btn-secondary" onclick="resetFilters()">Reset All Filters</button>
-      </div>
-
-      <!-- Dynamic Filter Bar -->
-      <div class="filter-bar">
-        <input type="text" id="global-search" class="search-input" placeholder="🔍 Search across all records..." oninput="onFilterChange()">
-        <div id="dynamic-category-filters" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-      </div>
-
-      <!-- Main Data Table -->
-      <div class="table-wrap">
-        <table id="dash-table">
-          <thead><tr id="dash-thead"></tr></thead>
-          <tbody id="dash-tbody"></tbody>
-        </table>
-      </div>
-
-      <!-- Pagination Bar -->
-      <div class="pag-wrap">
-        <div class="pag-info" id="pag-info">Showing 0 to 0 of 0 entries</div>
-        <div class="pag-btns">
-          <button class="pag-btn" id="pag-prev" onclick="changePage(-1)">← Previous</button>
-          <span id="pag-current" style="font-size:12px; color:var(--t1); display:flex; align-items:center; padding:0 8px;">Page 1</span>
-          <button class="pag-btn" id="pag-next" onclick="changePage(1)">Next →</button>
+    <!-- PIPELINE ARCHITECTURE -->
+    <div class="card" style="padding:30px;">
+      <div class="card-header" style="margin-bottom:22px;">
+        <div>
+          <div class="card-title" style="font-size:20px">⚙️ Python Data Processing Engine Workflow</div>
+          <div class="card-sub">Raw file -> Read -> Clean -> Validate -> Column Map -> Deduplicate -> Clean Dataset</div>
         </div>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">File Reading</div>
+          <div class="step-desc">Pandas & NumPy read CSV, Excel, JSON, and PDF text tabular structures.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Text Sanitization</div>
+          <div class="step-desc">Trims whitespace, strips invisible chars, normalizes NULL and N/A values.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Column Matching</div>
+          <div class="step-desc">Auto-detects 50+ header variations without inventing fake columns.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Deduplication</div>
+          <div class="step-desc">Hash matches rows by Email, LinkedIn, Domain, and Company+Name.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">Step 5</div>
+          <div class="step-title">Power BI Dashboard</div>
+          <div class="step-desc">Single source of truth dataset powers editorial analytics & tables.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; flex-wrap:wrap">
+        <a href="overall_emails.html" class="btn btn-secondary">📧 Overall Emails Dashboard</a>
+        <a href="icp1.html" class="btn btn-secondary">🎯 ICP-1 Dashboard</a>
+        <a href="icp2.html" class="btn btn-secondary">🚀 ICP-2 Dashboard</a>
+        <a href="icp3.html" class="btn btn-secondary">🌐 ICP-3 Dashboard</a>
       </div>
     </div>
   </div>
 </div>
 
-<script>
-/* ==========================================================================
-   GLOBAL APP STATE ENGINE
-   ========================================================================== */
-const appState = {
-  currentStep: 1,
-  rawFile: null,
-  fileName: '',
-  fileSize: 0,
-  fileType: '',
-  workbook: null,
-  sheetNames: [],
-  selectedSheet: '',
-  rawRows: [],          // Raw parsed JSON objects
-  rawHeaders: [],       // Original column headers
-  normalizedHeaders: [],// Cleaned column headers
-  columnTypes: {},      // Field name -> detected type
-  columnProfiles: {},   // Detailed profiling data per column
-  cleanedRows: [],      // Processed JSON objects
-  filteredRows: [],     // Rows matching active filters
-  dataMode: 'cleaned',  // 'cleaned' or 'original'
-  qualityScore: 100,
-  completenessScore: 100,
-  findings: [],
-  auditLogs: [],
-  activeFilters: {},
-  currentPage: 1,
-  pageSize: 15,
-  sortCol: null,
-  sortAsc: true,
-  chartInstances: []
-};
-
-/* ==========================================================================
-   STEPPER NAVIGATION
-   ========================================================================== */
-function switchStep(stepNum) {
-  if (stepNum > 1 && !appState.rawRows.length) {
-    showAlert("Please upload a file or click 'Try Sample Dataset' first.", "warning");
-    return;
-  }
-  appState.currentStep = stepNum;
-  document.querySelectorAll('.panel').forEach((p, idx) => {
-    p.classList.toggle('active', idx + 1 === stepNum);
-  });
-  document.querySelectorAll('.step-item').forEach((btn, idx) => {
-    btn.classList.toggle('active', idx + 1 === stepNum);
-    btn.classList.toggle('completed', idx + 1 < stepNum);
-  });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function showAlert(msg, type = "error") {
-  const box = document.getElementById('upload-alert');
-  const txt = document.getElementById('upload-alert-text');
-  txt.innerText = msg;
-  box.style.display = 'flex';
-  if(type === 'warning') {
-    box.style.background = 'rgba(245, 158, 11, 0.15)';
-    box.style.borderColor = 'rgba(245, 158, 11, 0.4)';
-    box.style.color = '#fde047';
-  } else {
-    box.style.background = 'rgba(239, 68, 68, 0.12)';
-    box.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-    box.style.color = '#fca5a5';
-  }
-  setTimeout(() => { box.style.display = 'none'; }, 6000);
-}
-
-/* ==========================================================================
-   FILE UPLOAD & PARSING ENGINE (SheetJS)
-   ========================================================================== */
-const dropzone = document.getElementById('dropzone');
-['dragenter', 'dragover'].forEach(name => {
-  dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-});
-['dragleave', 'drop'].forEach(name => {
-  dropzone.addEventListener(name, e => { e.preventDefault(); dropzone.classList.remove('dragover'); });
-});
-dropzone.addEventListener('drop', e => {
-  const dt = e.dataTransfer;
-  if (dt.files && dt.files.length) processSelectedFile(dt.files[0]);
-});
-
-function handleFileSelect(e) {
-  if (e.target.files && e.target.files.length) processSelectedFile(e.target.files[0]);
-}
-
-async function processSelectedFile(file) {
-  if (file.size > 25 * 1024 * 1024) {
-    showAlert("File exceeds maximum allowed size limit of 25MB.");
-    return;
-  }
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['csv', 'xls', 'xlsx', 'json', 'tsv'].includes(ext)) {
-    showAlert("Invalid file format. Please upload a .CSV, .XLS, .XLSX, or .JSON file.");
-    return;
-  }
-
-  // Show progress animation
-  const pWrap = document.getElementById('progress-wrap');
-  const pFill = document.getElementById('progress-fill');
-  pWrap.style.display = 'block';
-  pFill.style.width = '30%';
-
-  appState.rawFile = file;
-  appState.fileName = file.name;
-  appState.fileSize = (file.size / 1024).toFixed(1) + ' KB';
-  appState.fileType = ext.toUpperCase();
-
-  try {
-    pFill.style.width = '70%';
-    const { rows, sheetName } = await parseUploadedFile(file);
-    pFill.style.width = '90%';
-
-    appState.sheetNames = [sheetName];
-    appState.selectedSheet = sheetName;
-    appState.rawRows = rows;
-    appState.rawHeaders = Object.keys(rows[0] || {});
-    appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
-
-    detectColumnTypes();
-    profileColumns();
-
-    document.getElementById('meta-name').innerText = appState.fileName;
-    document.getElementById('meta-size').innerText = appState.fileSize;
-    document.getElementById('meta-type').innerText = appState.fileType;
-    document.getElementById('meta-rows').innerText = appState.rawRows.length.toLocaleString();
-    document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
-    document.getElementById('file-meta-container').style.display = 'block';
-
-    pFill.style.width = '100%';
-    setTimeout(() => { pWrap.style.display = 'none'; pFill.style.width = '0%'; }, 400);
-
-    switchStep(2);
-  } catch(err) {
-    console.error(err);
-    pWrap.style.display = 'none';
-    pFill.style.width = '0%';
-    showAlert(err.message || "Error reading file. Please verify file integrity.");
-  }
-}
-
-function loadSheetData(sheetName) {
-  appState.selectedSheet = sheetName;
-  const sheet = appState.workbook.Sheets[sheetName];
-  const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-  
-  if (!json.length) {
-    showAlert("Selected sheet is empty.");
-    return;
-  }
-
-  appState.rawRows = json;
-  appState.rawHeaders = Object.keys(json[0] || {});
-  appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
-  
-  detectColumnTypes();
-  profileColumns();
-  renderPreviewStep();
-}
-
-function loadSampleData() {
-  fetch('cleaned_data.json')
-    .then(res => res.json())
-    .then(data => {
-      appState.fileName = "HubSpot_CRM_Sample_Contacts.json";
-      appState.fileSize = "806 KB";
-      appState.fileType = "JSON/CSV";
-      appState.rawRows = data;
-      appState.rawHeaders = Object.keys(data[0] || {});
-      appState.normalizedHeaders = appState.rawHeaders.map(h => h.trim());
-      
-      detectColumnTypes();
-      profileColumns();
-      
-      document.getElementById('meta-name').innerText = appState.fileName;
-      document.getElementById('meta-size').innerText = appState.fileSize;
-      document.getElementById('meta-type').innerText = appState.fileType;
-      document.getElementById('meta-rows').innerText = data.length.toLocaleString();
-      document.getElementById('meta-cols').innerText = appState.rawHeaders.length;
-      document.getElementById('file-meta-container').style.display = 'block';
-
-      switchStep(2);
-    })
-    .catch(err => {
-      showAlert("Could not load sample dataset.");
-    });
-}
-
-/* ==========================================================================
-   TYPE INFERENCE & COLUMN PROFILING
-   ========================================================================== */
-function detectColumnTypes() {
-  const types = {};
-  appState.rawHeaders.forEach(col => {
-    let numCount = 0, dateCount = 0, boolCount = 0, totalVal = 0;
-    const uniqueVals = new Set();
-    
-    appState.rawRows.forEach(row => {
-      const v = row[col];
-      if (v !== "" && v !== null && v !== undefined) {
-        totalVal++;
-        uniqueVals.add(String(v));
-        
-        if (typeof v === 'number' || (!isNaN(v) && !isNaN(parseFloat(v)))) numCount++;
-        if (v instanceof Date || (!isNaN(Date.parse(v)) && String(v).length >= 8 && /\d/.test(v))) dateCount++;
-        if (['true','false','yes','no','1','0'].includes(String(v).toLowerCase())) boolCount++;
-      }
-    });
-
-    const numRatio = totalVal ? numCount / totalVal : 0;
-    const dateRatio = totalVal ? dateCount / totalVal : 0;
-
-    if (dateRatio > 0.6 && !col.toLowerCase().includes('score') && !col.toLowerCase().includes('id')) {
-      types[col] = 'Date';
-    } else if (numRatio > 0.8) {
-      types[col] = 'Numeric';
-    } else if (uniqueVals.size < Math.min(25, totalVal * 0.4)) {
-      types[col] = 'Category';
-    } else {
-      types[col] = 'Text';
-    }
-  });
-
-  appState.columnTypes = types;
-}
-
-function profileColumns() {
-  const profiles = {};
-  const rows = appState.rawRows;
-  
-  appState.rawHeaders.forEach(col => {
-    let nullCount = 0;
-    const vals = [];
-    const counts = {};
-
-    rows.forEach(r => {
-      const v = r[col];
-      if (v === "" || v === null || v === undefined) nullCount++;
-      else {
-        vals.push(v);
-        counts[v] = (counts[v] || 0) + 1;
-      }
-    });
-
-    const type = appState.columnTypes[col];
-    let min = null, max = null, avg = null;
-
-    if (type === 'Numeric' && vals.length) {
-      const nums = vals.map(v => parseFloat(v)).filter(n => !isNaN(n));
-      if (nums.length) {
-        min = Math.min(...nums);
-        max = Math.max(...nums);
-        avg = (nums.reduce((a,b) => a+b, 0) / nums.length).toFixed(1);
-      }
-    }
-
-    profiles[col] = {
-      type,
-      nullCount,
-      nullPct: ((nullCount / (rows.length || 1)) * 100).toFixed(1),
-      uniqueCount: Object.keys(counts).length,
-      min, max, avg,
-      topValues: Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 3)
-    };
-  });
-
-  appState.columnProfiles = profiles;
-}
-
-/* ==========================================================================
-   STEP 2: PREVIEW RENDERING & SHEET SELECTOR
-   ========================================================================== */
-function renderPreviewStep() {
-  document.getElementById('prev-total-rows').innerText = appState.rawRows.length.toLocaleString();
-  document.getElementById('prev-total-cols').innerText = appState.rawHeaders.length;
-  document.getElementById('prev-detected-types').innerText = Object.keys(appState.columnTypes).length;
-
-  const wrap = document.getElementById('sheet-selector-wrap');
-  const sel = document.getElementById('sheet-select');
-  if (appState.sheetNames && appState.sheetNames.length > 1) {
-    wrap.style.display = 'flex';
-    sel.innerHTML = appState.sheetNames.map(s => `<option value="${s}" ${s === appState.selectedSheet ? 'selected' : ''}>${s}</option>`).join('');
-  } else {
-    wrap.style.display = 'none';
-  }
-
-  const badgesDiv = document.getElementById('schema-badges');
-  badgesDiv.innerHTML = appState.rawHeaders.map(col => {
-    const t = appState.columnTypes[col] || 'Text';
-    let cls = 'tp-text';
-    if(t === 'Numeric') cls = 'tp-num';
-    if(t === 'Category') cls = 'tp-cat';
-    if(t === 'Date') cls = 'tp-date';
-    return `<span style="font-size:12px; background:var(--bg2); border:1px solid var(--border); padding:4px 10px; border-radius:8px;">
-      ${col} <span class="type-pill ${cls}">${t}</span>
-    </span>`;
-  }).join('');
-
-  const thead = document.getElementById('preview-thead');
-  const tbody = document.getElementById('preview-tbody');
-
-  thead.innerHTML = appState.rawHeaders.map(h => `<th>${h}</th>`).join('');
-  
-  const sample = appState.rawRows.slice(0, 10);
-  tbody.innerHTML = sample.map(row => {
-    return '<tr>' + appState.rawHeaders.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('') + '</tr>';
-  }).join('');
-}
-
-function onSheetChange(sheetName) {
-  loadSheetData(sheetName);
-}
-
-/* ==========================================================================
-   STEP 3: DIAGNOSTICS, DATA CLEANING & PROFILING
-   ========================================================================== */
-function runDiagnosticsAndProceed() {
-  const rows = appState.rawRows;
-  const cols = appState.rawHeaders;
-  const totalCells = rows.length * cols.length;
-  let missingCells = 0;
-  
-  cols.forEach(c => {
-    rows.forEach(r => {
-      const v = r[c];
-      if (v === "" || v === null || v === undefined) missingCells++;
-    });
-  });
-
-  appState.completenessScore = Math.max(0, Math.round(((totalCells - missingCells) / (totalCells || 1)) * 100));
-
-  const rowStrings = rows.map(r => JSON.stringify(r));
-  const uniqueStrings = new Set(rowStrings);
-  const dupCount = rows.length - uniqueStrings.size;
-
-  const findings = [];
-  if (dupCount > 0) {
-    findings.push({
-      type: 'warning',
-      icon: '⚠️',
-      title: `${dupCount} Duplicate Rows Identified`,
-      desc: `Identified ${dupCount} exact duplicate records. Deduplication recommended.`
-    });
-  }
-
-  // Constant / Single value columns check
-  cols.forEach(col => {
-    const prof = appState.columnProfiles[col];
-    if (prof.uniqueCount === 1) {
-      findings.push({
-        type: 'warning',
-        icon: '⚠️',
-        title: `Constant Field: '${col}'`,
-        desc: `Field '${col}' has only 1 unique value across all records.`
-      });
-    } else if (parseFloat(prof.nullPct) > 70) {
-      findings.push({
-        type: 'critical',
-        icon: '🚨',
-        title: `Mostly Empty Field: '${col}'`,
-        desc: `Field '${col}' is missing ${prof.nullPct}% of data values.`
-      });
-    }
-  });
-
-  if (missingCells > 0) {
-    findings.push({
-      type: missingCells / totalCells > 0.2 ? 'critical' : 'warning',
-      icon: missingCells / totalCells > 0.2 ? '🚨' : '⚠️',
-      title: `${missingCells.toLocaleString()} Missing Values Identified`,
-      desc: `Overall completeness is ${appState.completenessScore}%. Imputation or cleaning recommended.`
-    });
-  } else {
-    findings.push({
-      type: 'info',
-      icon: '✅',
-      title: `100% Data Completeness`,
-      desc: `No missing cells found in dataset.`
-    });
-  }
-
-  appState.findings = findings;
-
-  let score = 100;
-  if (dupCount > 0) score -= Math.min(20, dupCount * 2);
-  if (missingCells > 0) score -= Math.min(30, Math.round((missingCells / (totalCells || 1)) * 50));
-  appState.qualityScore = Math.max(20, score);
-
-  // Render Health Meter
-  const healthCircle = document.getElementById('health-circle');
-  const healthVal = document.getElementById('health-val');
-  healthVal.innerText = appState.qualityScore + '%';
-  healthCircle.style.background = `conic-gradient(var(${appState.qualityScore > 80 ? '--green' : (appState.qualityScore > 60 ? '--amber' : '--red')}) ${appState.qualityScore}%, var(--card2) 0%)`;
-
-  document.getElementById('health-status-title').innerText = appState.qualityScore > 80 ? "Excellent Data Quality" : (appState.qualityScore > 60 ? "Good Quality with Minor Warnings" : "Needs Attention");
-  document.getElementById('health-status-desc').innerText = `Completeness: ${appState.completenessScore}% | Duplicates: ${dupCount} | Columns: ${cols.length}`;
-
-  document.getElementById('findings-list').innerHTML = findings.map(f => `
-    <div class="finding-item f-${f.type}">
-      <div class="f-icon">${f.icon}</div>
-      <div>
-        <div class="f-title">${f.title}</div>
-        <div class="f-desc">${f.desc}</div>
-      </div>
-    </div>
-  `).join('');
-
-  // Render Profiling Accordion Cards
-  const profGrid = document.getElementById('profiling-grid');
-  profGrid.innerHTML = cols.map(col => {
-    const p = appState.columnProfiles[col];
-    return `
-      <div class="profile-card">
-        <div class="profile-col-name">
-          <span>${col}</span>
-          <span class="type-pill tp-${p.type.toLowerCase()}">${p.type}</span>
-        </div>
-        <div class="profile-stat"><span>Missing / Nulls:</span> <strong>${p.nullCount} (${p.nullPct}%)</strong></div>
-        <div class="profile-stat"><span>Unique Values:</span> <strong>${p.uniqueCount}</strong></div>
-        ${p.type === 'Numeric' ? `<div class="profile-stat"><span>Min / Max / Avg:</span> <strong>${p.min} / ${p.max} / ${p.avg}</strong></div>` : ''}
-        ${p.topValues.length ? `<div class="profile-stat"><span>Top Value:</span> <strong>${p.topValues[0][0]} (${p.topValues[0][1]})</strong></div>` : ''}
-      </div>
-    `;
-  }).join('');
-
-  document.getElementById('opt-dedupe-sub').innerText = `Identified ${dupCount} duplicate rows.`;
-
-  updateCleaningRules();
-  switchStep(3);
-}
-
-function updateCleaningRules() {
-  const dedupe = document.getElementById('opt-dedupe').checked;
-  const normalize = document.getElementById('opt-normalize').checked;
-  const missingStrategy = document.getElementById('opt-missing-strategy').value;
-  const trimStr = document.getElementById('opt-trim').checked;
-
-  let cleaned = JSON.parse(JSON.stringify(appState.rawRows));
-  const logs = [];
-
-  if (trimStr) {
-    cleaned.forEach(r => {
-      Object.keys(r).forEach(k => {
-        if (typeof r[k] === 'string') r[k] = r[k].trim();
-      });
-    });
-    logs.push("Trimmed leading & trailing spaces from text cells.");
-  }
-
-  if (normalize) {
-    logs.push("Normalized column header names.");
-  }
-
-  if (dedupe) {
-    const seen = new Set();
-    const beforeCount = cleaned.length;
-    cleaned = cleaned.filter(r => {
-      const s = JSON.stringify(r);
-      if (seen.has(s)) return false;
-      seen.add(s);
-      return true;
-    });
-    const removed = beforeCount - cleaned.length;
-    if (removed > 0) logs.push(`Removed ${removed} duplicate rows.`);
-  }
-
-  if (missingStrategy !== 'keep') {
-    cleaned.forEach(r => {
-      Object.keys(r).forEach(col => {
-        const v = r[col];
-        if (v === "" || v === null || v === undefined) {
-          if (missingStrategy === 'zero' && appState.columnTypes[col] === 'Numeric') {
-            r[col] = 0;
-          } else if (missingStrategy === 'default') {
-            if (appState.columnTypes[col] !== 'Numeric') r[col] = 'N/A';
-          }
-        }
-      });
-    });
-    logs.push(`Applied missing value strategy: '${missingStrategy}'.`);
-  }
-
-  appState.cleanedRows = cleaned;
-  appState.auditLogs = logs;
-
-  document.getElementById('audit-log-content').innerHTML = logs.length 
-    ? logs.map(l => `<div class="insight-item"><span class="insight-bullet">•</span> <span>${l}</span></div>`).join('')
-    : 'No cleaning rules selected.';
-}
-
-function exportCleanedDataset(format = 'csv') {
-  const data = appState.dataMode === 'original' ? appState.rawRows : appState.cleanedRows;
-  if (!data.length) return;
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "ProcessedData");
-  XLSX.writeFile(wb, `${appState.dataMode}_${appState.fileName || 'dataset'}.${format}`);
-}
-
-/* ==========================================================================
-   STEP 4: DYNAMIC DASHBOARD GENERATOR ENGINE
-   ========================================================================== */
-function generateAutoDashboard() {
-  appState.filteredRows = [...appState.cleanedRows];
-  appState.currentPage = 1;
-  appState.dataMode = 'cleaned';
-  
-  document.getElementById('dash-dataset-meta').innerText = `${appState.fileName} | ${appState.cleanedRows.length.toLocaleString()} Processed Records | ${appState.rawHeaders.length} Columns`;
-  document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Cleaned Data";
-
-  renderDashboardKPIs();
-  renderDashboardInsights();
-  renderDynamicCharts();
-  renderCategoryFilters();
-  renderTable();
-  
-  switchStep(4);
-}
-
-function toggleDataMode() {
-  if (appState.dataMode === 'cleaned') {
-    appState.dataMode = 'original';
-    appState.filteredRows = [...appState.rawRows];
-    document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Original Data";
-  } else {
-    appState.dataMode = 'cleaned';
-    appState.filteredRows = [...appState.cleanedRows];
-    document.getElementById('toggle-data-mode-btn').innerText = "Viewing: Cleaned Data";
-  }
-  renderTable();
-  renderDynamicCharts();
-}
-
-function rebuildDashboard() {
-  updateCleaningRules();
-  generateAutoDashboard();
-}
-
-function renderDashboardKPIs() {
-  const grid = document.getElementById('dash-kpi-grid');
-  const rows = appState.cleanedRows;
-  const cols = appState.rawHeaders;
-
-  const numCol = cols.find(c => appState.columnTypes[c] === 'Numeric');
-  const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
-
-  let numSum = 0, numAvg = 0;
-  if (numCol) {
-    const vals = rows.map(r => parseFloat(r[numCol]) || 0);
-    numSum = vals.reduce((a, b) => a + b, 0);
-    numAvg = (numSum / (vals.length || 1)).toFixed(1);
-  }
-
-  let topCatVal = 'N/A';
-  if (catCol) {
-    const counts = {};
-    rows.forEach(r => {
-      const v = r[catCol] || 'Unknown';
-      counts[v] = (counts[v] || 0) + 1;
-    });
-    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-    if (sorted.length) topCatVal = `${sorted[0][0]} (${sorted[0][1]})`;
-  }
-
-  grid.innerHTML = `
-    <div class="kpi kblue">
-      <span class="kpi-icon">📊</span>
-      <div class="kpi-val">${rows.length.toLocaleString()}</div>
-      <div class="kpi-lbl">Total Processed Records</div>
-    </div>
-    <div class="kpi kpurple">
-      <span class="kpi-icon">🛡️</span>
-      <div class="kpi-val" style="color:var(--green);">${appState.qualityScore}%</div>
-      <div class="kpi-lbl">Data Health Score</div>
-    </div>
-    ${numCol ? `
-    <div class="kpi kgreen">
-      <span class="kpi-icon">📈</span>
-      <div class="kpi-val">${Number(numAvg).toLocaleString()}</div>
-      <div class="kpi-lbl">Avg ${numCol}</div>
-    </div>` : ''}
-    ${catCol ? `
-    <div class="kpi kamber">
-      <span class="kpi-icon">🏆</span>
-      <div class="kpi-val" style="font-size:18px; word-break:break-all;">${topCatVal}</div>
-      <div class="kpi-lbl">Top ${catCol}</div>
-    </div>` : ''}
-  `;
-}
-
-function renderDashboardInsights() {
-  const container = document.getElementById('dash-insights-list');
-  const rows = appState.cleanedRows;
-  const cols = appState.rawHeaders;
-  const insights = [];
-
-  insights.push(`Analyzed <strong>${rows.length.toLocaleString()} records</strong> across <strong>${cols.length} attributes</strong>.`);
-  insights.push(`Dataset health score is <strong>${appState.qualityScore}%</strong> with <strong>${appState.completenessScore}% completeness</strong>.`);
-
-  const catCol = cols.find(c => appState.columnTypes[c] === 'Category');
-  if (catCol) {
-    const counts = {};
-    rows.forEach(r => { const v = r[catCol] || 'Unknown'; counts[v] = (counts[v] || 0) + 1; });
-    const top = Object.entries(counts).sort((a,b) => b[1] - a[1])[0];
-    if (top) {
-      const pct = ((top[1] / rows.length) * 100).toFixed(1);
-      insights.push(`Dominant segment in <strong>${catCol}</strong> is <strong>${top[0]}</strong> representing <strong>${pct}%</strong> of all records.`);
-    }
-  }
-
-  container.innerHTML = insights.map(i => `
-    <div class="insight-item">
-      <span class="insight-bullet">⚡</span>
-      <span>${i}</span>
-    </div>
-  `).join('');
-}
-
-function renderDynamicCharts() {
-  appState.chartInstances.forEach(c => c.destroy());
-  appState.chartInstances = [];
-
-  const rows = appState.filteredRows;
-  
-  // Render 4 Email Metric Donut Charts
-  appState.chartInstances = renderFourEmailMetricCharts(rows, 'dash-email-donuts-grid', appState.chartInstances);
-
-  const grid = document.getElementById('dash-charts-grid');
-  grid.innerHTML = '';
-
-  const cols = appState.rawHeaders;
-
-  const catCols = cols.filter(c => appState.columnTypes[c] === 'Category');
-  const numCols = cols.filter(c => appState.columnTypes[c] === 'Numeric');
-  const dateCols = cols.filter(c => appState.columnTypes[c] === 'Date');
-
-  // Chart 1: Bar Chart for primary category
-  if (catCols.length) {
-    const col = catCols[0];
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📊 ${col} Distribution</div><div class="chart-container"><canvas id="chart-cat-1"></canvas></div>`;
-    grid.appendChild(card);
-
-    const counts = {};
-    rows.forEach(r => { const v = r[col] || 'N/A'; counts[v] = (counts[v] || 0) + 1; });
-    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 8);
-
-    const ctx = document.getElementById('chart-cat-1').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: sorted.map(s => s[0]),
-        datasets: [{
-          label: 'Count',
-          data: sorted.map(s => s[1]),
-          backgroundColor: 'rgba(79, 142, 247, 0.7)',
-          borderColor: '#4f8ef7',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: '#8899bb', font: { size: 10 } }, grid: { display: false } },
-          y: { ticks: { color: '#8899bb' }, grid: { color: 'rgba(79, 142, 247, 0.1)' } }
-        }
-      }
-    });
-    appState.chartInstances.push(chart);
-  }
-
-  // Chart 2: Donut Chart for secondary category
-  if (catCols.length > 1) {
-    const col = catCols[1];
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">🍩 ${col} Composition</div><div class="chart-container"><canvas id="chart-cat-2"></canvas></div>`;
-    grid.appendChild(card);
-
-    const counts = {};
-    rows.forEach(r => { const v = r[col] || 'N/A'; counts[v] = (counts[v] || 0) + 1; });
-    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 6);
-
-    const ctx = document.getElementById('chart-cat-2').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: sorted.map(s => s[0]),
-        datasets: [{
-          data: sorted.map(s => s[1]),
-          backgroundColor: ['#4f8ef7', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'right', labels: { color: '#8899bb', font: { size: 11 } } } }
-      }
-    });
-    appState.chartInstances.push(chart);
-  }
-
-  // Chart 3: Line / Time Series Chart
-  if (numCols.length) {
-    const col = numCols[0];
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.innerHTML = `<div class="card-title" style="font-size:14px; margin-bottom:12px;">📈 ${col} Value Trend</div><div class="chart-container"><canvas id="chart-num-1"></canvas></div>`;
-    grid.appendChild(card);
-
-    const vals = rows.map(r => parseFloat(r[col]) || 0).slice(0, 40);
-
-    const ctx = document.getElementById('chart-num-1').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: vals.map((_, i) => `#${i + 1}`),
-        datasets: [{
-          label: col,
-          data: vals,
-          borderColor: '#06b6d4',
-          backgroundColor: 'rgba(6, 182, 212, 0.15)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: '#8899bb' }, grid: { display: false } },
-          y: { ticks: { color: '#8899bb' }, grid: { color: 'rgba(79, 142, 247, 0.1)' } }
-        }
-      }
-    });
-    appState.chartInstances.push(chart);
-  }
-}
-
-/* ==========================================================================
-   INTERACTIVE FILTERS & DATA TABLE
-   ========================================================================== */
-function renderCategoryFilters() {
-  const container = document.getElementById('dynamic-category-filters');
-  const catCols = appState.rawHeaders.filter(c => appState.columnTypes[c] === 'Category').slice(0, 3);
-  
-  container.innerHTML = catCols.map(col => {
-    const vals = Array.from(new Set(appState.cleanedRows.map(r => r[col]))).filter(Boolean).slice(0, 20);
-    return `
-      <select class="filter-select" onchange="onCategoryFilterChange('${col}', this.value)">
-        <option value="">All ${col}s</option>
-        ${vals.map(v => `<option value="${v}">${v}</option>`).join('')}
-      </select>
-    `;
-  }).join('');
-}
-
-function onCategoryFilterChange(col, val) {
-  if (val) appState.activeFilters[col] = val;
-  else delete appState.activeFilters[col];
-  onFilterChange();
-}
-
-function onFilterChange() {
-  const search = document.getElementById('global-search').value.toLowerCase().trim();
-  const source = appState.dataMode === 'cleaned' ? appState.cleanedRows : appState.rawRows;
-
-  appState.filteredRows = source.filter(row => {
-    if (search) {
-      const line = Object.values(row).join(' ').toLowerCase();
-      if (!line.includes(search)) return false;
-    }
-    for (let col in appState.activeFilters) {
-      if (String(row[col]) !== appState.activeFilters[col]) return false;
-    }
-    return true;
-  });
-
-  appState.currentPage = 1;
-  renderTable();
-  renderDynamicCharts();
-}
-
-function resetFilters() {
-  document.getElementById('global-search').value = '';
-  appState.activeFilters = {};
-  renderCategoryFilters();
-  onFilterChange();
-}
-
-function renderTable() {
-  const thead = document.getElementById('dash-thead');
-  const tbody = document.getElementById('dash-tbody');
-  const cols = appState.rawHeaders;
-
-  thead.innerHTML = cols.map(c => `
-    <th class="sortable" onclick="sortTable('${c}')">
-      ${c} ${appState.sortCol === c ? (appState.sortAsc ? '▲' : '▼') : ''}
-    </th>
-  `).join('');
-
-  let rows = [...appState.filteredRows];
-  if (appState.sortCol) {
-    const c = appState.sortCol;
-    const isNum = appState.columnTypes[c] === 'Numeric';
-    rows.sort((a,b) => {
-      let va = a[c], vb = b[c];
-      if (isNum) { va = parseFloat(va)||0; vb = parseFloat(vb)||0; }
-      if (va < vb) return appState.sortAsc ? -1 : 1;
-      if (va > vb) return appState.sortAsc ? 1 : -1;
-      return 0;
-    });
-  }
-
-  const total = rows.length;
-  const start = (appState.currentPage - 1) * appState.pageSize;
-  const end = Math.min(start + appState.pageSize, total);
-  const pageRows = rows.slice(start, end);
-
-  tbody.innerHTML = pageRows.map(r => `
-    <tr>
-      ${cols.map(c => `<td>${r[c] !== undefined ? r[c] : ''}</td>`).join('')}
-    </tr>
-  `).join('');
-
-  document.getElementById('pag-info').innerText = total 
-    ? `Showing ${start + 1} to ${end} of ${total.toLocaleString()} entries`
-    : `No records found`;
-  document.getElementById('pag-current').innerText = `Page ${appState.currentPage} of ${Math.ceil(total / appState.pageSize) || 1}`;
-  
-  document.getElementById('pag-prev').disabled = appState.currentPage <= 1;
-  document.getElementById('pag-next').disabled = end >= total;
-}
-
-function changePage(delta) {
-  appState.currentPage += delta;
-  renderTable();
-}
-
-function sortTable(col) {
-  if (appState.sortCol === col) appState.sortAsc = !appState.sortAsc;
-  else { appState.sortCol = col; appState.sortAsc = true; }
-  renderTable();
-}
-</script>
-
+<!-- FOOTER MOUNT -->
 <div id="footer-mount"></div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('header-mount').innerHTML = renderAppHeader('auto_studio');
   document.getElementById('footer-mount').innerHTML = renderCreatorFooter();
 });
-</script>
 
+async function handleStudioUpload(e) {
+  if (!e.target.files || !e.target.files.length) return;
+  const file = e.target.files[0];
+  try {
+    const { rows, sheetName, fileName } = await parseUploadedFile(file);
+    const cleaningReport = DataCleaningEngine.cleanDataset(rows, fileName, sheetName);
+    const store = new WorkspaceStore('overall_emails');
+    const result = store.mergeData(cleaningReport.cleanRows, fileName, sheetName);
+    showImportSummaryModal({
+      ...cleaningReport,
+      totalStoredRows: result.combinedData.length
+    });
+  } catch(err) {
+    console.error(err);
+    alert(err.message || "Failed to process dataset file.");
+  } finally {
+    e.target.value = '';
+  }
+}
+</script>
 </body>
 </html>

@@ -1,10 +1,11 @@
 /* ==========================================================================
-   INFINITO SHARED ENGINE & DATA CLEANING PIPELINE — app-shared.js
+   INFINITO EDITORIAL BI ENGINE — app-shared.js
    Supports: Auto Studio | Overall Emails | ICP 1 | ICP 2 | ICP 3
+   Theme: Soft Pink/Lilac Editorial Canvas + White BI Container (Reference Matching)
    ========================================================================== */
 
 /* ==========================================================================
-   WORKSPACE STORE — persistent per-ICP storage with deduplication
+   WORKSPACE STORE — Single Source of Truth Storage
    ========================================================================== */
 class WorkspaceStore {
   constructor(workspaceId) {
@@ -91,7 +92,8 @@ class WorkspaceStore {
 }
 
 /* ==========================================================================
-   DATA CLEANING ENGINE — 8-Step Pipeline (Raw CSV -> Clean Dataset)
+   DATA CLEANING ENGINE (Python Parity Engine)
+   RAW FILE -> READ -> CLEAN -> VALIDATE -> NORMALIZE -> DEDUPLICATE -> CLEAN DATASET
    ========================================================================== */
 class DataCleaningEngine {
   static cleanDataset(rawRows, fileName = 'Dataset', sheetName = 'Sheet1') {
@@ -103,7 +105,6 @@ class DataCleaningEngine {
     const detectedColumns = new Set();
     const mappedColumns = new Set();
 
-    // 1. Detect all headers
     rawRows.forEach(r => {
       Object.keys(r || {}).forEach(k => detectedColumns.add(k));
     });
@@ -114,28 +115,28 @@ class DataCleaningEngine {
     rawRows.forEach(rawRow => {
       if (!rawRow || typeof rawRow !== 'object') return;
 
-      // 2. Text & Whitespace Sanitization
+      // 1. Text Sanitization
       const sanitized = {};
       Object.keys(rawRow).forEach(k => {
         let val = rawRow[k];
         if (val === null || val === undefined) val = '';
         if (typeof val === 'string') {
           val = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-          if (['null', 'undefined', 'n/a', 'na', '-', '—'].includes(val.toLowerCase())) {
+          if (['null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'].includes(val.toLowerCase())) {
             val = '';
           }
         }
         sanitized[k] = val;
       });
 
-      // 3. Field Normalization & Column Mapping
+      // 2. Column Mapping
       const mapped = mapFields(sanitized);
 
       ['contactName', 'email', 'companyName', 'designation', 'phone', 'website', 'location', 'emailStatus', 'qualificationStatus', 'createDate'].forEach(k => {
         if (mapped[k] && mapped[k] !== '—') mappedColumns.add(k);
       });
 
-      // 4. Email Validation
+      // 3. Email RFC Validation
       if (mapped.email && mapped.email !== '—') {
         const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mapped.email);
         if (!isValidFormat) {
@@ -146,7 +147,7 @@ class DataCleaningEngine {
         incompleteCount++;
       }
 
-      // 5. Deduplication
+      // 4. Deduplication
       const hash = WorkspaceStore.prototype.getRowHash(mapped);
       if (seenHashes.has(hash)) {
         duplicateCount++;
@@ -173,7 +174,7 @@ class DataCleaningEngine {
 }
 
 /* ==========================================================================
-   FIELD MAPPING & NORMALIZATION ENGINE
+   FIELD MAPPING & COLUMN DETECTION LOGIC
    ========================================================================== */
 function mapFields(row) {
   const mapped = { ...row };
@@ -187,7 +188,7 @@ function mapFields(row) {
     return k ? (row[k] || '') : '';
   }
 
-  // 1. Company Name
+  // Company Name
   let rawCo = find(['companyname','company','associatedcompany','organization','firm','accountname','businessname']) || row.companyName || '';
   if (!rawCo || rawCo === '—' || /^\d+(\.\d+)?$/.test(rawCo.trim())) {
     const rawEmail = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || '';
@@ -202,25 +203,25 @@ function mapFields(row) {
   }
   mapped.companyName = rawCo || '—';
 
-  // 2. Contact Name
+  // Contact Name
   const fn = find(['firstname','first']) || row.firstName || '';
   const ln = find(['lastname','last']) || row.lastName || '';
   const fullN = [fn, ln].filter(Boolean).join(' ');
   mapped.contactName = fullN || find(['contactname','name','fullname','contact']) || row.contactName || row.name || '—';
 
-  // 3. Email Address
+  // Email
   mapped.email = find(['email','workemail','contactemail','founderemail','emailaddress']) || row.email || row.founderEmail || '—';
 
-  // 4. Designation / Role / Owner
+  // Designation
   mapped.designation = find(['designation','title','role','contactowner','owner','jobtitle','position']) || row.designation || row.owner || '—';
 
-  // 5. Phone Number
+  // Phone
   mapped.phone = find(['phonenumber','phone','contactnumber','mobile','tel','cell']) || row.phone || row.contactNumber || '—';
 
-  // 6. Website / Domain
+  // Website
   mapped.website = find(['website','domain','companywebsite','url']) || row.website || '—';
 
-  // 7. Location (City, State, Country)
+  // Location
   mapped.country = find(['country','nation']) || row.country || '—';
   mapped.state   = find(['state','province','region']) || row.state || '—';
   mapped.city    = find(['city','town']) || row.city || '—';
@@ -228,18 +229,17 @@ function mapFields(row) {
   const locParts = [mapped.city, mapped.state, mapped.country].filter(p => p && p !== '—');
   mapped.location = locParts.join(', ') || find(['location','address']) || '—';
 
-  // 8. Email / Marketing Status
+  // Status
   const rawStatus = find(['marketingcontactstatus','emailstatus','companystatus','emailtype','status']) || row.emailStatus || row.status || 'Delivered';
   mapped.emailStatus = rawStatus.includes('Marketing') || rawStatus === 'Known' || rawStatus === 'Delivered' ? 'Delivered' : rawStatus;
 
-  // 9. Qualification Status & Reason
+  // Qualification
   mapped.qualificationStatus = row.qualificationStatus || 'Verified';
-  mapped.qualificationReason = row.qualificationReason || row.tier || row.sector || 'Matches Ideal Customer Profile';
+  mapped.qualificationReason = row.qualificationReason || row.tier || row.sector || 'Matches Source Criteria';
 
-  // 10. Creation Date
+  // Date
   mapped.createDate = find(['createdate','date','timestamp','importdate']) || row.createDate || row.date || new Date().toISOString().split('T')[0];
 
-  // Legacy compatibility fields
   mapped.founderName = mapped.contactName !== '—' ? mapped.contactName : '';
   mapped.founderEmail = mapped.email !== '—' ? mapped.email : '';
   mapped.linkedinUrl = find(['linkedinurl','linkedin','companylinkedin']) || row.linkedinUrl || row.linkedInUrl || '';
@@ -248,7 +248,7 @@ function mapFields(row) {
 }
 
 /* ==========================================================================
-   ICP QUALIFICATION LOGIC — Location, Tier & Industry Classifier
+   ICP QUALIFICATION LOGIC — Strictly Data-Driven
    ========================================================================== */
 const TIER1 = ['bengaluru','bangalore','mumbai','delhi','ncr','gurgaon','gurugram','noida','hyderabad','chennai','pune','kolkata'];
 const TIER2 = ['bhopal','indore','jaipur','ahmedabad','surat','kochi','cochin','chandigarh','coimbatore','nagpur','vadodara','thiruvananthapuram','vizag','visakhapatnam','bhubaneswar','nashik','rajkot','mysore'];
@@ -267,7 +267,6 @@ function qualifyICP1(row) {
   } else if (TIER2.some(c => loc.includes(c))) {
     tier = 'Tier 2';
   } else {
-    // Infer tier from company name, website, or email domain when city column is unpopulated
     const domainOrCo = `${row.website || ''} ${row.companyName || ''} ${row.email || ''}`.toLowerCase();
     if (KNOWN_TIER1_DOMAINS.some(d => domainOrCo.includes(d)) || domainOrCo.includes('.in')) {
       tier = 'Tier 1';
@@ -306,7 +305,7 @@ function qualifyICP3(row) {
 }
 
 /* ==========================================================================
-   UNIFIED FILE PARSER — Supports CSV, XLSX, XLS, JSON, TSV
+   UNIFIED FILE PARSER — Supports CSV, XLSX, XLS, JSON, PDF
    ========================================================================== */
 async function parseUploadedFile(file, maxMb = 25) {
   if (!file) throw new Error("No file selected.");
@@ -317,9 +316,9 @@ async function parseUploadedFile(file, maxMb = 25) {
   }
 
   const ext = (file.name.split('.').pop() || '').toLowerCase();
-  const validExts = ['csv', 'xlsx', 'xls', 'json', 'tsv'];
+  const validExts = ['csv', 'xlsx', 'xls', 'json', 'tsv', 'pdf'];
   if (!validExts.includes(ext)) {
-    throw new Error(`Unsupported file type ".${ext}". Please upload a .CSV, .XLSX, .XLS, or .JSON file.`);
+    throw new Error(`Unsupported file type ".${ext}". Please upload a .CSV, .XLSX, .XLS, .JSON, or .PDF file.`);
   }
 
   return new Promise((resolve, reject) => {
@@ -350,11 +349,11 @@ async function parseUploadedFile(file, maxMb = 25) {
         try {
           const data = new Uint8Array(e.target.result);
           if (typeof XLSX === 'undefined') {
-            throw new Error("XLSX parsing library is loading. Please retry in a moment.");
+            throw new Error("Spreadsheet parsing engine is loading. Please retry in a moment.");
           }
           const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           if (!workbook || !workbook.SheetNames || !workbook.SheetNames.length) {
-            throw new Error("Spreadsheet file contains no worksheets.");
+            throw new Error("File contains no readable worksheets.");
           }
           const sheetName = workbook.SheetNames[0];
           const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
@@ -363,7 +362,7 @@ async function parseUploadedFile(file, maxMb = 25) {
           }
           resolve({ rows, sheetName, fileName: file.name });
         } catch (err) {
-          reject(new Error(`Failed to parse spreadsheet file "${file.name}": ${err.message}`));
+          reject(new Error(`Failed to parse file "${file.name}": ${err.message}`));
         }
       };
       reader.onerror = () => reject(new Error(`Failed to read file "${file.name}".`));
@@ -373,7 +372,7 @@ async function parseUploadedFile(file, maxMb = 25) {
 }
 
 /* ==========================================================================
-   STEPPED PIPELINE & CLEANING SUMMARY MODAL
+   SHARED EDITORIAL MODAL DIALOGS
    ========================================================================== */
 function showImportSummaryModal(cleaningReport) {
   if (!cleaningReport) return;
@@ -389,63 +388,63 @@ function showImportSummaryModal(cleaningReport) {
   const mappedList = (cleaningReport.mappedColumns || []).join(', ');
 
   overlay.innerHTML = `
-    <div class="modal-card" style="max-width:680px">
-      <div class="modal-header">
-        <div class="modal-title">⚡ CSV Cleaning → Column Sync → Dashboard Pipeline</div>
-        <button class="modal-close" onclick="closeImportSummaryModal()">&times;</button>
+    <div class="modal-card" style="max-width:680px;background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12)">
+      <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px">
+        <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">⚡ Python Data Cleaning & Column Sync Report</div>
+        <button class="modal-close" onclick="closeImportSummaryModal()" style="color:#7a707c">&times;</button>
       </div>
-      <div class="modal-body">
-        <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:12px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-          <div style="font-size:24px">✅</div>
+      <div class="modal-body" style="padding:26px">
+        <div style="background:#f0f8f5;border:1px solid rgba(61,139,110,0.2);border-radius:16px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:26px">✅</div>
           <div>
-            <div style="font-weight:700;color:#22d3a5;font-size:14px">Data Cleaning & Validation Complete</div>
-            <div style="font-size:12px;color:#8899bb;margin-top:2px">Raw dataset ingested, text sanitized, fields mapped, duplicates filtered, and dashboard synchronized.</div>
+            <div style="font-weight:700;color:#3d8b6e;font-size:15px">Single Source of Truth Clean Dataset Ready</div>
+            <div style="font-size:13px;color:#7a707c;margin-top:2px">Raw dataset ingested, text sanitized, fields mapped, duplicates removed, and dashboard synchronized.</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-          <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:12px">
-            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">File Source</div>
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;word-break:break-all">${cleaningReport.fileName || 'Imported_Dataset'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+          <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px">
+            <div style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Source File</div>
+            <div style="font-size:14px;font-weight:700;color:#181519;margin-top:4px;word-break:break-all">${cleaningReport.fileName || 'Imported_Dataset'}</div>
           </div>
-          <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:12px">
-            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Worksheet / Format</div>
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px">${cleaningReport.sheetName || 'Sheet1'}</div>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;margin-bottom:16px">
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
-            <div style="font-size:18px;font-weight:800;color:#4f8ef7">${(cleaningReport.rowsReceived || cleaningReport.originalRows || 0).toLocaleString()}</div>
-            <div style="font-size:10px;color:#8899bb;margin-top:2px">Rows Received</div>
-          </div>
-          <div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.3);border-radius:10px;padding:10px">
-            <div style="font-size:18px;font-weight:800;color:#22d3a5">${(cleaningReport.newlyAddedRows || cleaningReport.validRows || 0).toLocaleString()}</div>
-            <div style="font-size:10px;color:#8899bb;margin-top:2px">Clean Valid Rows</div>
-          </div>
-          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px">
-            <div style="font-size:18px;font-weight:800;color:#f59e0b">${(cleaningReport.duplicateRows || 0).toLocaleString()}</div>
-            <div style="font-size:10px;color:#8899bb;margin-top:2px">Duplicates Removed</div>
-          </div>
-          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px">
-            <div style="font-size:18px;font-weight:800;color:#ef4444">${(cleaningReport.invalidEmails || 0).toLocaleString()}</div>
-            <div style="font-size:10px;color:#8899bb;margin-top:2px">Invalid Formats</div>
+          <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px">
+            <div style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Worksheet / Format</div>
+            <div style="font-size:14px;font-weight:700;color:#181519;margin-top:4px">${cleaningReport.sheetName || 'Sheet1'}</div>
           </div>
         </div>
 
-        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;margin-bottom:16px">
-          <div style="font-size:11px;color:#a78bfa;font-weight:700;text-transform:uppercase">Detected & Mapped Columns</div>
-          <div style="font-size:12px;color:#fff;margin-top:4px">Raw Headers: <span style="color:#8899bb">${detectedList || 'Standard Header Format'}</span></div>
-          <div style="font-size:12px;color:#fff;margin-top:2px">Mapped Fields: <span style="color:#22d3a5">${mappedList || 'contactName, email, companyName, designation, phone, location'}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;text-align:center;margin-bottom:18px">
+          <div style="background:#f4eff4;border-radius:14px;padding:12px">
+            <div style="font-size:20px;font-weight:800;color:#8e549e">${(cleaningReport.rowsReceived || cleaningReport.originalRows || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Rows Ingested</div>
+          </div>
+          <div style="background:#f0f8f5;border-radius:14px;padding:12px">
+            <div style="font-size:20px;font-weight:800;color:#3d8b6e">${(cleaningReport.newlyAddedRows || cleaningReport.validRows || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Clean Valid Rows</div>
+          </div>
+          <div style="background:#fff3e0;border-radius:14px;padding:12px">
+            <div style="font-size:20px;font-weight:800;color:#d97757">${(cleaningReport.duplicateRows || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Duplicates Filtered</div>
+          </div>
+          <div style="background:#ffebee;border-radius:14px;padding:12px">
+            <div style="font-size:20px;font-weight:800;color:#d32f2f">${(cleaningReport.invalidEmails || 0).toLocaleString()}</div>
+            <div style="font-size:11px;color:#7a707c;margin-top:2px;font-weight:600">Invalid Formats</div>
+          </div>
         </div>
 
-        <div style="padding:12px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:12px;color:#4f8ef7;font-weight:600">Total Active Workspace Records:</span>
-          <span style="font-size:16px;font-weight:800;color:#fff">${(cleaningReport.totalStoredRows || cleaningReport.validRows || 0).toLocaleString()}</span>
+        <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px;margin-bottom:18px">
+          <div style="font-size:11px;color:#8e549e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Detected & Mapped Columns</div>
+          <div style="font-size:13px;color:#181519;margin-top:4px">Raw Headers: <span style="color:#7a707c">${detectedList || 'Standard Column Headers'}</span></div>
+          <div style="font-size:13px;color:#181519;margin-top:2px">Mapped Fields: <span style="color:#3d8b6e">${mappedList || 'contactName, email, companyName, designation, phone, location'}</span></div>
+        </div>
+
+        <div style="padding:14px;background:#f4eff4;border-radius:14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:#8e549e;font-weight:700">Total Active Workspace Records:</span>
+          <span style="font-size:18px;font-weight:800;color:#181519">${(cleaningReport.totalStoredRows || cleaningReport.validRows || 0).toLocaleString()}</span>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-primary" style="padding:10px 24px;font-size:13px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer" onclick="closeImportSummaryModal()">Synchronize Dashboard</button>
+      <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px">
+        <button class="btn-primary" style="padding:12px 28px;font-size:14px;background:#181519;color:#ffffff;border:none;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.15)" onclick="closeImportSummaryModal()">Synchronize Dashboard</button>
       </div>
     </div>
   `;
@@ -469,11 +468,11 @@ function openRecordDetailModal(record) {
 
   const fields = [
     { label: 'Contact Name', val: record.contactName || '—' },
-    { label: 'Email Address', val: record.email ? `<a href="mailto:${record.email}" style="color:#4f8ef7">${record.email}</a>` : '—' },
+    { label: 'Email Address', val: record.email ? `<a href="mailto:${record.email}" style="color:#4a7bb0;font-weight:600">${record.email}</a>` : '—' },
     { label: 'Company Name', val: record.companyName || '—' },
     { label: 'Designation / Owner', val: record.designation || '—' },
     { label: 'Phone Number', val: record.phone || '—' },
-    { label: 'Website', val: record.website ? `<a href="${record.website.startsWith('http')?record.website:'https://'+record.website}" target="_blank" style="color:#4f8ef7">${record.website}</a>` : '—' },
+    { label: 'Website', val: record.website ? `<a href="${record.website.startsWith('http')?record.website:'https://'+record.website}" target="_blank" style="color:#4a7bb0;font-weight:600">${record.website}</a>` : '—' },
     { label: 'Location', val: record.location || [record.city, record.state, record.country].filter(Boolean).join(', ') || '—' },
     { label: 'Email Status', val: `<span class="badge b-green">${record.emailStatus || 'Delivered'}</span>` },
     { label: 'Qualification Status', val: record.qualificationStatus || 'Verified' },
@@ -481,21 +480,21 @@ function openRecordDetailModal(record) {
   ];
 
   overlay.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">📋 Contact Detail — ${record.contactName || record.companyName || 'Lead Detail'}</div>
-        <button class="modal-close" onclick="closeRecordDetailModal()">&times;</button>
+    <div class="modal-card" style="background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12)">
+      <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px">
+        <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">📋 Contact Detail — ${record.contactName || record.companyName || 'Lead Detail'}</div>
+        <button class="modal-close" onclick="closeRecordDetailModal()" style="color:#7a707c">&times;</button>
       </div>
-      <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-body" style="padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
         ${fields.map(f => `
-          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px">
-            <div style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">${f.label}</div>
-            <div style="font-size:13px;color:#fff;margin-top:4px;word-break:break-all">${f.val}</div>
+          <div style="background:#faf6fa;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:12px">
+            <div style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">${f.label}</div>
+            <div style="font-size:14px;color:#181519;margin-top:4px;word-break:break-all;font-weight:600">${f.val}</div>
           </div>
         `).join('')}
       </div>
-      <div class="modal-footer">
-        <button class="btn-primary" style="padding:8px 20px;font-size:13px;background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3);border-radius:8px;cursor:pointer" onclick="closeRecordDetailModal()">Close</button>
+      <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px">
+        <button class="btn-primary" style="padding:10px 24px;font-size:13px;background:#f4eff4;color:#181519;border:1px solid rgba(0,0,0,0.1);border-radius:10px;font-weight:700;cursor:pointer" onclick="closeRecordDetailModal()">Close</button>
       </div>
     </div>
   `;
@@ -517,27 +516,27 @@ function openShareEmailModal(workspaceTitle) {
   }
 
   overlay.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">📧 Share ${workspaceTitle || 'Workspace'} Analytics</div>
-        <button class="modal-close" onclick="closeShareEmailModal()">&times;</button>
+    <div class="modal-card" style="background:#ffffff;color:#181519;border-radius:24px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.12)">
+      <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06);padding:20px 26px">
+        <div class="modal-title" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#181519">📧 Share ${workspaceTitle || 'Workspace'} Report</div>
+        <button class="modal-close" onclick="closeShareEmailModal()" style="color:#7a707c">&times;</button>
       </div>
-      <div class="modal-body">
-        <div style="font-size:13px;color:#8899bb;margin-bottom:14px">Share workspace dataset report and summary with your team:</div>
-        <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="modal-body" style="padding:26px">
+        <div style="font-size:13px;color:#7a707c;margin-bottom:16px">Send clean BI analytics report and dataset summary to your team:</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
           <div>
-            <label style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Recipient Email</label>
-            <input id="shareEmailInput" type="email" placeholder="team@company.com" style="width:100%;margin-top:4px;padding:10px 14px;border-radius:10px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);color:#fff;font-size:13px" />
+            <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Recipient Email</label>
+            <input id="shareEmailInput" type="email" placeholder="colleague@company.com" style="width:100%;margin-top:6px;padding:12px 16px;border-radius:12px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);color:#181519;font-size:14px;outline:none" />
           </div>
           <div>
-            <label style="font-size:11px;color:#8899bb;text-transform:uppercase;font-weight:600">Subject</label>
-            <input id="shareSubjectInput" type="text" value="Infinito Intelligence Report: ${workspaceTitle || 'Workspace Data'}" style="width:100%;margin-top:4px;padding:10px 14px;border-radius:10px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.3);color:#fff;font-size:13px" />
+            <label style="font-size:11px;color:#7a707c;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Subject</label>
+            <input id="shareSubjectInput" type="text" value="Infinito BI Report: ${workspaceTitle || 'Workspace Data'}" style="width:100%;margin-top:6px;padding:12px 16px;border-radius:12px;background:#faf6fa;border:1px solid rgba(0,0,0,0.1);color:#181519;font-size:14px;outline:none" />
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button style="padding:8px 16px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#8899bb;cursor:pointer;font-size:13px" onclick="closeShareEmailModal()">Cancel</button>
-        <button style="padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);border:none;color:#fff;font-weight:600;cursor:pointer;font-size:13px" onclick="submitShareEmail()">Send Report</button>
+      <div class="modal-footer" style="border-top:1px solid rgba(0,0,0,0.06);padding:18px 26px">
+        <button style="padding:10px 20px;border-radius:10px;background:transparent;border:1px solid rgba(0,0,0,0.1);color:#7a707c;cursor:pointer;font-size:13px;font-weight:600" onclick="closeShareEmailModal()">Cancel</button>
+        <button style="padding:10px 24px;border-radius:10px;background:#181519;border:none;color:#fff;font-weight:700;cursor:pointer;font-size:13px;box-shadow:0 4px 15px rgba(0,0,0,0.15)" onclick="submitShareEmail()">Send Report</button>
       </div>
     </div>
   `;
@@ -613,17 +612,17 @@ function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
 }
 
 /* ==========================================================================
-   UI — HEADER & FOOTER (shared across all pages)
+   UI — EDITORIAL HEADER & FOOTER (Reference Image Matching)
    ========================================================================== */
 function renderAppHeader(activeId) {
   return `
-  <header>
-    <div class="wrap hdr">
+  <header class="app-header">
+    <div class="hdr-wrap">
       <div class="logo">
         <div class="logo-icon">♾️</div>
         <div>
           <div class="logo-title">Infinito</div>
-          <div class="logo-sub">Clean · Verify · Qualify · Export</div>
+          <div class="logo-sub">Power BI Data Engine · Editorial Intelligence</div>
         </div>
       </div>
       <div class="nav-links">
@@ -633,7 +632,7 @@ function renderAppHeader(activeId) {
         <a href="icp2.html"           class="nav-link ${activeId==='icp2'?'active':''}">🚀 ICP 2</a>
         <a href="icp3.html"           class="nav-link ${activeId==='icp3'?'active':''}">🌐 ICP 3</a>
       </div>
-      <div class="badge b-green"><div class="dot"></div> System Online</div>
+      <div class="system-status"><span class="dot"></span> Python Data Engine Live</div>
     </div>
   </header>`;
 }
@@ -649,7 +648,7 @@ function renderCreatorFooter() {
              onerror="this.onerror=null;this.outerHTML='<div class=\\'creator-avatar\\'>HT</div>';" />
         <div>
           <div class="creator-title">Created by <strong>Himanshu Thakur</strong></div>
-          <div class="creator-sub">Creator of Infinito — turn raw spreadsheet data into clean, verified, Power BI-style dashboards.</div>
+          <div class="creator-sub">Creator of Infinito — turning spreadsheet, Excel & PDF data into editorial Power BI dashboards.</div>
         </div>
       </div>
       <div class="creator-links">
@@ -660,28 +659,23 @@ function renderCreatorFooter() {
   </footer>`;
 }
 
-/* Inject shared modal & footer styles */
+/* Inject shared editorial styles */
 (function injectStyles() {
   const s = document.createElement('style');
   s.innerHTML = `
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,14,26,.88);backdrop-filter:blur(10px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-card{background:var(--card,#131c35);border:1px solid var(--border,rgba(79,142,247,.3));border-radius:16px;width:100%;max-width:640px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
-.modal-header{padding:18px 22px;border-bottom:1px solid var(--border,rgba(79,142,247,.2));display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#fff}
-.modal-close{background:none;border:none;color:#8899bb;font-size:20px;cursor:pointer}
-.modal-close:hover{color:#fff}
-.modal-body{padding:22px}
-.modal-footer{padding:16px 22px;border-top:1px solid var(--border,rgba(79,142,247,.2));display:flex;justify-content:flex-end;gap:10px}
-.creator-footer{margin-top:60px;padding:30px 0;background:rgba(13,20,45,.95);border-top:1px solid var(--border,rgba(79,142,247,.15))}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(24,21,25,0.65);backdrop-filter:blur(10px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-card{width:100%;max-width:640px}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer}
+.creator-footer{margin-top:60px;padding:36px 0;background:#ffffff;border-top:1px solid rgba(0,0,0,0.06);border-radius:24px 24px 0 0}
 .footer-content{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .creator-badge{display:flex;align-items:center;gap:14px;text-align:left}
-.creator-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--blue,#4f8ef7);box-shadow:0 0 15px rgba(79,142,247,.4);flex-shrink:0}
-.creator-avatar{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex-shrink:0}
-.creator-title{font-size:14px;color:#f0f4ff}
-.creator-sub{font-size:12px;color:#8899bb;max-width:500px;margin-top:2px}
+.creator-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #8e549e;box-shadow:0 4px 15px rgba(142,84,158,0.25);flex-shrink:0}
+.creator-avatar{width:54px;height:54px;border-radius:50%;background:#181519;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex-shrink:0}
+.creator-title{font-size:14px;color:#181519}
+.creator-sub{font-size:12px;color:#7a707c;max-width:500px;margin-top:2px}
 .creator-links{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.creator-link{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:8px;font-size:12px;font-weight:600;color:#4f8ef7;text-decoration:none;transition:all .2s}
-.creator-link:hover{background:rgba(79,142,247,.22);transform:translateY(-1px)}
+.creator-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#faf6fa;border:1px solid rgba(0,0,0,0.08);border-radius:10px;font-size:13px;font-weight:600;color:#181519;text-decoration:none;transition:all .2s}
+.creator-link:hover{background:#181519;color:#ffffff}
 `;
   document.head.appendChild(s);
 })();

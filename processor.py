@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Infinito Python Data Processing, Profiling & Natural Language Dashboard Engine (processor.py)
-----------------------------------------------------------------------------------------
-Mandatory Pipeline:
-FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MATCHING -> CLEAN DATASET -> COMMAND PARSER -> DASHBOARD STATE
+Infinito Python Data Processing, Profiling & Dashboard Engine (processor.py)
+-------------------------------------------------------------------------
+Deterministic Local Processing Engine:
+UPLOAD -> READ -> PROFILE -> CLEAN -> VALIDATE -> QUALITY REPORT -> POWER BI DATASET
 """
 
 import sys
@@ -38,6 +38,17 @@ def find_column_by_patterns(df_cols, patterns):
     return None
 
 
+def calculate_data_quality_score(total_rows, total_missing, duplicates, invalid_emails):
+    if not total_rows or total_rows == 0:
+        return 100
+    dup_pct = (duplicates / total_rows) * 100
+    missing_pct = (total_missing / (total_rows * 5)) * 100
+    invalid_pct = (invalid_emails / (total_rows or 1)) * 100
+    
+    score = 100 - (dup_pct * 0.4 + missing_pct * 0.4 + invalid_pct * 0.2)
+    return max(0, min(100, round(score)))
+
+
 def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     original_rows = len(df)
     cols = list(df.columns)
@@ -51,7 +62,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         s_col = df[c]
         null_count = sum(1 for v in s_col if pd.isna(v) or str(v).strip().lower() in ['', 'null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'])
         missing_by_col[str(c)] = null_count
-        unique_by_col[str(c)] = s_col.nunique(dropna=True)
+        unique_by_col[str(c)] = int(s_col.nunique(dropna=True))
         dtype_by_col[str(c)] = str(s_col.dtype)
 
     total_missing_cells = sum(missing_by_col.values())
@@ -76,7 +87,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     city_col = find_column_by_patterns(cols, ['city', 'town'])
     country_col = find_column_by_patterns(cols, ['country', 'nation'])
     status_col = find_column_by_patterns(cols, ['marketingcontactstatus', 'emailstatus', 'companystatus', 'emailtype', 'status'])
-    icp_col = find_column_by_patterns(cols, ['icp', 'icpcategory', 'targeticp', 'segment', 'profile'])
     date_col = find_column_by_patterns(cols, ['createdate', 'date', 'timestamp', 'importdate'])
 
     mapped_rows = []
@@ -89,7 +99,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     email_regex = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
 
     for idx, row in df_clean.iterrows():
-        # Company Name & Numeric ID Clean
         co_val = str(row[co_col]) if co_col and row[co_col] else ""
         email_val = str(row[email_col]) if email_col and row[email_col] else ""
 
@@ -133,7 +142,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         else:
             incomplete_count += 1
 
-        icp_val = str(row[icp_col]) if icp_col and row[icp_col] else "Standard"
         date_val = str(row[date_col]) if date_col and row[date_col] else "2026-08-11"
 
         mapped_record = {
@@ -145,14 +153,8 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "website": web_val or "—",
             "location": loc_val or "—",
             "emailStatus": email_status,
-            "icp": icp_val,
             "createDate": date_val
         }
-
-        # Preserve unmapped fields
-        for c in cols:
-            if c not in [co_col, fn_col, ln_col, name_col, email_col, desig_col, phone_col, web_col, loc_col, city_col, country_col, status_col, icp_col, date_col]:
-                mapped_record[f"raw_{c}"] = str(row[c])
 
         # Deduplication Hash
         em_hash = email_val.lower().strip() if email_val and email_val != "—" else ""
@@ -168,26 +170,20 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
         mapped_rows.append(mapped_record)
 
     total_clean = len(mapped_rows)
-    valid_emails = sum(1 for r in mapped_rows if r["email"] != "—")
-    unique_companies = len(set(r["companyName"] for r in mapped_rows if r["companyName"] != "—"))
-    unique_contacts = len(set(r["contactName"] for r in mapped_rows if r["contactName"] != "—"))
-    phones_found = sum(1 for r in mapped_rows if r["phone"] != "—")
-    websites_found = sum(1 for r in mapped_rows if r["website"] != "—")
-
-    delivered_count = sum(1 for r in mapped_rows if r["emailStatus"] == "Delivered")
-    delivery_rate = round((delivered_count / valid_emails * 100), 1) if valid_emails > 0 else 100.0
+    quality_score = calculate_data_quality_score(original_rows, total_missing_cells, duplicate_count, invalid_email_count)
 
     return {
         "profiling": {
             "fileName": file_name,
             "sheetName": sheet_name,
             "totalRowsIngested": original_rows,
+            "totalColumns": len(cols),
             "totalMissingCells": total_missing_cells,
             "completenessRate": completeness_rate,
+            "qualityScore": quality_score,
             "missingByColumn": missing_by_col,
             "uniqueByColumn": unique_by_col,
             "dtypeByColumn": dtype_by_col,
-            "detectedHeadersCount": len(cols),
             "detectedHeaders": cols
         },
         "cleaningSummary": {
@@ -198,109 +194,20 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "invalidRecords": invalid_email_count,
             "missingValuesFixed": total_missing_cells,
             "completenessRate": completeness_rate,
+            "qualityScore": quality_score,
             "validRecords": total_clean,
             "detectedColumns": cols,
             "mappedColumns": [k for k in ["contactName", "email", "companyName", "designation", "phone", "website", "location", "emailStatus", "createDate"] if any(r[k] != "—" for r in mapped_rows)]
         },
-        "emailAnalytics": {
-            "totalEmailsSent": valid_emails,
-            "delivered": delivered_count,
-            "deliveryRate": delivery_rate,
-            "bounces": invalid_email_count,
-            "bounceRate": round((invalid_email_count / (valid_emails or 1) * 100), 1),
-            "uniqueDomainsCount": len(domain_counts),
-            "topDomains": sorted([{"domain": k, "count": v} for k, v in domain_counts.items()], key=lambda x: x["count"], reverse=True)[:6]
-        },
         "kpis": {
             "totalRecords": total_clean,
-            "validEmails": valid_emails,
-            "uniqueCompanies": unique_companies,
-            "uniqueContacts": unique_contacts,
-            "phonesFound": phones_found,
-            "websitesFound": websites_found
+            "validEmails": sum(1 for r in mapped_rows if r["email"] != "—"),
+            "uniqueCompanies": len(set(r["companyName"] for r in mapped_rows if r["companyName"] != "—")),
+            "phonesFound": sum(1 for r in mapped_rows if r["phone"] != "—"),
+            "qualityScore": quality_score
         },
         "records": mapped_rows
     }
-
-
-def parse_natural_language_command(command_text, current_state):
-    """
-    Parses natural language instructions to update the Dashboard State dynamically.
-    """
-    cmd = command_text.lower().strip()
-    updated = json.loads(json.dumps(current_state)) if current_state else {
-        "version": 1,
-        "mode": "view",
-        "activePage": "executive",
-        "charts": [
-            {"id": "trend_chart", "type": "bar", "title": "Emails Sent & Activity Trend", "visible": True},
-            {"id": "domain_chart", "type": "donut", "title": "Email Domain Distribution", "visible": True}
-        ],
-        "visibleColumns": ["contactName", "email", "companyName", "designation", "phone", "location", "emailStatus"],
-        "filters": {}
-    }
-
-    action_taken = "No state change matched."
-
-    # 1. Chart Type Modification
-    if "line" in cmd:
-        for c in updated.get("charts", []):
-            if c["id"] == "trend_chart":
-                c["type"] = "line"
-        action_taken = "Changed Trend Chart type to Line Chart."
-    elif "bar" in cmd:
-        for c in updated.get("charts", []):
-            if c["id"] == "trend_chart":
-                c["type"] = "bar"
-        action_taken = "Changed Trend Chart type to Bar Chart."
-
-    # 2. Hide / Remove Charts
-    if "remove donut" in cmd or "hide donut" in cmd or "remove domain chart" in cmd:
-        for c in updated.get("charts", []):
-            if c["id"] == "domain_chart":
-                c["visible"] = False
-        action_taken = "Removed Donut Domain Chart from dashboard layout."
-    elif "show donut" in cmd or "add donut" in cmd:
-        for c in updated.get("charts", []):
-            if c["id"] == "domain_chart":
-                c["visible"] = True
-        action_taken = "Restored Donut Domain Chart to dashboard layout."
-
-    # 3. Filtering Domain
-    if "gmail" in cmd:
-        updated.setdefault("filters", {})["domainFilter"] = "gmail.com"
-        action_taken = "Filtered dashboard analytics to display Gmail contacts only."
-    elif "clear filter" in cmd or "all domains" in cmd:
-        updated.setdefault("filters", {})["domainFilter"] = "all"
-        action_taken = "Cleared domain filters."
-
-    # 4. Column Slicing
-    if "remove location" in cmd or "hide location" in cmd:
-        cols = updated.get("visibleColumns", [])
-        if "location" in cols:
-            cols.remove("location")
-        updated["visibleColumns"] = cols
-        action_taken = "Removed Location column from data table grid."
-    elif "add location" in cmd or "show location" in cmd:
-        cols = updated.get("visibleColumns", [])
-        if "location" not in cols:
-            cols.append("location")
-        updated["visibleColumns"] = cols
-        action_taken = "Added Location column to data table grid."
-
-    # 5. Page Switching
-    if "deliverability" in cmd or "quality" in cmd:
-        updated["activePage"] = "deliverability"
-        action_taken = "Switched view to Deliverability & Data Quality Audit page."
-    elif "executive" in cmd or "overview" in cmd:
-        updated["activePage"] = "executive"
-        action_taken = "Switched view to Executive Overview page."
-    elif "email" in cmd or "performance" in cmd:
-        updated["activePage"] = "email_performance"
-        action_taken = "Switched view to Email & Outreach Performance page."
-
-    updated["version"] = updated.get("version", 1) + 1
-    return {"updatedState": updated, "actionTaken": action_taken}
 
 
 def process_file(file_path):
@@ -318,18 +225,6 @@ def process_file(file_path):
             sheet = excel.sheet_names[0]
             df = pd.read_excel(file_path, sheet_name=sheet)
             return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name=sheet)
-        elif ext == '.json':
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            df = pd.DataFrame(data if isinstance(data, list) else [data])
-            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="JSON Data")
-        elif ext == '.pdf':
-            from pypdf import PdfReader
-            reader = PdfReader(file_path)
-            text = "\n".join([p.extract_text() for p in reader.pages if p.extract_text()])
-            lines = [l.strip() for l in text.splitlines() if l.strip()]
-            df = pd.DataFrame([{"extractedLine": l} for l in lines])
-            return profile_and_clean_dataframe(df, file_name=os.path.basename(file_path), sheet_name="PDF Extraction")
         else:
             return {"error": f"Unsupported extension: {ext}"}
     except Exception as err:
@@ -342,4 +237,4 @@ if __name__ == "__main__":
     else:
         sample_path = "/Users/himanshuthakur/Documents/Advocate Finder/DASHBOARD CREATER/contacts_raw.csv"
         res = process_file(sample_path)
-        print("Profiling Completeness:", res["profiling"]["completenessRate"], "%")
+        print("Data Quality Score:", res["profiling"]["qualityScore"], "/ 100")

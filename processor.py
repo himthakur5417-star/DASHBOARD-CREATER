@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Infinito Python Data Processing, Profiling & Dashboard Engine (processor.py)
--------------------------------------------------------------------------
-Deterministic Local Processing Engine:
-UPLOAD -> READ -> PROFILE -> CLEAN -> VALIDATE -> QUALITY REPORT -> POWER BI DATASET
+Infinito Python Processing & Permission Engine (processor.py)
+------------------------------------------------------------
+Deterministic Backend Engine for Data Profiling, Cleaning Previews,
+Permission-Based Transformations, and Power BI Dataset Generation.
 """
 
 import sys
@@ -53,7 +53,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     original_rows = len(df)
     cols = list(df.columns)
 
-    # 1. DATA PROFILING & QUALITY AUDIT
     missing_by_col = {}
     unique_by_col = {}
     dtype_by_col = {}
@@ -69,12 +68,10 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     total_cells = original_rows * len(cols) if original_rows and len(cols) else 1
     completeness_rate = round(((total_cells - total_missing_cells) / total_cells * 100), 1)
 
-    # 2. DATA CLEANING & TEXT SANITIZATION
     df_clean = df.copy()
     for c in cols:
         df_clean[c] = df_clean[c].apply(sanitize_text)
 
-    # 3. COLUMN DETECTION & MATCHING
     co_col = find_column_by_patterns(cols, ['companyname', 'company', 'associatedcompany', 'organization', 'firm', 'accountname', 'businessname'])
     fn_col = find_column_by_patterns(cols, ['firstname', 'first'])
     ln_col = find_column_by_patterns(cols, ['lastname', 'last'])
@@ -84,8 +81,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     phone_col = find_column_by_patterns(cols, ['phonenumber', 'phone', 'contactnumber', 'mobile', 'tel', 'cell'])
     web_col = find_column_by_patterns(cols, ['website', 'domain', 'companywebsite', 'url'])
     loc_col = find_column_by_patterns(cols, ['location', 'address', 'city', 'state', 'country'])
-    city_col = find_column_by_patterns(cols, ['city', 'town'])
-    country_col = find_column_by_patterns(cols, ['country', 'nation'])
     status_col = find_column_by_patterns(cols, ['marketingcontactstatus', 'emailstatus', 'companystatus', 'emailtype', 'status'])
     date_col = find_column_by_patterns(cols, ['createdate', 'date', 'timestamp', 'importdate'])
 
@@ -122,10 +117,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             web_val = email_val.split("@")[1].strip()
 
         loc_val = str(row[loc_col]) if loc_col and row[loc_col] else ""
-        city_val = str(row[city_col]) if city_col and row[city_col] else ""
-        country_val = str(row[country_col]) if country_col and row[country_col] else ""
-        if not loc_val:
-            loc_val = ", ".join(filter(None, [city_val, country_val]))
 
         email_status = "Delivered"
         if status_col and row[status_col]:
@@ -156,7 +147,6 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "createDate": date_val
         }
 
-        # Deduplication Hash
         em_hash = email_val.lower().strip() if email_val and email_val != "—" else ""
         co_hash = co_val.lower().strip() if co_val and co_val != "—" else ""
         name_hash = full_name.lower().strip() if full_name and full_name != "—" else ""

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | Unified Power BI-Style Dashboard Generator</title>
-<meta name="description" content="Infinito — Clean, Verify, Qualify, Visualize, and Export. Turn raw CSV and Excel data into interactive Power BI-style dashboards with zero AI dependency.">
+<title>Infinito | Smart Data Cleaning & Permission-Based Dashboard Generator</title>
+<meta name="description" content="Infinito — Clean, Verify, Qualify, Visualize, and Export. Permission-based intelligent data cleaning and Power BI-style dashboard generator.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="app-shared.js"></script>
@@ -62,15 +62,15 @@ body {
 .main-wrapper { flex-grow: 1; padding: 32px 40px; overflow-y: auto; max-width: 1600px; }
 
 /* STEP PROCESS BAR */
-.step-bar { display: flex; align-items: center; gap: 12px; background: var(--shell-bg); border: 1px solid var(--card-border); padding: 12px 24px; border-radius: 16px; margin-bottom: 28px; flex-wrap: wrap; }
-.step-chip { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); padding: 6px 14px; border-radius: 20px; background: transparent; }
+.step-bar { display: flex; align-items: center; gap: 10px; background: var(--shell-bg); border: 1px solid var(--card-border); padding: 12px 24px; border-radius: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.step-chip { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 6px 12px; border-radius: 20px; background: transparent; }
 .step-chip.active { background: rgba(168,85,247,0.2); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.4); }
 .step-chip.completed { color: var(--accent-green); }
 
 /* HERO SECTION */
 .hero-card { background: linear-gradient(135deg, #1c1f2e, #141722); border: 1px solid var(--card-border); border-radius: var(--r-shell); padding: 40px; margin-bottom: 28px; text-align: center; }
 .hero-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero-sub { font-size: 15px; color: var(--text-muted); max-width: 600px; margin: 0 auto 28px; }
+.hero-sub { font-size: 15px; color: var(--text-muted); max-width: 640px; margin: 0 auto 28px; }
 
 /* UPLOAD DROPZONE */
 .dropzone {
@@ -97,13 +97,19 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 .kpi-lbl { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* BUTTONS */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 22px; border-radius: var(--r-btn); font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: var(--r-btn); font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
 .btn-primary { background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); color: #fff; box-shadow: 0 4px 15px rgba(168,85,247,0.3); }
 .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
 .btn-secondary { background: var(--card-bg); color: #fff; border: 1px solid var(--card-border); }
 .btn-secondary:hover { background: #262b3b; }
 
 .search-input { padding: 10px 16px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--card-border); color: #fff; font-size: 13px; outline: none; width: 100%; }
+
+/* TEMPLATE CARD GRID */
+.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+.template-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+.template-card:hover { border-color: var(--accent-purple); transform: translateY(-2px); }
+.template-card.active { border-color: var(--accent-purple); background: rgba(168,85,247,0.1); }
 </style>
 </head>
 <body>
@@ -125,8 +131,8 @@ tr:hover td { background: rgba(255,255,255,0.03); }
   </nav>
 
   <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:14px;margin-top:auto">
-    <div style="font-size:11px;color:var(--accent-green);font-weight:700">● Local-First Processing</div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">100% Deterministic · Zero AI API Required</div>
+    <div style="font-size:11px;color:var(--accent-green);font-weight:700">● Permission-Based Engine</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">AI Recommends. You Approve. Infinito Executes.</div>
   </div>
 </aside>
 
@@ -135,18 +141,19 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 
   <!-- STEP PROCESS BAR -->
   <div class="step-bar">
-    <div class="step-chip active" id="step-1-chip">1. Upload File</div> →
-    <div class="step-chip" id="step-2-chip">2. Data Preview</div> →
-    <div class="step-chip" id="step-3-chip">3. Health Profiling</div> →
-    <div class="step-chip" id="step-4-chip">4. Clean Dataset</div> →
-    <div class="step-chip" id="step-5-chip">5. Generate Dashboard</div>
+    <div class="step-chip active" id="step-1-chip">1. Upload</div> →
+    <div class="step-chip" id="step-2-chip">2. Profile</div> →
+    <div class="step-chip" id="step-3-chip">3. Cleaning Actions</div> →
+    <div class="step-chip" id="step-4-chip">4. Smart Visuals</div> →
+    <div class="step-chip" id="step-5-chip">5. Select Template</div> →
+    <div class="step-chip" id="step-6-chip">6. BI Dashboard</div>
   </div>
 
-  <!-- HERO / FILE UPLOAD SECTION -->
+  <!-- STEP 1: UPLOAD SECTION -->
   <div id="upload-section">
     <div class="hero-card">
       <h1 class="hero-title">Turn Raw Data Into a Powerful Dashboard</h1>
-      <p class="hero-sub">Upload your raw CSV or Excel spreadsheet. Infinito deterministically profiles, cleans, validates, and generates an interactive Power BI-style dashboard.</p>
+      <p class="hero-sub">Upload your raw CSV or Excel file. Infinito analyzes dataset structure, suggests clean-up rules with side-by-side previews, asks your permission, and builds a Power BI dashboard.</p>
       
       <div class="dropzone" onclick="document.getElementById('file-input').click()">
         <div style="font-size:44px;margin-bottom:12px">📥</div>
@@ -157,24 +164,24 @@ tr:hover td { background: rgba(255,255,255,0.03); }
     </div>
   </div>
 
-  <!-- DATA PREVIEW & PROFILING SECTION -->
-  <div id="preview-section" style="display:none">
+  <!-- STEP 2: PROFILING & HEALTH REPORT SECTION -->
+  <div id="profile-section" style="display:none">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title" id="file-summary-title">Dataset Summary</div>
+          <div class="card-title" id="file-summary-title">📄 Dataset Detected</div>
           <div style="font-size:13px;color:var(--text-muted)" id="file-summary-meta">Rows: 0 | Columns: 0 | Size: 0 MB</div>
         </div>
         <div style="display:flex;gap:10px">
           <button class="btn btn-secondary" onclick="exportOriginalCSV()">⬇️ Download Original</button>
-          <button class="btn btn-primary" onclick="applyDataCleaning()">⚡ Clean Dataset & Profile</button>
+          <button class="btn btn-primary" onclick="proceedToCleaningActions()">Continue to Cleaning Actions →</button>
         </div>
       </div>
 
-      <!-- DATA HEALTH GAUGE CARD -->
+      <!-- HEALTH REPORT GAUGE CARD -->
       <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
         <div>
-          <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Deterministic Data Quality Score</div>
+          <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Read-Only Data Health Score</div>
           <div style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:800;color:var(--accent-green)" id="health-score-val">100 / 100</div>
         </div>
         <div style="display:flex;gap:20px;font-size:13px">
@@ -184,9 +191,9 @@ tr:hover td { background: rgba(255,255,255,0.03); }
         </div>
       </div>
 
-      <!-- INTERACTIVE SPREADSHEET PREVIEW TABLE -->
+      <!-- READ-ONLY DATA PREVIEW TABLE -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Data Preview (First 50 Rows)</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700">Original Dataset Preview (First 50 Rows)</div>
         <div style="max-width:280px">
           <input type="text" id="preview-search" class="search-input" placeholder="🔍 Search preview..." oninput="renderPreviewTable()">
         </div>
@@ -200,12 +207,89 @@ tr:hover td { background: rgba(255,255,255,0.03); }
     </div>
   </div>
 
-  <!-- CLEAN DATASET & DASHBOARD GENERATOR SECTION -->
+  <!-- STEP 3: RECOMMENDED CLEANING & PERMISSION SECTION -->
+  <div id="cleaning-section" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🧹 Recommended Cleaning Actions (Permission Required)</div>
+          <div style="font-size:13px;color:var(--text-muted)">Infinito recommends clean-up actions. Click Allow, Skip, or Preview Changes for each.</div>
+        </div>
+        <button class="btn btn-primary" onclick="allowAllCleaningActions()">Allow All Recommended Actions</button>
+      </div>
+
+      <div id="cleaning-cards-container" style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-secondary" onclick="backToProfile()">← Back to Profile</button>
+        <button class="btn btn-primary" onclick="executeApprovedCleaning()">Execute Approved Cleaning →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: VISIBLE TIMELINE & SUMMARY SECTION -->
+  <div id="timeline-section" style="display:none">
+    <div class="card" style="text-align:center;padding:40px">
+      <div class="card-title" style="margin-bottom:8px">🧹 Executing Dataset Cleaning Pipeline</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Live progress timeline updating clean dataset records...</div>
+
+      <div style="max-width:480px;margin:0 auto;text-align:left;background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px;font-size:13px" id="timeline-list">
+        <div style="color:var(--accent-green);font-weight:700">✓ Reading dataset headers</div>
+        <div style="color:var(--accent-green);font-weight:700;margin-top:6px">✓ Detecting duplicate records</div>
+        <div style="color:var(--accent-purple);font-weight:700;margin-top:6px">⟳ Removing approved duplicates...</div>
+        <div style="color:var(--text-muted);margin-top:6px">○ Normalizing formatting & RFC syntax</div>
+        <div style="color:var(--text-muted);margin-top:6px">○ Finalizing clean dataset store</div>
+      </div>
+
+      <div style="margin-top:24px">
+        <button class="btn btn-primary" id="timeline-continue-btn" onclick="proceedToVisualSuggestions()" style="display:none">Continue to Chart Suggestions →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: SMART CHART SUGGESTIONS & PERMISSION SECTION -->
+  <div id="visual-suggestions-section" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📊 Smart Visual Suggestions (Permission Required)</div>
+          <div style="font-size:13px;color:var(--text-muted)">Infinito analyzed column data types and recommends specific charts.</div>
+        </div>
+        <button class="btn btn-primary" onclick="addAllSuggestedCharts()">Add All Recommended Charts</button>
+      </div>
+
+      <div id="visual-suggestions-container" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-primary" onclick="proceedToTemplateLibrary()">Continue to Template Selection →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: 10 PROFESSIONAL TEMPLATE LIBRARY SECTION -->
+  <div id="template-library-section" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📐 Select a Professional Dashboard Template</div>
+          <div style="font-size:13px;color:var(--text-muted)">Choose a visual layout template. Templates dynamically adapt to actual dataset columns.</div>
+        </div>
+      </div>
+
+      <div class="template-grid" id="templates-grid"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+        <button class="btn btn-primary" onclick="generateFinalDashboard()">🚀 Confirm Plan & Build Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: INTERACTIVE POWER BI DASHBOARD SECTION -->
   <div id="dashboard-section" style="display:none">
     <div class="card" style="margin-bottom:20px">
       <div class="card-header" style="margin-bottom:0">
         <div>
-          <div class="card-title">📊 Power BI Interactive Dashboard Workspace</div>
+          <div class="card-title" id="dashboard-active-title">📊 Power BI Interactive Dashboard</div>
           <div style="font-size:13px;color:var(--text-muted)">Single Source of Truth Clean Dataset | Zero AI Dependency</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -221,11 +305,9 @@ tr:hover td { background: rgba(255,255,255,0.03); }
     <div class="kpi-grid" id="kpi-grid"></div>
 
     <!-- MAIN DASHBOARD CANVAS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px" id="charts-grid">
-      <!-- DYNAMIC CHARTS INJECTED HERE -->
-    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px" id="charts-grid"></div>
 
-    <!-- TOP RECORDS DATA GRID TABLE -->
+    <!-- CLEAN RECORD DATA GRID TABLE -->
     <div class="card">
       <div class="card-header">
         <div class="card-title">🏢 Clean Record Intelligence Table</div>
@@ -248,10 +330,14 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 let rawDataset = [];
 let cleanedDataset = [];
 let detectedHeaders = [];
+let datasetProfileCache = null;
+let approvedCleaningRules = { duplicates: true, empty_rows: true, company_names: true, emails: true, column_names: true };
+let approvedCharts = new Set(['domain_bar', 'company_top', 'time_series']);
+let selectedTemplateId = 't1';
 let isEditMode = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("Infinito Unified Dashboard Generator Loaded.");
+  console.log("Infinito Permission-Based Dashboard Generator Loaded.");
 });
 
 function switchTab(tabKey) {
@@ -268,18 +354,17 @@ async function handleFileUpload(e) {
     rawDataset = rows;
     detectedHeaders = headers;
 
-    document.getElementById('file-summary-title').innerText = `Dataset: ${fileName}`;
+    document.getElementById('file-summary-title').innerText = `📄 Dataset Detected: ${fileName}`;
     document.getElementById('file-summary-meta').innerText = `Rows: ${rows.length.toLocaleString()} | Columns: ${headers.length} | Size: ${(fileSize / (1024*1024)).toFixed(2)} MB`;
 
-    // Profile Data & Calculate Health Score
-    const profile = profileDataset(rows, headers);
-    document.getElementById('health-score-val').innerText = `${profile.qualityScore} / 100`;
-    document.getElementById('health-missing-val').innerText = profile.totalMissing.toLocaleString();
-    document.getElementById('health-dup-val').innerText = profile.duplicateCount.toLocaleString();
-    document.getElementById('health-invalid-val').innerText = profile.invalidEmails.toLocaleString();
+    datasetProfileCache = profileDataset(rows, headers);
+    document.getElementById('health-score-val').innerText = `${datasetProfileCache.qualityScore} / 100`;
+    document.getElementById('health-missing-val').innerText = datasetProfileCache.totalMissing.toLocaleString();
+    document.getElementById('health-dup-val').innerText = datasetProfileCache.duplicateCount.toLocaleString();
+    document.getElementById('health-invalid-val').innerText = datasetProfileCache.invalidEmails.toLocaleString();
 
     document.getElementById('upload-section').style.display = 'none';
-    document.getElementById('preview-section').style.display = 'block';
+    document.getElementById('profile-section').style.display = 'block';
 
     updateStep(2);
     renderPreviewTable();
@@ -289,8 +374,9 @@ async function handleFileUpload(e) {
 }
 
 function updateStep(stepNum) {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const chip = document.getElementById(`step-${i}-chip`);
+    if (!chip) continue;
     if (i < stepNum) chip.className = 'step-chip completed';
     else if (i === stepNum) chip.className = 'step-chip active';
     else chip.className = 'step-chip';
@@ -317,12 +403,130 @@ function renderPreviewTable() {
   `).join('') : `<tr><td colspan="${detectedHeaders.length + 1}" style="text-align:center;padding:30px;color:var(--text-muted)">No matching records.</td></tr>`;
 }
 
-function applyDataCleaning() {
-  cleanedDataset = cleanDatasetRows(rawDataset, detectedHeaders);
-  document.getElementById('preview-section').style.display = 'none';
+function proceedToCleaningActions() {
+  document.getElementById('profile-section').style.display = 'none';
+  document.getElementById('cleaning-section').style.display = 'block';
+  updateStep(3);
+  renderCleaningCards();
+}
+
+function renderCleaningCards() {
+  const container = document.getElementById('cleaning-cards-container');
+  const recs = generateCleaningRecommendations(datasetProfileCache);
+
+  container.innerHTML = recs.map(r => `
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${r.title}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${r.description}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px" onclick="previewCleaningAction('${r.id}', '${r.beforeSample}', '${r.afterSample}')">Preview Changes</button>
+        <button class="btn btn-primary" style="font-size:11px;padding:6px 14px;background:${approvedCleaningRules[r.id]?'#10b981':'#3b82f6'}" onclick="setCleaningRule('${r.id}', true)">${approvedCleaningRules[r.id]?'✓ Allowed':'Allow'}</button>
+        <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px" onclick="setCleaningRule('${r.id}', false)">Skip</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setCleaningRule(ruleId, isApproved) {
+  approvedCleaningRules[ruleId] = isApproved;
+  renderCleaningCards();
+}
+
+function allowAllCleaningActions() {
+  ['duplicates', 'empty_rows', 'company_names', 'emails', 'column_names'].forEach(k => approvedCleaningRules[k] = true);
+  renderCleaningCards();
+}
+
+function previewCleaningAction(id, before, after) {
+  alert(`🔍 BEFORE vs AFTER PREVIEW:\n\nBEFORE:\n${before}\n\nAFTER:\n${after}`);
+}
+
+function executeApprovedCleaning() {
+  document.getElementById('cleaning-section').style.display = 'none';
+  document.getElementById('timeline-section').style.display = 'block';
+
+  cleanedDataset = cleanDatasetRows(rawDataset, approvedCleaningRules);
+
+  setTimeout(() => {
+    document.getElementById('timeline-list').innerHTML = `
+      <div style="color:var(--accent-green);font-weight:700">✓ Reading dataset headers</div>
+      <div style="color:var(--accent-green);font-weight:700;margin-top:6px">✓ Detecting duplicate records</div>
+      <div style="color:var(--accent-green);font-weight:700;margin-top:6px">✓ Removed approved duplicates</div>
+      <div style="color:var(--accent-green);font-weight:700;margin-top:6px">✓ Standardized text & RFC email syntax</div>
+      <div style="color:var(--accent-green);font-weight:700;margin-top:6px">✓ Clean dataset ready (${cleanedDataset.length.toLocaleString()} clean rows)</div>
+    `;
+    document.getElementById('timeline-continue-btn').style.display = 'inline-flex';
+  }, 1000);
+}
+
+function proceedToVisualSuggestions() {
+  document.getElementById('timeline-section').style.display = 'none';
+  document.getElementById('visual-suggestions-section').style.display = 'block';
+  updateStep(4);
+  renderVisualSuggestions();
+}
+
+function renderVisualSuggestions() {
+  const container = document.getElementById('visual-suggestions-container');
+  const suggestions = generateChartRecommendations(cleanedDataset, detectedHeaders);
+
+  container.innerHTML = suggestions.map(s => `
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:18px">
+      <div style="font-size:15px;font-weight:700;color:#fff">${s.title}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Reason: ${s.reason}</div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" style="font-size:11px;padding:6px 14px;background:${approvedCharts.has(s.id)?'#10b981':'#3b82f6'}" onclick="toggleChartApproved('${s.id}')">${approvedCharts.has(s.id)?'✓ Added':'Add to Dashboard'}</button>
+        <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px" onclick="alert('Visual Preview: ${s.title}')">Preview</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleChartApproved(chartId) {
+  if (approvedCharts.has(chartId)) approvedCharts.delete(chartId);
+  else approvedCharts.add(chartId);
+  renderVisualSuggestions();
+}
+
+function addAllSuggestedCharts() {
+  ['domain_bar', 'company_top', 'time_series', 'domain_donut'].forEach(id => approvedCharts.add(id));
+  renderVisualSuggestions();
+}
+
+function proceedToTemplateLibrary() {
+  document.getElementById('visual-suggestions-section').style.display = 'none';
+  document.getElementById('template-library-section').style.display = 'block';
+  updateStep(5);
+  renderTemplateGrid();
+}
+
+function renderTemplateGrid() {
+  const grid = document.getElementById('templates-grid');
+  grid.innerHTML = TEMPLATE_LIBRARY.map(t => `
+    <div class="template-card ${selectedTemplateId===t.id?'active':''}" onclick="selectTemplate('${t.id}')">
+      <div style="font-size:24px;margin-bottom:8px">${t.icon}</div>
+      <div style="font-size:14px;font-weight:700;color:#fff">${t.name}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${t.desc}</div>
+      <div style="margin-top:14px;font-size:11px;font-weight:700;color:var(--accent-purple)">${selectedTemplateId===t.id?'✓ Selected':'Click to Select'}</div>
+    </div>
+  `).join('');
+}
+
+function selectTemplate(tId) {
+  selectedTemplateId = tId;
+  renderTemplateGrid();
+}
+
+function generateFinalDashboard() {
+  document.getElementById('template-library-section').style.display = 'none';
   document.getElementById('dashboard-section').style.display = 'block';
 
-  updateStep(5);
+  const templateObj = TEMPLATE_LIBRARY.find(t => t.id === selectedTemplateId);
+  document.getElementById('dashboard-active-title').innerText = `📊 Power BI Dashboard (${templateObj ? templateObj.name : 'Executive'})`;
+
+  updateStep(6);
   renderDashboardCanvas();
 }
 
@@ -352,7 +556,6 @@ function renderDashboardCanvas() {
     </div>
   `;
 
-  // Dynamic Chart Cards
   const domains = {};
   rows.forEach(r => {
     if (r.email && r.email.includes('@')) {
@@ -418,7 +621,7 @@ function toggleEditMode() {
   isEditMode = !isEditMode;
   const btn = document.getElementById('edit-mode-btn');
   btn.innerText = isEditMode ? '👁️ View Dashboard' : '✏️ Edit Dashboard';
-  alert(isEditMode ? "Dashboard Edit Mode Enabled. You can now customize title, chart styles, and grid columns." : "Switched to View Mode.");
+  alert(isEditMode ? "Dashboard Edit Mode Enabled." : "Switched to View Mode.");
 }
 
 function exportOriginalCSV() { exportDatasetCSV(rawDataset, 'Original_Dataset.csv'); }

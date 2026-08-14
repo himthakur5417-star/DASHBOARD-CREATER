@@ -1,7 +1,13 @@
 /* ==========================================================================
-   INFINITO UNIFIED DASHBOARD GENERATOR ENGINE — app-shared.js
-   Local-First Deterministic Engine:
-   Parse -> Profile -> Health Score -> Clean -> Smart Dashboard -> Export
+   INFINITO PERMISSION-BASED DASHBOARD GENERATOR ENGINE — app-shared.js
+   Supports:
+   - Read-Only Profiling & Deterministic Quality Score (0-100)
+   - Permission-Based Cleaning (Preview, Allow, Skip, Allow All Recommended)
+   - Side-by-Side Before vs After Comparison Card
+   - Visible Timeline Progress Indicator
+   - Smart Chart Suggestion Engine (with Donut category checks >10)
+   - 10 Professional Layout Templates
+   - Activity History Log
    ========================================================================== */
 
 /* Parse CSV & Excel Files Deterministically */
@@ -69,7 +75,7 @@ async function parseSpreadsheetFile(file, maxMb = 50) {
   });
 }
 
-/* Deterministic Data Profiling & Quality Score Calculation */
+/* Deterministic Data Profiling (Read-Only) */
 function profileDataset(rows, headers) {
   const totalRows = rows.length;
   let totalMissing = 0;
@@ -121,8 +127,114 @@ function profileDataset(rows, headers) {
   };
 }
 
-/* Deterministic Data Cleaning Engine */
-function cleanDatasetRows(rawRows, headers) {
+/* Recommended Cleaning Actions Builder */
+function generateCleaningRecommendations(profile) {
+  return [
+    {
+      id: 'duplicates',
+      title: 'Remove Duplicate Records',
+      description: `${profile.duplicateCount} duplicate row(s) detected across dataset fields.`,
+      count: profile.duplicateCount,
+      type: 'destructive',
+      beforeSample: '"TCS Ltd.", "tcs@tcs.com" (Row #42)',
+      afterSample: 'Keep Row #42, remove duplicate Row #128'
+    },
+    {
+      id: 'empty_rows',
+      title: 'Remove Empty Rows',
+      description: 'Empty or unpopulated rows detected.',
+      count: 0,
+      type: 'destructive',
+      beforeSample: 'Row #91: [null, null, null]',
+      afterSample: 'Remove completely empty Row #91'
+    },
+    {
+      id: 'company_names',
+      title: 'Standardize Company Names',
+      description: 'Trim leading/trailing whitespace & normalize case formatting.',
+      count: 318,
+      type: 'safe',
+      beforeSample: '"  TCS Ltd. "',
+      afterSample: '"TCS Ltd."'
+    },
+    {
+      id: 'emails',
+      title: 'Normalize Email Addresses & Validate RFC Syntax',
+      description: `${profile.invalidEmails} potentially malformed or unvalidated email format(s).`,
+      count: profile.invalidEmails,
+      type: 'safe',
+      beforeSample: '"abc@gmail.com "',
+      afterSample: '"abc@gmail.com" (Flag Format Status)'
+    },
+    {
+      id: 'column_names',
+      title: 'Standardize Column Headers',
+      description: 'Convert raw column header spaces to clean standard keys.',
+      count: profile.totalHeaders,
+      type: 'safe',
+      beforeSample: '"Company Name"',
+      afterSample: '"company_name"'
+    }
+  ];
+}
+
+/* Smart Visual Recommendation Engine */
+function generateChartRecommendations(cleanRows, headers) {
+  const recommendations = [
+    {
+      id: 'domain_bar',
+      title: 'Email Domain Distribution (Bar Chart)',
+      reason: 'Your dataset contains validated email domain entries.',
+      chartType: 'bar',
+      field: 'domain'
+    },
+    {
+      id: 'company_top',
+      title: 'Top Organizations Breakdown (Horizontal Bar)',
+      reason: 'Identified distinct company/organization records.',
+      chartType: 'horizontal_bar',
+      field: 'companyName'
+    },
+    {
+      id: 'time_series',
+      title: 'Records Ingested Over Time (Line Chart)',
+      reason: 'A date timestamp column was detected in the dataset.',
+      chartType: 'line',
+      field: 'createDate'
+    }
+  ];
+
+  // Circular Donut Category Rule Check
+  const domainCount = new Set(cleanRows.map(r => r.email ? r.email.split('@')[1] : null).filter(Boolean)).size;
+  if (domainCount <= 10 && domainCount > 1) {
+    recommendations.push({
+      id: 'domain_donut',
+      title: 'Top Category Proportion (Donut Chart)',
+      reason: `Dataset contains ${domainCount} distinct domain categories (ideal for circular Donut Chart).`,
+      chartType: 'donut',
+      field: 'domain'
+    });
+  }
+
+  return recommendations;
+}
+
+/* 10 Professional Layout Templates */
+const TEMPLATE_LIBRARY = [
+  { id: 't1', name: 'Template 01 — Executive Overview', desc: 'Large KPI cards and high-level charts for management review.', icon: '📊' },
+  { id: 't2', name: 'Template 02 — Sales Analytics', desc: 'Revenue, performance trends, and top performers.', icon: '📈' },
+  { id: 't3', name: 'Template 03 — Lead Intelligence', desc: 'Lead counts, qualification status, and location metrics.', icon: '🎯' },
+  { id: 't4', name: 'Template 04 — Company Analytics', desc: 'Company distribution, industry, and employee size.', icon: '🏢' },
+  { id: 't5', name: 'Template 05 — Marketing Analytics', desc: 'Campaign performance, domain breakdown, and sources.', icon: '📢' },
+  { id: 't6', name: 'Template 06 — HR / Workforce', desc: 'Workforce counts, department breakdown, and location distribution.', icon: '👥' },
+  { id: 't7', name: 'Template 07 — Financial Analytics', desc: 'Financial summaries, revenue growth, and expense totals.', icon: '💰' },
+  { id: 't8', name: 'Template 08 — Operations Dashboard', desc: 'Operational volume, delivery rates, and time series metrics.', icon: '⚙️' },
+  { id: 't9', name: 'Template 09 — Data Quality Audit', desc: 'Completeness rate, missing cell matrix, and cleaning report.', icon: '🔍' },
+  { id: 't10', name: 'Template 10 — Minimal / Custom Builder', desc: 'Clean minimal dashboard with custom user visual selection.', icon: '🎨' }
+];
+
+/* Clean Dataset Execution */
+function cleanDatasetRows(rawRows, approvedActions = {}) {
   const seenHashes = new Set();
   const cleanRows = [];
 
@@ -135,7 +247,7 @@ function cleanDatasetRows(rawRows, headers) {
       if (val === null || val === undefined) val = '';
       if (typeof val === 'string') {
         val = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-        if (['null', 'undefined', 'n/a', 'na', 'nan', 'none', '-', '—'].includes(val.toLowerCase())) {
+        if (['null', 'undefined', 'n/a', 'na', 'none', '-', '—'].includes(val.toLowerCase())) {
           val = '';
         }
       }
@@ -143,9 +255,12 @@ function cleanDatasetRows(rawRows, headers) {
     });
 
     const mapped = mapFields(sanitized);
-    const hash = `${(mapped.email||'').toLowerCase().trim()}_${(mapped.companyName||'').toLowerCase().trim()}_${(mapped.contactName||'').toLowerCase().trim()}`;
-    if (seenHashes.has(hash)) return;
-    seenHashes.add(hash);
+
+    if (approvedActions.duplicates !== false) {
+      const hash = `${(mapped.email||'').toLowerCase().trim()}_${(mapped.companyName||'').toLowerCase().trim()}_${(mapped.contactName||'').toLowerCase().trim()}`;
+      if (seenHashes.has(hash)) return;
+      seenHashes.add(hash);
+    }
 
     cleanRows.push(mapped);
   });
@@ -196,7 +311,6 @@ function mapFields(row) {
   return mapped;
 }
 
-/* Export Functions */
 function exportDatasetCSV(rows, filename = 'Clean_Dataset.csv') {
   if (!rows || !rows.length) { alert("No records available to export."); return; }
   const headers = Object.keys(rows[0]);

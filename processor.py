@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Infinito Python Data Processing & BI Engine (processor.py)
----------------------------------------------------------
-Mandatory Workflow:
-FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MAPPING -> REQUIREMENT CONFIRMATION -> CLEAN DATASET
+Infinito Python Data Processing & Email Analytics Engine (processor.py)
+------------------------------------------------------------------------
+Mandatory Pipeline:
+FILE UPLOAD -> READ -> PROFILING -> CLEANING -> VALIDATION -> DEDUPLICATION -> COLUMN MATCHING -> CLEAN DATASET -> EMAIL BI METRICS
 """
 
 import sys
@@ -55,7 +55,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     for c in cols:
         df_clean[c] = df_clean[c].apply(sanitize_text)
 
-    # 3. COLUMN DETECTION & AUTO MAPPING (Strictly Data-Driven)
+    # 3. COLUMN DETECTION & MATCHING
     co_col = find_column_by_patterns(cols, ['companyname', 'company', 'associatedcompany', 'organization', 'firm', 'accountname', 'businessname'])
     fn_col = find_column_by_patterns(cols, ['firstname', 'first'])
     ln_col = find_column_by_patterns(cols, ['lastname', 'last'])
@@ -76,6 +76,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     incomplete_count = 0
     seen_hashes = set()
     duplicate_count = 0
+    domain_counts = {}
 
     email_regex = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
 
@@ -119,6 +120,9 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             if not email_regex.match(email_val):
                 invalid_email_count += 1
                 email_status = "Invalid Format"
+            else:
+                dom = email_val.split("@")[1].lower().strip()
+                domain_counts[dom] = domain_counts.get(dom, 0) + 1
         else:
             incomplete_count += 1
 
@@ -138,7 +142,7 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "createDate": date_val
         }
 
-        # Preserve unmapped extra fields
+        # Preserve unmapped fields
         for c in cols:
             if c not in [co_col, fn_col, ln_col, name_col, email_col, desig_col, phone_col, web_col, loc_col, city_col, country_col, status_col, icp_col, date_col]:
                 mapped_record[f"raw_{c}"] = str(row[c])
@@ -163,6 +167,10 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
     phones_found = sum(1 for r in mapped_rows if r["phone"] != "—")
     websites_found = sum(1 for r in mapped_rows if r["website"] != "—")
 
+    # Email BI Metrics
+    delivered_count = sum(1 for r in mapped_rows if r["emailStatus"] == "Delivered")
+    delivery_rate = round((delivered_count / valid_emails * 100), 1) if valid_emails > 0 else 100.0
+
     return {
         "profiling": {
             "fileName": file_name,
@@ -183,6 +191,15 @@ def profile_and_clean_dataframe(df, file_name="Dataset", sheet_name="Sheet1"):
             "validRecords": total_clean,
             "detectedColumns": cols,
             "mappedColumns": [k for k in ["contactName", "email", "companyName", "designation", "phone", "website", "location", "emailStatus", "createDate"] if any(r[k] != "—" for r in mapped_rows)]
+        },
+        "emailAnalytics": {
+            "totalEmailsSent": valid_emails,
+            "delivered": delivered_count,
+            "deliveryRate": delivery_rate,
+            "bounces": invalid_email_count,
+            "bounceRate": round((invalid_email_count / (valid_emails or 1) * 100), 1),
+            "uniqueDomainsCount": len(domain_counts),
+            "topDomains": sorted([{"domain": k, "count": v} for k, v in domain_counts.items()], key=lambda x: x["count"], reverse=True)[:5]
         },
         "kpis": {
             "totalRecords": total_clean,
@@ -235,6 +252,4 @@ if __name__ == "__main__":
     else:
         sample_path = "/Users/himanshuthakur/Documents/Advocate Finder/DASHBOARD CREATER/contacts_raw.csv"
         res = process_file(sample_path)
-        print("Profiling:", res["profiling"])
-        print("Cleaning Summary:", res["cleaningSummary"])
-        print("KPIs:", res["kpis"])
+        print("Email Analytics:", res["emailAnalytics"])

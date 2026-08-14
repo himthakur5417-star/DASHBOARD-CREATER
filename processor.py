@@ -230,10 +230,11 @@ def parse_natural_language_command(command_text, current_state):
     cmd = command_text.lower().strip()
     updated = json.loads(json.dumps(current_state)) if current_state else {
         "version": 1,
+        "mode": "view",
         "activePage": "executive",
         "charts": [
-            {"id": "trend_chart", "type": "bar", "visible": True},
-            {"id": "domain_chart", "type": "donut", "visible": True}
+            {"id": "trend_chart", "type": "bar", "title": "Emails Sent & Activity Trend", "visible": True},
+            {"id": "domain_chart", "type": "donut", "title": "Email Domain Distribution", "visible": True}
         ],
         "visibleColumns": ["contactName", "email", "companyName", "designation", "phone", "location", "emailStatus"],
         "filters": {}
@@ -342,4 +343,3 @@ if __name__ == "__main__":
         sample_path = "/Users/himanshuthakur/Documents/Advocate Finder/DASHBOARD CREATER/contacts_raw.csv"
         res = process_file(sample_path)
         print("Profiling Completeness:", res["profiling"]["completenessRate"], "%")
-        print("Command Test:", parse_natural_language_command("change trend chart to line chart and filter gmail", None))

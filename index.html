@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infinito | Power BI Dynamic Dashboard Builder & NL Studio</title>
-<meta name="description" content="Infinito Power BI Dynamic Dashboard Builder — Natural language dashboard editor, Python processing engine, multi-page reports, and voice command orchestrator.">
+<title>Infinito | Power BI Dynamic Data Analytics Studio & Editor</title>
+<meta name="description" content="Infinito Power BI Dynamic Analytics Studio — Interactive View/Edit mode, visual properties panel, drag/resize canvas, multi-page report tabs, and voice commands.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="app-shared.js"></script>
@@ -31,22 +31,22 @@ body {
   background: var(--bg-canvas);
   color: var(--text-main);
   min-height: 100vh;
-  padding: 24px 0 60px;
+  padding: 20px 0 60px;
   line-height: 1.5;
 }
-.wrap { max-width: 1680px; margin: 0 auto; padding: 0 24px; }
+.wrap { max-width: 1720px; margin: 0 auto; padding: 0 20px; }
 
 /* EDITORIAL SHELL */
 .shell {
   background: var(--shell-bg);
   border-radius: var(--r-shell);
-  padding: 32px 36px;
+  padding: 28px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* HEADER NAVIGATION */
-.app-header { margin-bottom: 24px; }
+.app-header { margin-bottom: 20px; }
 .hdr-wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .logo-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; stroke-dasharray: none; }
 .logo-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
@@ -65,14 +65,31 @@ body {
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
 
+/* POWER BI TOOLBAR */
+.bi-toolbar {
+  background: #faf6fa; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;
+  padding: 10px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+}
+.bi-toolbar-group { display: flex; align-items: center; gap: 10px; }
+.bi-toolbar-btn {
+  padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 700;
+  background: #ffffff; border: 1px solid rgba(0,0,0,0.1); color: var(--text-main); cursor: pointer; transition: all 0.2s;
+}
+.bi-toolbar-btn:hover { background: #181519; color: #ffffff; }
+.mode-pill {
+  padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s;
+}
+.mode-view { background: #e8f5e9; color: #2e7d32; }
+.mode-edit { background: #fff3e0; color: #d97757; }
+
 /* THREE-PANEL LAYOUT GRID */
 .workspace-grid {
   display: grid;
-  grid-template-columns: 320px 1fr 280px;
+  grid-template-columns: 310px 1fr 310px;
   gap: 20px;
   align-items: start;
 }
-@media (max-width: 1240px) {
+@media (max-width: 1280px) {
   .workspace-grid { grid-template-columns: 1fr; }
 }
 
@@ -81,7 +98,7 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--r-card);
-  padding: 24px;
+  padding: 22px;
 }
 
 .panel-title {
@@ -97,12 +114,20 @@ body {
 
 .upload-box {
   border: 2px dashed rgba(0,0,0,0.15); border-radius: 14px; background: #ffffff;
-  padding: 22px 16px; text-align: center; cursor: pointer; transition: all 0.2s;
+  padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.2s;
 }
 .upload-box:hover { border-color: var(--accent-purple); background: #faf6fa; }
 
+/* FIELD SELECTION CHIPS */
+.field-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px;
+  background: #ffffff; border: 1px solid rgba(0,0,0,0.08); font-size: 11px; font-weight: 600;
+  color: var(--text-main); margin: 3px; cursor: pointer; transition: all 0.2s;
+}
+.field-chip:hover { border-color: var(--accent-purple); background: #f5eef8; }
+
 /* CENTER PANEL WORKSPACE */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
 .kpi { border-radius: var(--r-card); padding: 18px; border: 1px solid rgba(0,0,0,0.05); }
 .kpurp { background: #f5eef8; }
 .kpeach { background: #fdf4f0; }
@@ -144,31 +169,61 @@ tr:hover td { background: #f5edf5; }
     <!-- HEADER MOUNT -->
     <div id="header-mount"></div>
 
+    <!-- POWER BI TOOLBAR BAR -->
+    <div class="bi-toolbar">
+      <div class="bi-toolbar-group">
+        <button class="bi-toolbar-btn">File</button>
+        <button class="bi-toolbar-btn">Edit</button>
+        <button class="bi-toolbar-btn">View</button>
+        <button class="bi-toolbar-btn">Insert</button>
+        <button class="bi-toolbar-btn" onclick="executeNL('undo')">⏪ Undo</button>
+      </div>
+
+      <div class="bi-toolbar-group">
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted)">Dashboard Mode:</span>
+        <button id="mode-toggle-btn" class="mode-pill mode-view" onclick="toggleMode()">👁️ View Mode (Interactive)</button>
+      </div>
+    </div>
+
     <!-- THREE-PANEL WORKSPACE GRID -->
     <div class="workspace-grid">
       
-      <!-- LEFT PANEL — TOOLS & NATURAL LANGUAGE BUILDER -->
+      <!-- LEFT PANEL — TOOLS, FIELD LIST & NATURAL LANGUAGE BUILDER -->
       <div class="panel">
         <div class="panel-title">
-          <span>🛠️ Dashboard Builder</span>
+          <span>🛠️ Field & Builder Panel</span>
           <span style="font-size:11px;color:var(--accent-purple);font-weight:700">Panel 1</span>
         </div>
 
         <!-- NATURAL LANGUAGE DASHBOARD COMMAND INPUT -->
         <div class="control-group">
-          <label class="control-label">💬 Natural Language Command Editor</label>
+          <label class="control-label">💬 Natural Language Editor</label>
           <div style="display:flex;gap:6px">
             <input type="text" id="nl-command-input" class="search-input" placeholder="e.g. Change chart to line, show only gmail, remove location..." onkeypress="if(event.key==='Enter') handleNLSubmit()">
             <button style="padding:10px 14px;background:#181519;color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:700" onclick="handleNLSubmit()">Go</button>
           </div>
         </div>
 
+        <!-- FIELD / COLUMN LIST -->
+        <div class="control-group">
+          <label class="control-label">Available Dataset Fields</label>
+          <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:10px" id="field-chips-container">
+            <span class="field-chip" onclick="toggleField('contactName')">👤 Contact Name</span>
+            <span class="field-chip" onclick="toggleField('email')">📧 Email</span>
+            <span class="field-chip" onclick="toggleField('companyName')">🏢 Company</span>
+            <span class="field-chip" onclick="toggleField('designation')">💼 Designation</span>
+            <span class="field-chip" onclick="toggleField('phone')">📞 Phone</span>
+            <span class="field-chip" onclick="toggleField('location')">📍 Location</span>
+            <span class="field-chip" onclick="toggleField('emailStatus')">✅ Status</span>
+          </div>
+        </div>
+
         <!-- UPLOAD DROP BOX -->
         <div class="control-group">
-          <label class="control-label">Ingest Dataset</label>
+          <label class="control-label">Ingest Source File</label>
           <div class="upload-box" onclick="document.getElementById('hero-file-input').click()">
-            <div style="font-size:28px;margin-bottom:6px">📥</div>
-            <div style="font-weight:700;font-size:13px">Upload Source File</div>
+            <div style="font-size:26px;margin-bottom:4px">📥</div>
+            <div style="font-weight:700;font-size:12px">Upload Source File</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:2px">CSV, XLSX, XLS, JSON, PDF</div>
           </div>
           <input type="file" id="hero-file-input" accept=".csv, .xls, .xlsx, .json, .pdf" style="display:none" onchange="handleStudioUpload(event)">
@@ -180,19 +235,8 @@ tr:hover td { background: #f5edf5; }
           <button id="voice-mic-btn" class="btn btn-secondary" onclick="toggleVoiceListening()">🎙️ Voice Command</button>
         </div>
 
-        <!-- QUICK EDIT PRESETS -->
-        <div class="control-group">
-          <label class="control-label">Quick Modify Controls</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <button class="btn btn-secondary" style="font-size:11px;padding:8px" onclick="executeNL('change trend chart to line chart')">📈 Line Chart</button>
-            <button class="btn btn-secondary" style="font-size:11px;padding:8px" onclick="executeNL('change trend chart to bar chart')">📊 Bar Chart</button>
-            <button class="btn btn-secondary" style="font-size:11px;padding:8px" onclick="executeNL('filter gmail')">📧 Gmail Only</button>
-            <button class="btn btn-secondary" style="font-size:11px;padding:8px" onclick="executeNL('undo')">⏪ Undo Change</button>
-          </div>
-        </div>
-
         <!-- ROBOT ASSISTANT WIDGET -->
-        <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px;margin-top:14px;display:flex;align-items:center;gap:12px">
+        <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:12px;margin-top:14px;display:flex;align-items:center;gap:12px">
           <div id="left-robot-avatar"></div>
           <div>
             <div style="font-size:12px;font-weight:700;color:var(--text-main)">Himanshu Robot AI</div>
@@ -266,14 +310,38 @@ tr:hover td { background: #f5edf5; }
         </div>
       </div>
 
-      <!-- RIGHT PANEL — ACTIONS, EXPORT & EMAIL DISPATCHER -->
+      <!-- RIGHT PANEL — VISUAL PROPERTIES & ACTIONS -->
       <div class="panel">
         <div class="panel-title">
-          <span>🚀 Actions & Sharing</span>
+          <span id="right-panel-heading">🚀 Actions & Sharing</span>
           <span style="font-size:11px;color:var(--accent-blue);font-weight:700">Panel 3</span>
         </div>
 
-        <!-- REAL EMAIL DISPATCHER -->
+        <!-- VISUAL PROPERTIES CONFIGURATION PANEL (EDIT MODE ONLY) -->
+        <div id="edit-properties-panel" style="display:none;background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:700;color:var(--accent-purple);margin-bottom:10px">🎨 Visual Properties Configurator</div>
+          
+          <div class="control-group">
+            <label class="control-label">Chart Type</label>
+            <select id="prop-chart-type" class="control-select" onchange="updateSelectedVisualProperty('type', this.value)">
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="donut">Donut Chart</option>
+              <option value="area">Area Chart</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">X Axis Field</label>
+            <select id="prop-x-axis" class="control-select" onchange="updateSelectedVisualProperty('xAxis', this.value)">
+              <option value="createDate">Create Date</option>
+              <option value="companyName">Company Name</option>
+              <option value="emailStatus">Email Status</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- EMAIL DISPATCHER -->
         <div class="control-group">
           <label class="control-label">Real Email Dispatcher</label>
           <button class="btn btn-primary" onclick="openShareEmailModal('Dynamic BI Report')">📧 Send Report via Email</button>
@@ -293,7 +361,7 @@ tr:hover td { background: #f5edf5; }
           <button class="btn btn-secondary" onclick="generateShareableLink()">🔗 Shareable Live Link</button>
         </div>
 
-        <!-- SEPARATE DASHBOARD QUICK NAV -->
+        <!-- SEPARATE WORKSPACES QUICK NAV -->
         <div class="control-group" style="margin-top:20px;border-top:1px solid rgba(0,0,0,0.06);padding-top:16px">
           <label class="control-label">Independent Workspaces</label>
           <a href="overall_emails.html" class="btn btn-secondary">📧 Overall Emails View</a>
@@ -353,6 +421,44 @@ async function handleStudioUpload(e) {
   } finally {
     e.target.value = '';
   }
+}
+
+function toggleMode() {
+  const state = store.getState();
+  state.mode = state.mode === 'view' ? 'edit' : 'view';
+  store.saveState(state);
+
+  const btn = document.getElementById('mode-toggle-btn');
+  const panel = document.getElementById('edit-properties-panel');
+  if (state.mode === 'edit') {
+    btn.className = 'mode-pill mode-edit';
+    btn.innerHTML = '✏️ Edit Mode (Visual Builder)';
+    panel.style.display = 'block';
+  } else {
+    btn.className = 'mode-pill mode-view';
+    btn.innerHTML = '👁️ View Mode (Interactive)';
+    panel.style.display = 'none';
+  }
+}
+
+function updateSelectedVisualProperty(key, val) {
+  const state = store.getState();
+  state.charts.forEach(c => {
+    if (c.id === 'trend_chart') c[key] = val;
+  });
+  store.saveState(state);
+  renderDashboardCanvas();
+}
+
+function toggleField(colKey) {
+  const state = store.getState();
+  if (state.visibleColumns.includes(colKey)) {
+    state.visibleColumns = state.visibleColumns.filter(c => c !== colKey);
+  } else {
+    state.visibleColumns.push(colKey);
+  }
+  store.saveState(state);
+  renderDashboardCanvas();
 }
 
 function handleNLSubmit() {
@@ -427,7 +533,6 @@ function renderDashboardCanvas() {
     </div>
   `;
 
-  // Domain Cards
   const domains = {};
   rows.forEach(r => {
     if (r.email && r.email.includes('@')) {

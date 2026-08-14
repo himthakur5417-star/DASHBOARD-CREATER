@@ -1,15 +1,14 @@
 /* ==========================================================================
    INFINITO POWER BI DYNAMIC DASHBOARD BUILDER ENGINE — app-shared.js
    Supports:
-   - Dynamic Dashboard State (Layout, Visuals, Slicers, Pages, Version History)
-   - Natural Language & Voice Command Dashboard Editor ("change chart to line", "remove donut", "show only gmail", "undo")
-   - Dedicated Data Quality & Profiling Page
-   - Three-Panel Workspace Architecture
+   - View Mode vs Edit Mode Switching
+   - Visual Properties Configuration Panel (X-Axis, Y-Axis, Chart Type, Styling)
+   - Field/Column Selection Panel
+   - Undo / Redo Version History Stack
+   - Natural Language & Voice Command Dashboard Editor
+   - Data Quality & Profiling Audit Page
    ========================================================================== */
 
-/* ==========================================================================
-   WORKSPACE STORE — Single Source of Truth Storage
-   ========================================================================== */
 class WorkspaceStore {
   constructor(workspaceId) {
     this.workspaceId = workspaceId;
@@ -30,12 +29,14 @@ class WorkspaceStore {
     try {
       const defaultState = {
         version: 1,
+        mode: 'view',
+        selectedVisualId: 'trend_chart',
         activePage: 'executive',
         theme: 'powerbi_editorial',
         complexity: 'standard',
         charts: [
-          { id: 'trend_chart', type: 'bar', title: 'Emails Sent & Activity Trend', visible: true },
-          { id: 'domain_chart', type: 'donut', title: 'Email Domain Distribution', visible: true }
+          { id: 'trend_chart', type: 'bar', title: 'Emails Sent & Activity Trend', xAxis: 'createDate', yAxis: 'totalEmails', visible: true },
+          { id: 'domain_chart', type: 'donut', title: 'Email Domain Distribution', xAxis: 'domain', yAxis: 'count', visible: true }
         ],
         visibleColumns: ['contactName', 'email', 'companyName', 'designation', 'phone', 'location', 'emailStatus'],
         filters: { searchQuery: '', domainFilter: 'all', statusFilter: 'all' },
@@ -43,7 +44,7 @@ class WorkspaceStore {
       };
       return JSON.parse(localStorage.getItem(this.stateKey) || JSON.stringify(defaultState));
     } catch {
-      return { version: 1, activePage: 'executive', charts: [], visibleColumns: [] };
+      return { version: 1, mode: 'view', activePage: 'executive', charts: [], visibleColumns: [] };
     }
   }
 
@@ -117,9 +118,6 @@ class WorkspaceStore {
   }
 }
 
-/* ==========================================================================
-   DATA CLEANING ENGINE (Python Parity Engine)
-   ========================================================================== */
 class DataCleaningEngine {
   static cleanDataset(rawRows, fileName = 'Dataset', sheetName = 'Sheet1') {
     const originalCount = rawRows.length;
@@ -235,22 +233,17 @@ class DataCleaningEngine {
   }
 }
 
-/* ==========================================================================
-   NATURAL LANGUAGE DASHBOARD COMMAND PARSER
-   ========================================================================== */
 function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
   if (!cmdText) return { state: currentState, message: 'Empty instruction.' };
   const cmd = cmdText.toLowerCase().trim();
   const state = JSON.parse(JSON.stringify(currentState || storeInstance.getState()));
-  
-  // Push state to version history stack
+
   if (!state.versionHistory) state.versionHistory = [];
   state.versionHistory.push(JSON.parse(JSON.stringify(state)));
   if (state.versionHistory.length > 10) state.versionHistory.shift();
 
   let message = '';
 
-  // 1. Chart Modification
   if (cmd.includes('line')) {
     state.charts.forEach(c => { if (c.id === 'trend_chart') c.type = 'line'; });
     message = '📊 Changed Trend Chart type to Line Chart.';
@@ -259,7 +252,6 @@ function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
     message = '📊 Changed Trend Chart type to Bar Chart.';
   }
 
-  // 2. Hide / Remove Charts
   if (cmd.includes('remove donut') || cmd.includes('hide donut') || cmd.includes('remove domain chart')) {
     state.charts.forEach(c => { if (c.id === 'domain_chart') c.visible = false; });
     message = '🙈 Removed Donut Domain Chart from layout.';
@@ -268,7 +260,6 @@ function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
     message = '👁️ Restored Donut Domain Chart to layout.';
   }
 
-  // 3. Domain Filter
   if (cmd.includes('gmail')) {
     state.filters.domainFilter = 'gmail.com';
     message = '🔍 Filtered dashboard for Gmail addresses only.';
@@ -277,7 +268,6 @@ function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
     message = '🧹 Cleared domain filters.';
   }
 
-  // 4. Column Slicing
   if (cmd.includes('remove location') || cmd.includes('hide location')) {
     state.visibleColumns = state.visibleColumns.filter(c => c !== 'location');
     message = '✂️ Removed Location column from grid table.';
@@ -286,17 +276,15 @@ function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
     message = '➕ Added Location column to grid table.';
   }
 
-  // 5. Undo / Versioning
   if (cmd.includes('undo') || cmd.includes('previous version')) {
     if (state.versionHistory && state.versionHistory.length > 1) {
-      const prev = state.versionHistory.pop(); // Pop current
-      const restored = state.versionHistory.pop(); // Get previous
+      state.versionHistory.pop();
+      const restored = state.versionHistory.pop();
       storeInstance.saveState(restored);
       return { state: restored, message: '⏪ Restored previous dashboard state version.' };
     }
   }
 
-  // 6. Page Switching
   if (cmd.includes('quality') || cmd.includes('deliverability')) {
     state.activePage = 'deliverability';
     message = '📑 Switched view to Deliverability & Data Quality Audit page.';
@@ -310,7 +298,6 @@ function parseNaturalLanguageCommand(cmdText, currentState, storeInstance) {
   return { state, message: message || `Updated dashboard state for: "${cmdText}"` };
 }
 
-/* Field Mapping & ICP Logic */
 function mapFields(row) {
   const mapped = { ...row };
   const keys = Object.keys(row);
@@ -393,7 +380,6 @@ function qualifyICP3(row) {
   return row;
 }
 
-/* File Parser */
 async function parseUploadedFile(file, maxMb = 25) {
   if (!file) throw new Error("No file selected.");
   const maxBytes = maxMb * 1024 * 1024;
@@ -425,7 +411,6 @@ async function parseUploadedFile(file, maxMb = 25) {
   });
 }
 
-/* Himanshu Robot Avatar Component */
 function renderHimanshuRobotAvatar(size = 46) {
   return `
   <div class="himanshu-robot-avatar-container" style="position:relative;width:${size}px;height:${size}px;display:inline-block;flex-shrink:0;">
@@ -440,7 +425,6 @@ function renderHimanshuRobotAvatar(size = 46) {
   </div>`;
 }
 
-/* Voice Command Engine */
 function initVoiceCommandEngine() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return null;
@@ -481,7 +465,6 @@ function toggleVoiceListening() {
   } catch (e) { console.error(e); }
 }
 
-/* Data Profiling & Cleaning Modal */
 function showImportSummaryModal(cleaningReport, onConfirmCallback) {
   if (!cleaningReport) return;
   let overlay = document.getElementById('infinito-import-modal-overlay');
@@ -641,7 +624,6 @@ function closeRecordDetailModal() {
   if (overlay) overlay.style.display = 'none';
 }
 
-/* Copy HTML & Link Share Generators */
 function copyStaticHTMLDashboard() {
   navigator.clipboard.writeText(document.documentElement.outerHTML).then(() => {
     alert("⚡ Self-contained Static HTML Dashboard copied to clipboard!");
@@ -704,7 +686,6 @@ function submitShareEmail() {
   closeShareEmailModal();
 }
 
-/* Exports */
 function exportDatasetCSV(rows, filename = 'Infinito_Dataset.csv') {
   if (!rows || !rows.length) { alert("No records available to export."); return; }
   const headers = ['Contact Name', 'Email Address', 'Company Name', 'Designation / Owner', 'Phone Number', 'Website', 'Location', 'Email Status', 'Qualification Status', 'Reason / Tier'];
@@ -758,7 +739,6 @@ function exportDatasetXLSX(rows, filename = 'Infinito_Dataset.xlsx') {
   XLSX.writeFile(workbook, filename);
 }
 
-/* UI Header & Footer */
 function renderAppHeader(activeId) {
   return `
   <header class="app-header">
